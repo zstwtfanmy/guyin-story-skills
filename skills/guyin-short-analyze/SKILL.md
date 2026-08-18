@@ -1,6 +1,6 @@
 ---
 name: guyin-short-analyze
-version: 0.1.0
+version: 0.3.0
 description: "隐笔短篇拆文。单一全量管道：故事核→结构→情感线→反转设计→写作手法→共鸣层次，产物落盘 拆文库/{书名}/。触发方式：/guyin-short-analyze、/隐笔短篇拆文、「拆短篇」「拆这篇」「盐言拆文」「番茄短篇拆文」「故事会拆解」或提供短篇文本路径。"
 ---
 # guyin-short-analyze：隐笔短篇拆文

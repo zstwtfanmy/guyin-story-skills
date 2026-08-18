@@ -1,6 +1,6 @@
 ---
 name: guyin-short-write
-version: 0.1.0
+version: 0.3.0
 description: "隐笔短篇写作（编排层）。与 guyin-write 同一四卡体系与 beat 循环，骨架换成情节节点+情绪曲线+反转表（内涵）配时间线/伏笔（方向）。触发方式：/guyin-short-write、/隐笔短篇、「写短篇」「写一篇」「盐言故事」「番茄短篇」「追妻」「重生复仇」。"
 ---
 # guyin-short-write：隐笔短篇（你是编排层）
@@ -32,7 +32,7 @@ description: "隐笔短篇写作（编排层）。与 guyin-write 同一四卡�
 3. **逐 beat**：判 Craft/Muse → 组写作卡 → 执行层 → 自检卡 → 改写卡分级 → 下一 beat。卡片与组装协议见 [../guyin-write/cards/README.md](../guyin-write/cards/README.md)。
 4. **拼接成篇**：检查拼接点衔接；落盘 `正文/{篇名}.md`。
 5. **追踪提交**：`../guyin-write/scripts/guyin-tracking-commit.py`。
-6. **篇检**：跑 `../guyin-write/scripts/` 下三个 guyin-check 脚本；报警一律**待审**：改写卡修 / 豁免（五测试，**短篇每篇 ≤1 处**）/ 保留。
+6. **篇检**：跑 `../guyin-write/scripts/` 下四个 guyin-check 脚本（wordcount 以 `--min/--max` 依情节节点的字数目标定界）；报警一律**待审**：改写卡修 / 豁免（五测试，**短篇每篇 ≤1 处**）/ 保留。
 7. **灵感登记**：骨架外新元素登 `追踪/灵感台账.md`，下篇开写时决定转正。
 
 ## 短篇军规（与长篇的差异全在这里）

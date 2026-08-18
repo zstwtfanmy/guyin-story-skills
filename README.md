@@ -41,6 +41,8 @@ Copy-Item -Recurse D:\guyin-skills\skills\guyin-story, D:\guyin-skills\skills\gu
 Copy-Item -Recurse D:\guyin-skills\skills\guyin-* .\.codex\skills\   # Codex
 ```
 
+> **OpenCode 本体与两个坑**：未装时 `npm install -g opencode-ai`（或 `scoop install opencode`），首次用 `opencode auth login` 配 provider（编排层强模型 + 执行层 DeepSeek）。坑 1：npm 全局装完命令不识别，用 `npm config get prefix` 查路径并确认其在 PATH；坑 2：进项目后**不要跑 `/init`**——模板已自带路由版 AGENTS.md，`/init` 会覆盖它。
+
 **Claude Code**（全局 `$HOME\.claude\skills\` 或项目 `.claude/skills/`）：
 
 ```powershell

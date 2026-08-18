@@ -1,6 +1,6 @@
 ---
 name: guyin-deslop
-version: 0.1.0
+version: 0.3.0
 description: "隐笔去AI味。lint 只清确定性错误 + 陌生化段落改写（公共比喻→人物之眼），宁留三分糙不磨十分滑。触发方式：/guyin-deslop、/隐笔去味、「去AI味」「这篇太AI了」「太工整了」。"
 ---
 # guyin-deslop：隐笔去AI味

@@ -3,9 +3,9 @@
 
 // tests/run-tests.js — 运行时脚本回归测试（零依赖，node 直跑，Windows 友好）
 //
-// 适配自上游 test-ai-patterns.sh 的 fixture+断言思路，收窄为隐笔 5+1 个运行时脚本的最小回归：
-//   wordcount（新）／degeneration／ai-patterns／outline-copy／normalize-punctuation 做行为断言，
-//   tracking-commit.py 做语法 smoke（无 python 环境则 SKIP）。
+// 适配自上游 test-ai-patterns.sh 的 fixture+断言思路，收窄为隐笔 5+1 个运行时脚本与项目模板 hook 核的最小回归：
+//   wordcount／degeneration／ai-patterns／outline-copy／normalize-punctuation 做行为断言，
+//   tracking-commit.py 做语法 smoke（无 python 环境则 SKIP），guyin-hook.js 做 guard/兜底/注入三面断言。
 // 上游的 bash 壳、mktemp、内联 node 断言全部收进本文件——一个文件跑完，CI 与本地同口径。
 
 const { spawnSync } = require('child_process');
@@ -192,6 +192,76 @@ console.log('== guyin-tracking-commit.py (smoke) ==');
     const r = spawnSync(py, ['-c', `compile(open(${JSON.stringify(script)}, encoding="utf-8").read(), ${JSON.stringify(script)}, "exec")`], { encoding: 'utf8' });
     check('python 语法编译', r.status === 0, r.stderr.trim().slice(0, 300));
   }
+}
+
+// ============================================================
+console.log('== 项目模板 hook（guyin-hook.js） ==');
+{
+  const HOOK = path.join(REPO, '项目模板', '.claude', 'hooks', 'guyin-hook.js');
+  const runHook = (args, input, cwd) => {
+    const r = spawnSync('node', [HOOK, ...args], { encoding: 'utf8', input, cwd: cwd || process.cwd() });
+    return { status: r.status, stdout: r.stdout || '', stderr: r.stderr || '' };
+  };
+  const payload = (file) => JSON.stringify({ tool_name: 'Write', tool_input: { file_path: file } });
+
+  // 书A：第 1/2 章细纲齐 + state 已提交至第 1 章 + 第 1 章正文已存在
+  const bookA = path.join(TMP, 'hook', '书A');
+  fixture('hook/书A/大纲/细纲_第001章_试.md', '1. 开场。');
+  fixture('hook/书A/大纲/细纲_第002章_试.md', '1. 承接。');
+  fixture('hook/书A/追踪/_tracking-state.json', JSON.stringify({ schema_version: 1, last_committed_chapter: 1, state_revision: 1 }));
+  fixture('hook/书A/正文/第001章_试.md', `# 第001章 试${'\n'}${longChapter(75)}`);
+  fixture('hook/书A/追踪/上下文.md', `# 上下文${'\n'}${'\n'}## 当前位置${'\n'}- 第 1 章已交付${'\n'}`);
+
+  // 书B：只有第 2 章细纲，state 停在第 0 章（上一章未提交）
+  const bookB = path.join(TMP, 'hook', '书B');
+  fixture('hook/书B/大纲/细纲_第002章_试.md', '1. 承接。');
+  fixture('hook/书B/追踪/_tracking-state.json', JSON.stringify({ schema_version: 1, last_committed_chapter: 0, state_revision: 0 }));
+
+  let r = runHook(['guard'], payload(path.join(bookA, '正文', '第003章_新.md')));
+  check('guard 首建缺细纲拦截', r.status === 2 && r.stderr.includes('细纲'), `status=${r.status} err=${r.stderr.trim().slice(0, 80)}`);
+
+  r = runHook(['guard'], payload(path.join(bookB, '正文', '第002章_试.md')));
+  check('guard 上一章未提交拦截', r.status === 2 && r.stderr.includes('追踪'), `status=${r.status} err=${r.stderr.trim().slice(0, 80)}`);
+
+  r = runHook(['guard'], payload(path.join(bookA, '正文', '第002章_试.md')));
+  check('guard 细纲与 state 全齐放行', r.status === 0, `status=${r.status} err=${r.stderr.trim().slice(0, 80)}`);
+
+  r = runHook(['guard'], payload(path.join(bookA, '正文', '第001章_试.md')));
+  check('guard 续写已存在章放行', r.status === 0, `status=${r.status} err=${r.stderr.trim().slice(0, 80)}`);
+
+  r = runHook(['guard'], payload(path.join(bookA, '大纲', '细纲_第004章_新.md')));
+  check('guard 非正文目标放行', r.status === 0, `status=${r.status}`);
+
+  r = runHook(['guard'], 'not-json');
+  check('guard 坏负载 fail-open', r.status === 0, `status=${r.status}`);
+
+  const notBook = path.join(TMP, 'hook', 'notbook', '正文');
+  fs.mkdirSync(notBook, { recursive: true });
+  r = runHook(['guard'], payload(path.join(notBook, '第005章_误.md')));
+  check('guard 非隐笔项目防误伤', r.status === 0, `status=${r.status}`);
+
+  const tiny = fixture('hook/书A/正文/第004章_极短.md', `# 第004章 短${'\n'}太短。${'\n'}`);
+  r = runHook(['post-write'], payload(tiny));
+  check('post-write 极短落盘提醒', r.status === 0 && r.stdout.includes('落盘'), `status=${r.status} out=${r.stdout.trim().slice(0, 80)}`);
+
+  const midChap = fixture('hook/书A/正文/第005章_欠.md', `# 第005章 欠${'\n'}${longChapter(40)}`);
+  r = runHook(['post-write'], payload(midChap));
+  check('post-write 章字数欠账提醒', r.status === 0 && r.stdout.includes('字数'), `status=${r.status} out=${r.stdout.trim().slice(0, 80)}`);
+
+  const okChap = fixture('hook/书A/正文/第006章_全.md', `# 第006章 全${'\n'}${longChapter(75)}`);
+  r = runHook(['post-write'], payload(okChap));
+  check('post-write 正常章静默', r.status === 0 && r.stdout.trim() === '', `status=${r.status} out=${r.stdout.trim().slice(0, 80)}`);
+
+  r = runHook(['post-write'], payload(path.join(bookA, '大纲', '细纲_第001章_试.md')));
+  check('post-write 非正文静默', r.status === 0 && r.stdout.trim() === '', `status=${r.status}`);
+
+  r = runHook(['session'], '', bookA);
+  check('session 注入当前位置', r.status === 0 && r.stdout.includes('第 1 章已交付'), `status=${r.status} out=${r.stdout.slice(0, 120)}`);
+
+  const emptyDir = path.join(TMP, 'hook', 'empty');
+  fs.mkdirSync(emptyDir, { recursive: true });
+  r = runHook(['session'], '', emptyDir);
+  check('session 空项目静默', r.status === 0 && r.stdout.trim() === '', `status=${r.status}`);
 }
 
 // ============================================================

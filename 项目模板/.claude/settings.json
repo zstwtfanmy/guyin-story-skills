@@ -1,0 +1,41 @@
+{
+  "_comment": "隐笔硬护栏 hook 注册（Claude Code 端）。复制项目模板即得；已有本文件时把 hooks 节合并进去。Codex / OpenCode / Web AI 无此机制，靠 AGENTS.md 与 SKILL.md 纪律兜底（fail-open：hook 是增强层不是承重层）。逻辑与设计红线见 .claude/hooks/guyin-hook.js 头注。",
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume|compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node .claude/hooks/guyin-hook.js session",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node .claude/hooks/guyin-hook.js guard",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node .claude/hooks/guyin-hook.js post-write",
+            "timeout": 15
+          }
+        ]
+      }
+    ]
+  }
+}

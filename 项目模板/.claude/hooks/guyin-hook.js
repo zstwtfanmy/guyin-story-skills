@@ -1,0 +1,241 @@
+#!/usr/bin/env node
+'use strict';
+
+// guyin-hook.js — 隐笔硬护栏 hook 核（宿主增强层，node 单文件，无 bash 依赖，Windows 友好）
+//
+// 三个子命令（宿主端注册见 ../settings.json，Claude Code；其他宿主无此机制时靠
+// SKILL.md / AGENTS.md 纪律兜底——本层是增强不是承重）：
+//   guard       PreToolUse(Write|Edit|MultiEdit)。stdin=工具负载 JSON。exit 2=阻断（stderr 引导文案）。
+//   post-write  PostToolUse(Write|Edit|MultiEdit)。stdin 同上。exit 0 永不阻断，stdout 注入兜底提醒。
+//   session     SessionStart(startup|resume|compact)。stdout 注入恢复摘要；无信息完全静默。
+//
+// 设计红线（对齐框架哲学，勿"顺手增强"）：
+//   1. 确定性边界：只做存在性 / schema / 字数 / 极短四类确定性信号；毒句式、AI 句式、
+//      细纲照搬等规则权威在 skills/guyin-write/scripts/ 四个 guyin-check 脚本，本核零重复实现。
+//   2. fail-open：解析失败、非隐笔项目、任何不确定一律放行——宁可漏拦不可误伤。
+//   3. 注入面纪律：session 只注入结构状态（追踪/上下文、state、git 进度），
+//      作者性/ 目录（气卡等）永不注入——气不进自动流。
+//   4. 豁免权在台账：细纲/骨架缺失没有豁免通道，只能补纲；章检报警的豁免一律走
+//      追踪/豁免台账.md（五测试），本核不认正文内标记。
+//
+// 书项目判定：目标文件父目录为「正文」，且其上级存在 大纲/ 或 追踪/ 目录——
+// 非隐笔项目（目录名恰好叫"正文"的普通文件夹）静默放行。
+
+const fs = require('fs');
+const path = require('path');
+const { spawnSync } = require('child_process');
+
+const CHAPTER_MIN = 2000; // 章去空白字数下限，与 guyin-check-wordcount.js 默认 --min 同口径同值
+
+function readStdin() {
+  try {
+    return fs.readFileSync(0, 'utf8');
+  } catch (e) {
+    return '';
+  }
+}
+
+// 从工具负载抽目标路径：tool_input.file_path / path / filePath（Write/Edit/MultiEdit 三态）。
+function payloadTarget(raw) {
+  try {
+    const p = JSON.parse(raw);
+    const ti = p && p.tool_input;
+    const v = ti && (ti.file_path || ti.path || ti.filePath);
+    return typeof v === 'string' && v ? v : null;
+  } catch (e) {
+    return null;
+  }
+}
+
+function chapterNum(base) {
+  const m = /^第0*(\d+)章.*\.md$/.exec(base);
+  return m ? parseInt(m[1], 10) : null;
+}
+
+// 大纲/ 下按整数章号匹配 细纲_第N章*.md（容忍补零差异与标题后缀）。
+function hasOutlineFor(bookDir, num) {
+  try {
+    return fs.readdirSync(path.join(bookDir, '大纲'))
+      .some((name) => {
+        const m = /^细纲_第0*(\d+)章.*\.md$/.exec(name);
+        return m !== null && parseInt(m[1], 10) === num;
+      });
+  } catch (e) {
+    return false;
+  }
+}
+
+function readState(bookDir) {
+  try {
+    return JSON.parse(fs.readFileSync(path.join(bookDir, '追踪', '_tracking-state.json'), 'utf8'));
+  } catch (e) {
+    return null;
+  }
+}
+
+function isBookDir(dir) {
+  try {
+    return fs.statSync(path.join(dir, '大纲')).isDirectory()
+      || fs.statSync(path.join(dir, '追踪')).isDirectory();
+  } catch (e) {
+    return false;
+  }
+}
+
+// 去空白字数，与 guyin-check-wordcount.js 同口径：剥 YAML frontmatter 与 markdown 标题行。
+function visibleChars(text) {
+  const lines = text.split(/\r?\n/);
+  let inFront = lines[0] !== undefined && lines[0].trim() === '---';
+  let body = '';
+  for (let i = 0; i < lines.length; i += 1) {
+    if (inFront) {
+      if (i > 0 && lines[i].trim() === '---') inFront = false;
+      continue;
+    }
+    if (/^\s*#{1,6}\s/.test(lines[i])) continue;
+    body += lines[i];
+  }
+  return body.replace(/\s/g, '').length;
+}
+
+function stateProblem(st) {
+  return !st || st.schema_version !== 1 || !Number.isInteger(st.last_committed_chapter);
+}
+
+// ---------------------------------------------------------- guard（阻断守卫）
+function guard() {
+  const target = payloadTarget(readStdin());
+  if (!target) process.exit(0); // fail-open：无目标路径不判
+  const abs = path.resolve(target);
+  if (path.basename(path.dirname(abs)) !== '正文') process.exit(0);
+  const bookDir = path.dirname(path.dirname(abs));
+  if (!isBookDir(bookDir)) process.exit(0); // 非隐笔项目防误伤
+  const base = path.basename(abs);
+  const num = chapterNum(base);
+  const exists = fs.existsSync(abs);
+
+  if (num !== null) {
+    if (!exists) {
+      // 细纲门：首建第 N 章须有第 N 章细纲（对应 guyin-write 停靠纪律：开书停在细纲交付）。
+      if (!hasOutlineFor(bookDir, num)) {
+        console.error(`⛔ 写正文被拦截：第 ${num} 章缺细纲（大纲/细纲_第${String(num).padStart(3, '0')}章.md）。`);
+        console.error('   先走 guyin-write 补纲场景补建细纲，再写正文（不允许跳过细纲直接写作）。');
+        process.exit(2);
+      }
+      // state 门：上一章追踪事务须已提交（落盘即提交追踪是项目不变式）。
+      const st = readState(bookDir);
+      if (stateProblem(st)) {
+        console.error('⛔ 写正文被拦截：追踪状态缺失或 schema 不符（追踪/_tracking-state.json）。');
+        console.error('   先完成项目初始化，或运行 scripts/guyin-tracking-commit.py 提交上一章事务。');
+        process.exit(2);
+      }
+      if (st.last_committed_chapter < num - 1) {
+        console.error(`⛔ 写正文被拦截：上一章（第 ${num - 1} 章）追踪事务未提交（last_committed_chapter=${st.last_committed_chapter}）。`);
+        console.error('   先完成上一章的追踪提交与章检，再开新章。');
+        process.exit(2);
+      }
+    } else {
+      // 续写/改稿：细纲门不适用，只校验 state 自身合规。
+      if (stateProblem(readState(bookDir))) {
+        console.error('⛔ 写正文被拦截：追踪状态缺失或 schema 不符（追踪/_tracking-state.json）。');
+        console.error('   先修复追踪状态（scripts/guyin-tracking-commit.py），再续写。');
+        process.exit(2);
+      }
+    }
+  } else if (!exists && !/^[._]/.test(base)) {
+    // 骨架门：正文/ 下首建非章文件（短篇 {篇名}.md 等）时，大纲/ 须已有骨架件
+    // （长篇细纲 / 短篇情节节点皆算）。跳过 . 开头与 _ 开头的工程文件。
+    let hasSkeleton = false;
+    try {
+      hasSkeleton = fs.readdirSync(path.join(bookDir, '大纲')).some((n) => n.endsWith('.md'));
+    } catch (e) {
+      hasSkeleton = false;
+    }
+    if (!hasSkeleton) {
+      console.error('⛔ 写正文被拦截：大纲/ 为空，正文前须先有骨架（长篇细纲 / 短篇情节节点）。');
+      console.error('   先走 guyin-write（补纲）或 guyin-short-write（骨架三件）流程，再写正文。');
+      process.exit(2);
+    }
+  }
+  process.exit(0);
+}
+
+// ---------------------------------------------------------- post-write（写后兜底网）
+function postWrite() {
+  const target = payloadTarget(readStdin());
+  if (!target) process.exit(0);
+  const abs = path.resolve(target);
+  if (path.basename(path.dirname(abs)) !== '正文') process.exit(0);
+  const bookDir = path.dirname(path.dirname(abs));
+  if (!isBookDir(bookDir)) process.exit(0);
+  const base = path.basename(abs);
+  if (!base.endsWith('.md')) process.exit(0);
+
+  let buf;
+  try {
+    buf = fs.readFileSync(abs);
+  } catch (e) {
+    process.exit(0); // 文件不在（删除等），无事可兜
+  }
+  const out = [];
+  if (buf.length < 200) {
+    out.push(`【落盘】正文仅 ${buf.length} 字节，疑似未写完 / 落盘失败（额度或超时中断？），请核对补写。`);
+  }
+  const num = chapterNum(base);
+  if (num !== null) {
+    const count = visibleChars(buf.toString('utf8'));
+    if (count < CHAPTER_MIN) {
+      out.push(`【字数】第 ${num} 章去空白 ${count} 字，低于默认下限 ${CHAPTER_MIN}（权威口径：guyin-check-wordcount.js，--min 可调）。`);
+      out.push('   多为 beat 缺斤短两或拼接缺 beat——补写缺口 beat，勿机械注水。');
+    }
+  }
+  if (out.length === 0) process.exit(0); // 无发现完全静默，不污染上下文
+  console.log(`=== 隐笔正文兜底（${base}）===`);
+  console.log(out.join('\n'));
+  console.log('本网只是兜底：完整章检仍须按 guyin-write 步骤 6 依次跑四个 guyin-check 脚本；报警拦为待审，豁免走 追踪/豁免台账.md。');
+  process.exit(0);
+}
+
+// ---------------------------------------------------------- session（恢复注入）
+function session() {
+  const root = process.env.CLAUDE_PROJECT_DIR || process.cwd();
+  const lines = [];
+  const ctx = path.join(root, '追踪', '上下文.md');
+  if (fs.existsSync(ctx)) {
+    try {
+      const head = fs.readFileSync(ctx, 'utf8').split(/\r?\n/).slice(0, 20).join('\n').trimEnd();
+      lines.push('--- 当前位置（追踪/上下文.md 头部）---', head, '---');
+    } catch (e) {
+      /* 读不到就跳过这一节 */
+    }
+  }
+  const st = readState(root);
+  if (st && Number.isInteger(st.last_committed_chapter)) {
+    lines.push(`追踪：已提交至第 ${st.last_committed_chapter} 章（state revision ${Number.isInteger(st.state_revision) ? st.state_revision : '?'}）。`);
+  }
+  try {
+    const r = spawnSync('git', ['-C', root, 'log', '--oneline', '-3'], { encoding: 'utf8' });
+    if (r.status === 0 && r.stdout.trim()) lines.push(`最近提交：\n${r.stdout.trim()}`);
+  } catch (e) {
+    /* git 不在场则跳过 */
+  }
+  if (lines.length === 0) process.exit(0); // 非书项目完全静默
+  console.log('=== 隐笔会话恢复 ===');
+  console.log(lines.join('\n'));
+  console.log('先读 追踪/上下文.md 与 AGENTS.md 恢复状态再继续写作（compact / 新会话后必做）。');
+  process.exit(0);
+}
+
+// ------------------------------------------------------------ 分发（fail-open 总兜底）
+const cmd = process.argv[2];
+const handlers = { guard, 'post-write': postWrite, session };
+const handler = handlers[cmd];
+if (!handler) {
+  console.error('usage: node guyin-hook.js <guard|post-write|session>');
+  process.exit(2);
+}
+try {
+  handler();
+} catch (e) {
+  process.exit(0); // 兜底不能反噬流程：任何异常按放行处理
+}

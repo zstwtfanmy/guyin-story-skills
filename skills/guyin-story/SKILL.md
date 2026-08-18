@@ -1,6 +1,6 @@
 ---
 name: guyin-story
-version: 0.1.0
+version: 0.3.0
 description: "隐笔工具箱主入口。项目状态诊断 + 路由到写作/拆文/去AI味。触发方式：/guyin、$guyin、/隐笔、「我想写小说」「隐笔」。"
 ---
 # guyin-story：隐笔主入口

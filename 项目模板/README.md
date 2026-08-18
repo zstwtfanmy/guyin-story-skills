@@ -7,6 +7,8 @@
 ```
 AGENTS.md          Codex / OpenCode 读根路由表 + 五条项目不变式
 .claude/agents/    guyin-beat-writer 执行层部署件（Claude Code 用）
+.claude/hooks/     隐笔硬护栏 hook 核（guyin-hook.js，node 单文件，跨平台）
+.claude/settings.json  Claude Code hook 注册（写前守卫 / 写后兜底 / 会话恢复）
 .codex/agents/     guyin-beat-writer 执行层部署件（Codex 用，TOML）
 .opencode/agents/  guyin-beat-writer 执行层部署件（OpenCode 用）
 设定/世界观/      世界规则（一次写成，长期只读）
@@ -45,3 +47,19 @@ AGENTS.md          Codex / OpenCode 读根路由表 + 五条项目不变式
 
 - Codex / OpenCode 启动时读根 `AGENTS.md` 获得技能路由表与不变式；Claude Code 无此约定也能照常工作；
 - 装技能（skills/ 目录复制）见仓库根 `README.md` 安装节；模板只负责项目侧这一半。
+
+## 硬护栏 hook（Claude Code 端）
+
+复制模板即部署（`.claude/settings.json` + `.claude/hooks/guyin-hook.js`，node 调用，无需 bash）。项目里已有 `settings.json` 时把 `hooks` 节合并进去即可。
+
+| 子命令 | 挂点 | 行为 |
+|--------|------|------|
+| `guard` | PreToolUse(Write\|Edit\|MultiEdit) | 阻断守卫（exit 2）：首建第 N 章缺细纲 / 追踪 state 缺失或落后 / 短篇骨架缺失，拦下并给补纲引导 |
+| `post-write` | PostToolUse(Write\|Edit\|MultiEdit) | 兜底网（永不阻断）：落盘极短 / 章字数低于下限时注入提醒，防低模型漏跑章检 |
+| `session` | SessionStart(startup\|resume\|compact) | 恢复注入：追踪/上下文.md 头部 + 提交进度；compact 后自动回到状态，无信息时完全静默 |
+
+三条纪律（也是 hook 的设计红线，改 hook 前先读 `guyin-hook.js` 头注）：
+
+1. **兜底不是替代**：hook 只做确定性信号（存在性 / schema / 字数 / 极短），毒句式等规则权威在 skills 四个 guyin-check 脚本；章检照跑。
+2. **fail-open**：非隐笔项目、解析失败、任何不确定一律放行——宁可漏拦不可误伤；hook 是增强层，Codex / OpenCode / Web AI 宿主无 hook 时靠 `AGENTS.md` 与 SKILL.md 纪律照样成立。
+3. **豁免权在台账**：细纲/骨架缺失没有豁免通道，只能补；章检报警的豁免一律走 `追踪/豁免台账.md`（五测试），hook 不认正文内标记。

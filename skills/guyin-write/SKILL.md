@@ -1,6 +1,6 @@
 ---
 name: guyin-write
-version: 0.1.0
+version: 0.3.0
 description: "隐笔长篇写作（编排层）。以 beat 任务卡驱动低模型执行层：开书、细纲、逐 beat 写章、自检、分级改写、追踪落盘。触发方式：/guyin-write、/隐笔写作、「开书」「写第X章」「日更」「续写」「回炉」「重写第X章」。"
 ---
 # guyin-write：隐笔写作（你是编排层）
@@ -62,6 +62,8 @@ Muse 动作：情绪峰值 beat 前置[发散卡](cards/发散卡.md)（阶段�
 写：正文/第XXX章_标题.md、追踪/*（经 tracking-commit）、追踪/灵感台账.md、追踪/豁免台账.md
 项目结构按 项目模板/（仓库根）；新项目第一步复制该模板。
 ```
+
+**硬护栏**：项目模板自带 Claude Code hook（`.claude/hooks/guyin-hook.js`：写前细纲守卫、写后兜底、会话恢复注入）；hook 是兜底非替代，章检照跑；无 hook 宿主靠本文件纪律成立。
 
 ## 豁免五测试（报警待审的处理，作者主判）
 
