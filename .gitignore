@@ -1,0 +1,9 @@
+# 上游素材仓库（本地取材用，不随项目分发）
+.upstream/
+
+# 系统杂项
+.DS_Store
+Thumbs.db
+node_modules/
+__pycache__/
+*.pyc
