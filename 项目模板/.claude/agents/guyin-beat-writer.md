@@ -1,7 +1,7 @@
 ---
 name: guyin-beat-writer
-description: 隐笔执行层 beat 写手。收到单张任务卡后填空式写正文。编排层在写章循环中逐 beat 调用；禁止用它写整章、改大纲或读项目文件。
-model: deepseek-flash（示例：按环境配置低模型。三端部署件随 项目模板/ 分发：Claude Code → .claude/agents/*.md（model 字段）；OpenCode → .opencode/agents/*.md（model: provider/id）；Codex → .codex/agents/*.toml（视版本支持 model 字段，不支持则 solo 降级））
+description: 隐笔执行层 beat 写手。收到单张任务卡后填空式写正文，写完即停。编排层在写章循环中逐 beat 调用；禁止用它写整章、改大纲或读项目文件。
+model: deepseek-flash（改成你的低模型：Claude Code 用 model 字段直接指定）
 tools: ()（无文件工具——它只收到卡，只产正文）
 ---
 
