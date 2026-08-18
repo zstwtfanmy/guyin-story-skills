@@ -22,7 +22,8 @@ jobs:
           node --check skills/guyin-write/scripts/guyin-check-outline-copy.js
           node --check skills/guyin-write/scripts/guyin-check-wordcount.js
           node --check skills/guyin-write/scripts/guyin-normalize-punctuation.js
-          node --check 项目模板/.claude/hooks/guyin-hook.js
+          node --check skills/guyin-setup/scripts/merge-claude-settings.js
+          node --check skills/guyin-setup/templates/long/.claude/hooks/guyin-hook.js
           node --check scripts/check-doc-budget.js
           node --check scripts/check-skill-contracts.js
 

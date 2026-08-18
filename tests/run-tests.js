@@ -3,9 +3,10 @@
 
 // tests/run-tests.js — 运行时脚本回归测试（零依赖，node 直跑，Windows 友好）
 //
-// 适配自上游 test-ai-patterns.sh 的 fixture+断言思路，收窄为隐笔 5+1 个运行时脚本与项目模板 hook 核的最小回归：
+// 适配自上游 test-ai-patterns.sh 的 fixture+断言思路，收窄为隐笔 5+1 个运行时脚本与 guyin-setup 模板 hook 核的最小回归：
 //   wordcount／degeneration／ai-patterns／outline-copy／normalize-punctuation 做行为断言，
-//   tracking-commit.py 做语法 smoke（无 python 环境则 SKIP），guyin-hook.js 做 guard/兜底/注入三面断言。
+//   tracking-commit.py 做语法 smoke（无 python 环境则 SKIP），guyin-hook.js 做 guard/兑底/注入三面断言，
+//   另覆盖 guyin-setup 模板完整性（防「模板未提交致 CI 挂」复发）与 merge-claude-settings 合并语义。
 // 上游的 bash 壳、mktemp、内联 node 断言全部收进本文件——一个文件跑完，CI 与本地同口径。
 
 const { spawnSync } = require('child_process');
@@ -195,9 +196,9 @@ console.log('== guyin-tracking-commit.py (smoke) ==');
 }
 
 // ============================================================
-console.log('== 项目模板 hook（guyin-hook.js） ==');
+console.log('== guyin-setup 模板 hook（guyin-hook.js） ==');
 {
-  const HOOK = path.join(REPO, '项目模板', '.claude', 'hooks', 'guyin-hook.js');
+  const HOOK = path.join(REPO, 'skills', 'guyin-setup', 'templates', 'long', '.claude', 'hooks', 'guyin-hook.js');
   const runHook = (args, input, cwd) => {
     const r = spawnSync('node', [HOOK, ...args], { encoding: 'utf8', input, cwd: cwd || process.cwd() });
     return { status: r.status, stdout: r.stdout || '', stderr: r.stderr || '' };
@@ -262,6 +263,95 @@ console.log('== 项目模板 hook（guyin-hook.js） ==');
   fs.mkdirSync(emptyDir, { recursive: true });
   r = runHook(['session'], '', emptyDir);
   check('session 空项目静默', r.status === 0 && r.stdout.trim() === '', `status=${r.status}`);
+}
+
+// ============================================================
+console.log('== guyin-setup 模板完整性（Phase 0 清单落成断言） ==');
+{
+  const T = path.join(REPO, 'skills', 'guyin-setup', 'templates');
+  const required = [
+    'long/AGENTS.md',
+    'long/README.md',
+    'long/.claude/settings.json',
+    'long/.claude/hooks/guyin-hook.js',
+    'long/.claude/agents/guyin-beat-writer.md',
+    'long/.codex/agents/guyin-beat-writer.toml',
+    'long/.opencode/agents/guyin-beat-writer.md',
+    'long/.opencode/commands/guyin.md',
+    'long/作者性/气卡.md',
+    'long/作者性/指纹.md',
+    'long/作者性/偏执点.md',
+    'long/作者性/魂档案.md',
+    'long/作者性/粒度配置.md',
+    'long/作者性/参考-气质谱系.md',
+    'long/作者性/口述定稿单.md',
+    'long/大纲/魂谱对表.md',
+    'long/追踪/_tracking-state.json',
+    'short/大纲/情节节点.md',
+    'short/大纲/情绪曲线.md',
+    'short/大纲/反转表.md',
+  ];
+  for (const rel of required) {
+    check(`模板存在 ${rel}`, fs.existsSync(path.join(T, rel)));
+  }
+}
+
+// ============================================================
+console.log('== merge-claude-settings.js（hooks 节确定性合并） ==');
+{
+  const MERGE = path.join(REPO, 'skills', 'guyin-setup', 'scripts', 'merge-claude-settings.js');
+  const TPL = path.join(REPO, 'skills', 'guyin-setup', 'templates', 'long', '.claude', 'settings.json');
+  const runMerge = (target) => {
+    const r = spawnSync('node', [MERGE, '--template', TPL, '--target', target], { encoding: 'utf8' });
+    return { status: r.status, stdout: r.stdout || '', stderr: r.stderr || '' };
+  };
+  const readTarget = (file) => JSON.parse(fs.readFileSync(file, 'utf8'));
+  const managedCount = (j) => {
+    let n = 0;
+    for (const blocks of Object.values(j.hooks || {})) {
+      if (!Array.isArray(blocks)) continue;
+      for (const b of blocks) {
+        for (const h of (b && b.hooks) || []) {
+          if (h && typeof h.command === 'string' && h.command.includes('guyin-hook.js')) n += 1;
+        }
+      }
+    }
+    return n;
+  };
+
+  // 案例 1：target 不存在 → 等价复制，三条管理注册齐
+  const t1 = path.join(TMP, 'merge/a/.claude/settings.json');
+  let r = runMerge(t1);
+  const j1 = fs.existsSync(t1) ? readTarget(t1) : null;
+  check('无 target 等价复制', r.status === 0 && j1 && managedCount(j1) === 3,
+    `status=${r.status} managed=${j1 ? managedCount(j1) : 'n/a'}`);
+
+  // 案例 2：用户 hooks 与旧版管理注册共存 → 用户保留、旧注册刷新
+  const t2 = path.join(TMP, 'merge/b/.claude/settings.json');
+  fs.mkdirSync(path.dirname(t2), { recursive: true });
+  fs.writeFileSync(t2, JSON.stringify({
+    permissions: { allow: ['Bash(git:*)'] },
+    hooks: {
+      PreToolUse: [
+        { matcher: 'Bash', hooks: [{ type: 'command', command: 'echo user-hook' }] },
+        { matcher: 'Write|Edit', hooks: [{ type: 'command', command: 'node .claude/hooks/guyin-hook.js guard-OLD' }] },
+      ],
+    },
+  }, null, 2), 'utf8');
+  r = runMerge(t2);
+  const j2 = readTarget(t2);
+  const userBlock = (j2.hooks.PreToolUse || []).find((b) => b.matcher === 'Bash');
+  check('用户 hooks 保留', r.status === 0 && userBlock
+    && userBlock.hooks.some((h) => h.command === 'echo user-hook'), `status=${r.status}`);
+  check('旧管理注册被刷新为模板三条', r.status === 0 && managedCount(j2) === 3
+    && !JSON.stringify(j2).includes('guard-OLD'), `managed=${managedCount(j2)}`);
+  check('用户顶层字段保留', j2.permissions && j2.permissions.allow[0] === 'Bash(git:*)');
+
+  // 案例 3：重复执行幂等（字节一致）
+  const before = fs.readFileSync(t2, 'utf8');
+  r = runMerge(t2);
+  check('重复执行幂等', r.status === 0 && fs.readFileSync(t2, 'utf8') === before,
+    `status=${r.status}`);
 }
 
 // ============================================================

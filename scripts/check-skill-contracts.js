@@ -23,6 +23,7 @@ const CONTRACTS = [
   { dir: 'guyin-short-analyze', maxLines: MAX_LINES_DEFAULT },
   { dir: 'guyin-review', maxLines: MAX_LINES_DEFAULT },
   { dir: 'guyin-deslop', maxLines: MAX_LINES_DEFAULT },
+  { dir: 'guyin-setup', maxLines: MAX_LINES_DEFAULT },
 ];
 
 const failures = [];

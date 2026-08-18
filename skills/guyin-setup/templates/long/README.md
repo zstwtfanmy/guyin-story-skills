@@ -1,6 +1,6 @@
 # 写作项目模板
 
-> 开书第一步：把本目录整体复制到新项目根，再开始 Phase B。文件状态分层是低模型的生命线——每步落盘，下一步读盘。复制模板即同时得到 Codex / OpenCode / Claude Code 三端部署件，不用哪端删哪端，互不影响。
+> 本目录由 guyin-setup 技能持有——skills 装到哪，模板跟到哪。部署双路径：①对 AI 说「准备写书」或 /guyin-setup（推荐，幂等、不覆盖已有内容）；②手动把本目录（skills/guyin-setup/templates/long/）整体复制到新项目根，写短篇再叠加 templates/short/ 的内涵三件。文件状态分层是低模型的生命线——每步落盘，下一步读盘。部署模板即同时得到 Codex / OpenCode / Claude Code 三端部署件，不用哪端删哪端，互不影响。
 
 ## 目录结构与职责
 
@@ -50,7 +50,7 @@ AGENTS.md          Codex / OpenCode 读根路由表 + 五条项目不变式
 
 ## 硬护栏 hook（Claude Code 端）
 
-复制模板即部署（`.claude/settings.json` + `.claude/hooks/guyin-hook.js`，node 调用，无需 bash）。项目里已有 `settings.json` 时把 `hooks` 节合并进去即可。
+部署模板即注册（`.claude/settings.json` + `.claude/hooks/guyin-hook.js`，node 调用，无需 bash）。项目里已有 `settings.json` 时，/guyin-setup 会用其 `scripts/merge-claude-settings.js` 把 hooks 节确定性合并进去（用户配置保留）；手动部署则把 hooks 节合并进去即可。
 
 | 子命令 | 挂点 | 行为 |
 |--------|------|------|
@@ -63,3 +63,9 @@ AGENTS.md          Codex / OpenCode 读根路由表 + 五条项目不变式
 1. **兜底不是替代**：hook 只做确定性信号（存在性 / schema / 字数 / 极短），毒句式等规则权威在 skills 四个 guyin-check 脚本；章检照跑。
 2. **fail-open**：非隐笔项目、解析失败、任何不确定一律放行——宁可漏拦不可误伤；hook 是增强层，Codex / OpenCode / Web AI 宿主无 hook 时靠 `AGENTS.md` 与 SKILL.md 纪律照样成立。
 3. **豁免权在台账**：细纲/骨架缺失没有豁免通道，只能补；章检报警的豁免一律走 `追踪/豁免台账.md`（五测试），hook 不认正文内标记。
+
+## 短篇 delta（写短篇时叠加 templates/short/）
+
+- 叠加内涵三件到 `大纲/`：`情节节点.md`（钩压给转收）、`情绪曲线.md`（强度 1-10 / 压给交替 / 峰值 / 落点）、`反转表.md`（位置/铺垫/揭示方式/信息差/兑现状态）——节点是骨头，曲线是血，反转是雷，三件交付 = 短篇的停靠点；
+- 方向层沿用本模板轻量维护：`追踪/时间线/`（插叙/倒叙更需登记故事内时间）、`追踪/伏笔.md`（当篇回收，不留「下卷再说」）、双台账照旧（豁免限额每篇 ≤1 处）、`设定/角色/` 1-3 卡即可；
+- 可留空的长篇件：`大纲/卷纲_*.md`、`追踪/角色状态/`（弧光单篇完成时角色卡内记一节足矣）。

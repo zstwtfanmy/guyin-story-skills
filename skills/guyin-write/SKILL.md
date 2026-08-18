@@ -1,6 +1,6 @@
 ---
 name: guyin-write
-version: 0.3.0
+version: 0.4.0
 description: "隐笔长篇写作（编排层）。以 beat 任务卡驱动低模型执行层：开书、细纲、逐 beat 写章、自检、分级改写、追踪落盘。触发方式：/guyin-write、/隐笔写作、「开书」「写第X章」「日更」「续写」「回炉」「重写第X章」。"
 ---
 # guyin-write：隐笔写作（你是编排层）
@@ -19,7 +19,7 @@ description: "隐笔长篇写作（编排层）。以 beat 任务卡驱动低模
 
 | 场景 | 触发 | 动作 |
 |------|------|------|
-| 开书 | 「开书/写大纲」或项目空 | Phase A 建（按 `项目模板/`）→ B 定（题材/对标 + 作者性四件，按 [references/作者性引导.md](references/作者性引导.md) 逐件口述；作者不在场则默认档落盘）→ C 纲（卷纲+首批 10 章细纲），**停在细纲交付** |
+| 开书 | 「开书/写大纲」或项目空 | Phase A 建（/guyin-setup 部署结构；手动源见文件契约）→ B 定（题材/对标 + 作者性四件，按 [references/作者性引导.md](references/作者性引导.md) 逐件口述；作者不在场则默认档落盘）→ C 纲（卷纲+首批 10 章细纲），**停在细纲交付** |
 | 写指定章 | 「写第N章」 | 取该章细纲 → 写章循环；空项目先补 A→C |
 | 补纲 | 「出细纲/补纲/规划剧情」且已有大纲 | 只做 Phase C 扩展，停细纲交付 |
 | 日更续写 | 「日更/续写/继续写」且已有正文+追踪 | 循环执行写章循环，批量默认 2-3 章，单轮上限 3 章 |
@@ -48,7 +48,7 @@ Muse 动作：情绪峰值 beat 前置[发散卡](cards/发散卡.md)（阶段�
 
 ## 执行层调用协议
 
-- 首选 subagent：`guyin-beat-writer`（定义见 [agents/guyin-beat-writer.md](agents/guyin-beat-writer.md)，低模型）。三端部署件随 `项目模板/` 分发（Claude Code `.claude/agents/*.md`、OpenCode `.opencode/agents/*.md`（model: provider/id）、Codex `.codex/agents/*.toml`），复制模板即得；
+- 首选 subagent：`guyin-beat-writer`（定义见 [agents/guyin-beat-writer.md](agents/guyin-beat-writer.md)，低模型）。三端部署件随 guyin-setup 模板分发（Claude Code `.claude/agents/*.md`、OpenCode `.opencode/agents/*.md`（model: provider/id）、Codex `.codex/agents/*.toml`），部署即得；
 - 无 subagent 环境（或 Codex 报 unknown agent_type）降级：主会话直接扮演执行层填卡，但**先声明「Fallback: solo 执行，声线与节奏由编排层兜底」**；
 - 多采样：情绪峰值 beat 同卡抽 3-5 版（便宜是红利），自检卡淘汰硬错误后进入外选，判词不写入卡片；
 - **外选判词（合问进选择器）**：候选版并排，只问一句「哪版更接近气句」（编排层读 `作者性/气卡.md` 当前气句，**永不下发执行层**）；选中版编号 + 一句理由留在对话，备卷末复盘与魂档案「回响收编」；难分时任选——选择即作者性，不追求完美判定。
@@ -60,10 +60,10 @@ Muse 动作：情绪峰值 beat 前置[发散卡](cards/发散卡.md)（阶段�
     追踪/{伏笔,上下文}.md、追踪/时间线/*、追踪/角色状态/*、追踪/{灵感,豁免}台账.md、
     作者性/{指纹,偏执点,气卡,魂档案,粒度配置}.md、references/exemplars/{题材}.md
 写：正文/第XXX章_标题.md、追踪/*（经 tracking-commit）、追踪/灵感台账.md、追踪/豁免台账.md
-项目结构按 项目模板/（仓库根）；新项目第一步复制该模板。
+项目结构按 skills/guyin-setup/templates/long/；新项目第一步 /guyin-setup 或手动复制。
 ```
 
-**硬护栏**：项目模板自带 Claude Code hook（`.claude/hooks/guyin-hook.js`：写前细纲守卫、写后兜底、会话恢复注入）；hook 是兜底非替代，章检照跑；无 hook 宿主靠本文件纪律成立。
+**硬护栏**：guyin-setup 模板自带 Claude Code hook（`.claude/hooks/guyin-hook.js`：写前细纲守卫、写后兜底、会话恢复注入）；hook 是兜底非替代，章检照跑；无 hook 宿主靠本文件纪律成立。
 
 ## 豁免五测试（报警待审的处理，作者主判）
 

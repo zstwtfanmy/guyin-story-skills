@@ -116,7 +116,7 @@
 
 **正文元信息扫描**：按上方步骤 10 清掉标题行以外的写作工程词，再进入其他检查。`guyin-check-degeneration.js` 会确定性复扫这一项。
 
-**写后同轮清零**：正文落盘不是汇报时机——每章落盘后必须在**同一轮**内跑完上方步骤 10-11 扫描、下方确定性收尾脚本与章检审查，blocking 清零才算本章完成；不得先汇报"已写完"再等指示。若项目部署了隐笔 hook（`.claude/hooks/guyin-hook.js`，Claude Code 端，项目模板自带），落盘正文会被自动扫一道极短/字数兜底并注入提醒——那是兜底网不是替代，hook 报出的命中当轮清零，完整检查仍走确定性收尾与章检四脚本。豁免一律走 `追踪/豁免台账.md`（五测试），不用正文内标记。
+**写后同轮清零**：正文落盘不是汇报时机——每章落盘后必须在**同一轮**内跑完上方步骤 10-11 扫描、下方确定性收尾脚本与章检审查，blocking 清零才算本章完成；不得先汇报"已写完"再等指示。若项目部署了隐笔 hook（`.claude/hooks/guyin-hook.js`，Claude Code 端，guyin-setup 模板自带），落盘正文会被自动扫一道极短/字数兜底并注入提醒——那是兜底网不是替代，hook 报出的命中当轮清零，完整检查仍走确定性收尾与章检四脚本。豁免一律走 `追踪/豁免台账.md`（五测试），不用正文内标记。
 
 **确定性收尾**：本批正文写完后，主会话对实际落盘文件运行 `node scripts/guyin-check-ai-patterns.js --check --fail-on=blocking 正文/第XXX章_*.md` 与 `node scripts/guyin-check-outline-copy.js 正文/第XXX章_*.md`（细纲照搬复扫）。blocking 命中先回正文改写并复扫；advisory 与细纲重合逐条读原文判断，确属问题才改，功能性写法标 `[需复核]`——每条都要有结论，不为归零机械改写；细纲重合里判定保留的补进细纲「复沓锚句」，下章起不再复报。其中 `formulaic-parallelism` 必须连同对话一起复核，不能因它只是 advisory 就略过。
 随后运行 `node scripts/guyin-normalize-punctuation.js 正文/第XXX章_*.md`（默认 `--quote-mode keep`）清理无功能省略号、破折号、双连字符和独立分隔线；盐言「」不受影响。执行层（guyin-beat-writer）不运行这些脚本，一律由编排层跑。

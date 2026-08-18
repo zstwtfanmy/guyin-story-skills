@@ -1,6 +1,6 @@
 ---
 name: guyin-short-write
-version: 0.3.0
+version: 0.4.0
 description: "隐笔短篇写作（编排层）。与 guyin-write 同一四卡体系与 beat 循环，骨架换成情节节点+情绪曲线+反转表（内涵）配时间线/伏笔（方向）。触发方式：/guyin-short-write、/隐笔短篇、「写短篇」「写一篇」「盐言故事」「番茄短篇」「追妻」「重生复仇」。"
 ---
 # guyin-short-write：隐笔短篇（你是编排层）
@@ -19,7 +19,7 @@ description: "隐笔短篇写作（编排层）。与 guyin-write 同一四卡�
 
 | 场景 | 触发 | 动作 |
 |------|------|------|
-| 开写 | 「写短篇/写一篇」 | Phase A 建（复制 `项目模板/` + 叠加 `项目模板-短篇/`）→ B 定（题材/对标 + 作者性四件，按 [../guyin-write/references/作者性引导.md](../guyin-write/references/作者性引导.md) 逐件口述；不在场则默认档落盘、篇尾报告提示）+ **一句话故事核**）→ C 骨架三件（情节节点+情绪曲线+反转表），**停在骨架交付** |
+| 开写 | 「写短篇/写一篇」 | Phase A 建（/guyin-setup 选短篇；手动源见文件契约）→ B 定（题材/对标 + 作者性四件，按 [../guyin-write/references/作者性引导.md](../guyin-write/references/作者性引导.md) 逐件口述；不在场则默认档落盘、篇尾报告提示）+ **一句话故事核**）→ C 骨架三件（情节节点+情绪曲线+反转表），**停在骨架交付** |
 | 续写 | 「继续写/写下一段」 | 按情节节点状态推进写篇循环 |
 | 大修 | 「改这篇/重写」 | 同 guyin-write：L1 段改/L2 beat 改/L3 全篇重写须确认；guyin-review 输出按 level 直接进入 |
 
@@ -57,7 +57,7 @@ description: "隐笔短篇写作（编排层）。与 guyin-write 同一四卡�
 读：大纲/{情节节点,情绪曲线,反转表}.md、设定/角色/*.md、追踪/{伏笔,上下文}.md、追踪/时间线/*、
     追踪/{灵感,豁免}台账.md、作者性/五件、references/exemplars/{题材}.md（随用随补）
 写：正文/{篇名}.md、追踪/*（经 tracking-commit）、双台账
-新项目：先复制 项目模板/，再叠加 项目模板-短篇/（去留说明见其 README）。
+新项目：/guyin-setup 选短篇（delta 说明见 templates/long/README.md）；手动：复制 templates/long/ 后叠加 templates/short/。
 方法按需查 references/consult/INDEX.md（永不进主流程、永不下发）。
 ```
 

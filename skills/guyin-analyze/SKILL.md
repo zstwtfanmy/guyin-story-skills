@@ -1,6 +1,6 @@
 ---
 name: guyin-analyze
-version: 0.3.0
+version: 0.4.0
 description: "隐笔拆文。单一深度拆解管道：黄金三章（Stage 1）→停靠预览→确认后续跑 Stage 2-6 逐章摘要/聚合/设定关系/汇总报告，产物落盘 拆文库/{书名}/。触发方式：/guyin-analyze、/隐笔拆文、「拆这本书」「分析黄金三章」「深度拆解」「拆长篇」或提供小说文本路径。"
 ---
 # guyin-analyze：隐笔拆文

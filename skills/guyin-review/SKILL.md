@@ -1,6 +1,6 @@
 ---
 name: guyin-review
-version: 0.3.0
+version: 0.4.0
 description: "隐笔对抗式审查。只诊断不动刀：多视角找问题 + 合问收尾（这章更合还是只是更合格），输出按 L1/L2/L3 分级直接对接 guyin-write 大修。触发方式：/guyin-review、/隐笔审查、「审查」「帮我审一下」「这章怎么样」。"
 ---
 # guyin-review：隐笔审查（只诊断，不动刀）

@@ -8,12 +8,14 @@
     "为什么这段新规则值得每次会话都付。调 budget 是允许的，但必须是一次显式决定。",
     "",
     "新增热路径文件时把它加进来，否则它不受任何约束。",
+    "guyin-setup/SKILL.md 有意不入表：部署是一次性场景，不进每次会话/每个 beat 的上下文，",
+    "只受契约检查的 150 行上限约束（2026-08-18 v0.4.0 显式决定）。",
     "卡片预算 ≈ 500 token 的字符近似（中文 1 字 ≈ 0.6-1 token）。",
     "预算按「当前用量 + 5-10% 余量」收紧锁定，防无声膨胀；改内容请同步看 --dump。"
   ],
   "files": [
     { "path": "skills/guyin-story/SKILL.md", "budget": 1200, "why": "主入口路由，任一场景加载" },
-    { "path": "skills/guyin-write/SKILL.md", "budget": 3400, "why": "长篇任一场景都无条件加载；2026-08-18 由 3200 调升：章检新增字数护栏 guyin-check-wordcount.js 条目" },
+    { "path": "skills/guyin-write/SKILL.md", "budget": 3420, "why": "长篇任一场景都无条件加载；2026-08-18 由 3200 调升：章检新增字数护栏 guyin-check-wordcount.js 条目；同日 v0.4.0 再调至 3420：模板并入 guyin-setup 后的部署指路 3 处（开书部署入口/部署件来源/结构源路径）为安装链路必要信息" },
     { "path": "skills/guyin-short-write/SKILL.md", "budget": 2400, "why": "短篇任一场景都无条件加载" },
     { "path": "skills/guyin-analyze/SKILL.md", "budget": 1400, "why": "拆文管道入口" },
     { "path": "skills/guyin-short-analyze/SKILL.md", "budget": 1300, "why": "短篇拆文入口" },
@@ -24,7 +26,7 @@
     { "path": "skills/guyin-write/cards/改写卡.md", "budget": 900, "why": "报警重写路径付，500 token 近似" },
     { "path": "skills/guyin-write/cards/发散卡.md", "budget": 600, "why": "Muse 升档时付（阶段三激活），500 token 近似" },
     { "path": "skills/guyin-write/agents/guyin-beat-writer.md", "budget": 650, "why": "执行层 subagent 系统提示，每次 spawn 都付" },
-    { "path": "项目模板/AGENTS.md", "budget": 1200, "why": "Codex/OpenCode 每会话注入的路由与不变式" }
+    { "path": "skills/guyin-setup/templates/long/AGENTS.md", "budget": 1200, "why": "Codex/OpenCode 每会话注入的路由与不变式（部署后即项目根 AGENTS.md）" }
   ],
   "paths": [
     {

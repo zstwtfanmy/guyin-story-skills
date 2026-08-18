@@ -3,7 +3,7 @@
 > 笔不造文，隐术显天。
 > 作品不是造出来的，是合出来的——作者之天合万物之天，框架的职责不是造文，是**不挡光**。
 
-隐笔是基于 [oh-story-claudecode](https://github.com/worldwonderer/oh-story-claudecode) 资产重铸的网文写作技能包：换地基而非修补——编排/执行分离、任务卡驱动低模型、范文教学替代参数化文风卡、豁免机制保护神来之笔。所有技能以 **guyin-** 前缀命名，与原技能零重名。
+隐笔是基于 [oh-story-claudecode](https://github.com/worldwonderer/oh-story-claudecode) 资产重铸的网文写作技能包：换地基而非修补——上游的生硬不是 bug，是「合规工厂」哲学的必然产物（指令过载 / 参数化风格 / 负面清单 / 模块拼装 / 一次成稿 / 文气断裂）。隐笔改为：编排/执行分离、任务卡驱动低模型、范文教学替代参数化文风卡、豁免机制保护神来之笔。所有技能以 **guyin-** 前缀命名，与原技能零重名。
 
 ## 技能清单
 
@@ -16,37 +16,41 @@
 | **guyin-short-analyze** | `/guyin-short-analyze`、「拆短篇」 | 短篇拆文全量管道：故事核/情感线/反转设计/共鸣 |
 | **guyin-review** | `/guyin-review`、「审查」「这章怎么样」 | 对抗式审查：只诊断不动刀，输出 L1/L2/L3 接大修 |
 | **guyin-deslop** | `/guyin-deslop`、「去AI味」 | lint 确定性错误 + 陌生化段落改写 |
+| **guyin-setup** | `/guyin-setup`、「准备写书」「搭环境」「建项目」 | 项目脚手架部署：模板随技能走，幂等部署到当前目录 |
 
 ## 安装（Codex / OpenCode / Claude Code 三端兼容）
 
-> 一等公民：**Codex** 与 **OpenCode**；Claude Code 同样可用。三端的执行层部署件已内置在 [项目模板/](项目模板/)（AGENTS.md 路由 + `.claude/` `.codex/` `.opencode/` 三份 beat-writer），**复制模板即完成项目侧配置**。
+> 一等公民：**Codex** 与 **OpenCode**；Claude Code 同样可用。项目模板随 **guyin-setup** 技能分发——skills 装到哪，模板跟到哪，无需克隆仓库。
 
-### 第一步：克隆与建项目（PowerShell 示例，bash 同理）
+### 方式一：skills CLI 一键装（推荐）
+
+```powershell
+# OpenCode（全局 ~/.config/opencode/skills/，一次装处处用；去掉 -g 则装进项目 .agents/skills/）
+npx skills add https://github.com/zstwtfanmy/guyin-story-skills -a opencode -g
+# Claude Code（全局 ~/.claude/skills/）
+npx skills add https://github.com/zstwtfanmy/guyin-story-skills -a claude-code -g
+# Codex（项目级）
+npx skills add https://github.com/zstwtfanmy/guyin-story-skills -a codex
+```
+
+交互式选择时全选 8 个 guyin-* 技能（含 guyin-setup 与其项目模板）。然后每本书：
+
+```powershell
+mkdir D:\books\我的书; cd D:\books\我的书
+opencode    # 或 claude / codex
+```
+
+> 说「准备写书」（或 /guyin-setup）→ 部署项目模板（三端执行层部署件 + 硬护栏 hook + 双台账 + 作者性；幂等，不覆盖已有内容）→ 按报告配低模型 → 新开会话 → 说「开书」。
+
+> **OpenCode 本体与两个坑**：未装时 `npm install -g opencode-ai`（或 `scoop install opencode`），首次用 `opencode auth login` 配 provider（编排层强模型 + 执行层 DeepSeek）。坑 1：npm 全局装完命令不识别，用 `npm config get prefix` 查路径并确认其在 PATH；坑 2：进项目后**不要跑 `/init`**——模板已自带路由版 AGENTS.md，`/init` 会覆盖它。
+
+### 方式二：克隆手动装
 
 ```powershell
 git clone git@github.com:zstwtfanmy/guyin-story-skills.git D:\guyin-skills
 mkdir D:\books\我的书; cd D:\books\我的书
-Copy-Item -Recurse D:\guyin-skills\项目模板\* .     # 写短篇再叠加 项目模板-短篇\
-```
-
-### 第二步：装技能（按 CLI 三选一，可多端并存）
-
-**OpenCode**（项目内 `skills/`，原生发现）与 **Codex**（项目内 `.codex/skills/`）：
-
-```powershell
-Copy-Item -Recurse D:\guyin-skills\skills\guyin-story, D:\guyin-skills\skills\guyin-write, `
-  D:\guyin-skills\skills\guyin-short-write, D:\guyin-skills\skills\guyin-analyze, `
-  D:\guyin-skills\skills\guyin-short-analyze, D:\guyin-skills\skills\guyin-review, `
-  D:\guyin-skills\skills\guyin-deslop .\skills\        # OpenCode
-Copy-Item -Recurse D:\guyin-skills\skills\guyin-* .\.codex\skills\   # Codex
-```
-
-> **OpenCode 本体与两个坑**：未装时 `npm install -g opencode-ai`（或 `scoop install opencode`），首次用 `opencode auth login` 配 provider（编排层强模型 + 执行层 DeepSeek）。坑 1：npm 全局装完命令不识别，用 `npm config get prefix` 查路径并确认其在 PATH；坑 2：进项目后**不要跑 `/init`**——模板已自带路由版 AGENTS.md，`/init` 会覆盖它。
-
-**Claude Code**（全局 `$HOME\.claude\skills\` 或项目 `.claude/skills/`）：
-
-```powershell
-Copy-Item -Recurse D:\guyin-skills\skills\guyin-* $HOME\.claude\skills\
+Copy-Item -Recurse D:\guyin-skills\skills\guyin-setup\templates\long\* .    # 写短篇再叠加 templates\short\大纲\ 三件
+Copy-Item -Recurse D:\guyin-skills\skills\guyin-* .\.opencode\skills\       # OpenCode；Codex 改 .\.codex\skills\，Claude Code 改 $HOME\.claude\skills\
 ```
 
 ### 第三步：执行层低模型（编排/执行分离的关键）
@@ -63,17 +67,38 @@ Codex 的 custom agent 新开会话后生效。无 subagent 环境自动降级 s
 
 ### 第四步：开书
 
-在项目根对 AI 说「开书」（或 `$guyin-write` / `/guyin-write`）→ Phase A/B/C **停在细纲交付**；Phase B 会按 [作者性引导协议](skills/guyin-write/references/作者性引导.md) 逐件口述定四件（不在场则默认档运行、写作中持续提示）→ 说「写第 1 章」进入写章循环。
+新开会话（让 custom agent 与 hook 注册生效）后，在项目根对 AI 说「开书」（或 `$guyin-write` / `/guyin-write`）→ Phase A/B/C **停在细纲交付**；Phase B 会按 [作者性引导协议](skills/guyin-write/references/作者性引导.md) 逐件口述定四件（不在场则默认档运行、写作中持续提示）→ 说「写第 1 章」进入写章循环。
 
 ## 仓库结构
 
 ```
-skills/          七个 guyin- 技能（cards/ 四卡模板、exemplars/ 范文库 10+1 题材默认弹药、作者性引导协议、consult/ 咨询库、scripts/ 检查脚本）
+skills/          八个 guyin- 技能（cards/ 四卡模板、exemplars/ 范文库 10+1 题材默认弹药、作者性引导协议、consult/ 咨询库、scripts/ 检查脚本）
+                 guyin-setup/templates/ 持有项目模板：long/ 长篇脚手架 + short/ 短篇 delta（内涵三件），随技能安装走
 arena/           擂台：3 个固定基准场景 + 对战记录
-项目模板/        长篇脚手架：文件状态分层 + 双台账 + 灵感池 + 作者性五件 + AGENTS.md 路由 + .claude/.codex/.opencode 三端执行层部署件
-项目模板-短篇/   短篇 delta：内涵三件（情节节点/情绪曲线/反转表）叠加项目模板
-docs/            框架之魂与设计文档（README / 01-需求框架 / 02-落地计划 / 03-资产盘点）
+docs/            设计文档（01-需求框架 / 02-落地计划 / 03-资产盘点）
 ```
+
+## 框架之魂 · 以天合天
+
+> 作品不是造出来的，是合出来的。
+> 一个天，是**作者之天**——活过的生命、一生之问、他的真；
+> 另一个天，是**万物之天**——类型的永恒渴望、世界自生长的天性、人人心里的常情。
+> 作品只存在于两天相合之处。框架的职责不是造文，是**不挡光**。
+
+两千年前，木匠梓庆做完的乐器架，人人惊为鬼神。问他何术，他说：斋心三日，忘了庆赏爵禄；五日，忘了非誉巧拙；七日，忘了自己有手艺这回事。而后入山林，看见那棵树里本来就长着一只成器——"然后加手焉，不然则已。**以天合天**。"
+
+隐笔就是把这套工序造进系统：**低模型是那只不变的手，框架负责斋与观，作者带来自己的天。**同一句话，西方在另一条路上也抵达过——poiesis 是"让显现"而非制造（海德格尔）；天才的规则不可言明、不可传授（康德）。可显式化的交给框架，不可显式化的，交还给选择。
+
+### 四工序 · 四层架构
+
+| 工序 | 阶段 | 一句话 |
+|---|---|---|
+| **斋** | 守（L0） | 删掉一切毁真之物——合规工厂、负面清单、表演动机 |
+| **观** | 工（L1） | 入传统之山林，观其天性——范文、质感、魂谱 |
+| **合** | 灵（L2） | 以天合天——合魂、养气、灵感装置 |
+| **显** | 神（L3） | 加手焉——选择显影、豁免、指纹，真动于外 |
+
+完整哲学条款（重铸哲学十条 / 工程哲学四条 / 康德红线 / 操作化身双语制）见 [docs/01-需求框架.md](docs/01-需求框架.md) §4。
 
 ## 设计一页看懂
 
@@ -82,9 +107,47 @@ docs/            框架之魂与设计文档（README / 01-需求框架 / 02-落
 - **范文教学**：范文切片取代 32 张参数化腔调卡；上一章结尾 300 字原文贴卡保声线连续；
 - **写-读-改回路**：beat 化写作 + 是非题自检 + 段落级定向改写（分级控成本），取代一次成稿；
 - **豁免机制**：checker 报警永不自动删，五测试审判，每卷 ≤2 处——神来之笔是世界自生长的生殖道；
-- **铁律**：气卡永不下发任务卡；哲学词汇零进卡片，只以卡片结构在场。
+- **铁律**：气卡永不下发任务卡；哲学词汇零进卡片，只以卡片结构在场（范文=观，禁令=斋，细纲=合，对照例=显）。
 
-完整哲学（以天合天 / 合问 / 魂×皮 / 气的三栖息地）见 [docs/README.md](docs/README.md)。
+### 读者分层（哲学如何进系统）
+
+哲学不需要低模型读懂——低模型是那只不变的手，只读任务卡。概念按双语制成对存在，缺操作化身的理念不进流程：
+
+| 读者 | 读什么 | 形态 |
+|---|---|---|
+| 人 + 强模型（编排层） | 魂语言（为什么） | docs/ 三份文档 |
+| 任意档位模型（编排层） | 操作化身（怎么做） | 是非题、固定字段、判词——见 docs/01 §4.4，实现期编译进 skills |
+| 低模型（执行层） | 任务卡（填空） | 哲学 100% 隐形、100% 在场 |
+
+## 文档索引
+
+| 文档 | 内容 |
+|---|---|
+| [docs/01-需求框架.md](docs/01-需求框架.md) | 魂与哲学总纲（§4）、诊断、架构、核心机制（含合魂协议、气的三栖息地、豁免机制）、目录终态 |
+| [docs/02-落地计划.md](docs/02-落地计划.md) | 四阶段任务与验收（斋·观·合·显）、Arena 协议、风险清单、下一步 |
+| [docs/03-资产盘点.md](docs/03-资产盘点.md) | 上游资产继承清单与重铸状态 |
+
+## 术语速查
+
+| 术语 | 含义 |
+|---|---|
+| 编排层 / 执行层 | 框架与主会话负责拆任务组装卡片；低模型只按卡填空写作 |
+| 任务卡 | 执行层唯一可见物：写作卡 / 自检卡 / 发散卡 / 改写卡 |
+| 以天合天 | 框架之魂：作者之天合万物之天，合处即作品；框架不造文，不挡光 |
+| 斋 · 观 · 合 · 显 | 梓庆四工序，对应守工灵神四层：去毁真之物 / 观传统天性 / 合魂养气 / 加手显真 |
+| 合问 | 全部选择器的统一判词：这一笔是在雕，还是在放 |
+| 魂 × 皮 | 皮（题材/指纹/偏执点）书书不同；魂（一生之问）书书相同 |
+| 魂档案 / 类型魂谱 | 作者私有跨书资产 / 类型公共资产；经纬相乘为本书之魂 |
+| 气 | 魂在本书的投影（魂×世界=气）。不可造只可养；活在选择器、细纲底色、豁免第四票，永不下发任务卡 |
+| 气卡 / 气句 | 气的操作化身：气句一句 + 底色（暖/冷/涩）+ 收放；开书口述生成，每 N 卷复述刷新 |
+| 豁免 | 神来之笔的生殖道：checker 永不自动删，五测试审判，设定迁就之，每卷 ≤2 处 |
+| 十年测试 | 剥离时代性元素后复测细节留存；剩下的含量，就是魂的含量 |
+| Craft / Muse | 匠人模式（默认，确定性执行）/ 灵感模式（机械判据自动升档） |
+| 灵感台账 / 豁免台账 | 细纲外新元素的登记收编 / 世界自生长的年轮 |
+| 质感卡 | 从对标书提取的"生成习惯参数"（细节选择/比喻来源域/闲笔形态等），不是好句摘抄 |
+| 作者指纹 / 偏执点 | 开书时定的一组全书一致风格参数 / ≤2 条非理性全书规则 |
+| 操作化身 | 魂概念的执行形态（是非题/固定字段/判词）；魂语言与操作化身成对出生 |
+| Arena 擂台 | 同一细纲新旧版本各写一章，盲评定胜负（判词：合问），胜者成为新基线 |
 
 ## 路线图（守 → 工 → 灵 → 显）
 
@@ -100,3 +163,7 @@ docs/            框架之魂与设计文档（README / 01-需求框架 / 02-落
 ## 致谢与许可
 
 上游方法论资产来自 [worldwonderer/oh-story-claudecode](https://github.com/worldwonderer/oh-story-claudecode)（随其原许可分发）；隐笔新增文档与机制为本项目原创。`references/exemplars/` 内范文切片仅供私用模仿节奏，请勿公开分发。
+
+---
+
+*修订术语或哲学条款请同步 docs/01-需求框架.md · 哲学条款与操作化身成对出生（见 docs/01 §4.4）*
