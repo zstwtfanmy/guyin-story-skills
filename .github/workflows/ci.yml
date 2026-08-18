@@ -1,0 +1,35 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Syntax check (node --check)
+        run: |
+          node --check skills/guyin-write/scripts/guyin-check-degeneration.js
+          node --check skills/guyin-write/scripts/guyin-check-ai-patterns.js
+          node --check skills/guyin-write/scripts/guyin-check-outline-copy.js
+          node --check skills/guyin-write/scripts/guyin-check-wordcount.js
+          node --check skills/guyin-write/scripts/guyin-normalize-punctuation.js
+          node --check scripts/check-doc-budget.js
+          node --check scripts/check-skill-contracts.js
+
+      - name: SKILL structural contracts
+        run: node scripts/check-skill-contracts.js
+
+      - name: Hot-path doc budget
+        run: node scripts/check-doc-budget.js
+
+      - name: Runtime script regression tests
+        run: node tests/run-tests.js

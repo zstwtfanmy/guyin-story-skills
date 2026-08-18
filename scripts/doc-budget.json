@@ -1,0 +1,48 @@
+{
+  "_comment": [
+    "热路径文档预算。度量 = 去掉所有空白后的字符数（中英文都算，改标点/换行不影响）。",
+    "只登记「每次会话或每个 beat 都会进模型上下文」的文件；冷路径（references/consult、",
+    "exemplars、docs、拆文库、气质谱系、口述定稿单）不在此表，按需增长不受限。",
+    "",
+    "预算超了怎么办：先删等量的旧文本，删不动再在本文件里调高 budget 并在提交说明里写清",
+    "为什么这段新规则值得每次会话都付。调 budget 是允许的，但必须是一次显式决定。",
+    "",
+    "新增热路径文件时把它加进来，否则它不受任何约束。",
+    "卡片预算 ≈ 500 token 的字符近似（中文 1 字 ≈ 0.6-1 token）。",
+    "预算按「当前用量 + 5-10% 余量」收紧锁定，防无声膨胀；改内容请同步看 --dump。"
+  ],
+  "files": [
+    { "path": "skills/guyin-story/SKILL.md", "budget": 1200, "why": "主入口路由，任一场景加载" },
+    { "path": "skills/guyin-write/SKILL.md", "budget": 3400, "why": "长篇任一场景都无条件加载；2026-08-18 由 3200 调升：章检新增字数护栏 guyin-check-wordcount.js 条目" },
+    { "path": "skills/guyin-short-write/SKILL.md", "budget": 2400, "why": "短篇任一场景都无条件加载" },
+    { "path": "skills/guyin-analyze/SKILL.md", "budget": 1400, "why": "拆文管道入口" },
+    { "path": "skills/guyin-short-analyze/SKILL.md", "budget": 1300, "why": "短篇拆文入口" },
+    { "path": "skills/guyin-review/SKILL.md", "budget": 2300, "why": "审查场景加载" },
+    { "path": "skills/guyin-deslop/SKILL.md", "budget": 1500, "why": "去AI味场景加载" },
+    { "path": "skills/guyin-write/cards/写作卡.md", "budget": 1000, "why": "每个 beat 下发执行层都付一次；2026-08-18 由 900 调升：beat 声线锚升级为「结尾 100 字原文+文气一行」是声线连续性的显式对价" },
+    { "path": "skills/guyin-write/cards/自检卡.md", "budget": 900, "why": "每个 beat 收稿都付一次，500 token 近似" },
+    { "path": "skills/guyin-write/cards/改写卡.md", "budget": 900, "why": "报警重写路径付，500 token 近似" },
+    { "path": "skills/guyin-write/cards/发散卡.md", "budget": 600, "why": "Muse 升档时付（阶段三激活），500 token 近似" },
+    { "path": "skills/guyin-write/agents/guyin-beat-writer.md", "budget": 650, "why": "执行层 subagent 系统提示，每次 spawn 都付" },
+    { "path": "项目模板/AGENTS.md", "budget": 1200, "why": "Codex/OpenCode 每会话注入的路由与不变式" }
+  ],
+  "paths": [
+    {
+      "label": "长篇写章热路径（编排层会话 + 单 beat 下发）",
+      "budget": 5400,
+      "files": [
+        "skills/guyin-write/SKILL.md",
+        "skills/guyin-write/cards/写作卡.md",
+        "skills/guyin-write/cards/自检卡.md"
+      ]
+    },
+    {
+      "label": "执行层单 beat 上下文",
+      "budget": 1700,
+      "files": [
+        "skills/guyin-write/agents/guyin-beat-writer.md",
+        "skills/guyin-write/cards/写作卡.md"
+      ]
+    }
+  ]
+}
