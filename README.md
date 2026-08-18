@@ -10,32 +10,33 @@
 | 技能 | 触发 | 职责 |
 |------|------|------|
 | **guyin-story** | `/guyin`、`/隐笔`、「我想写小说」 | 主入口：路由 + 项目状态诊断 |
-| **guyin-write** | `/guyin-write`、「开书」「写第X章」「日更」「回炉」 | 写作编排层：beat 任务卡循环 + 检查 + 台账 |
-| **guyin-analyze** | `/guyin-analyze`、「拆这本书」 | 拆文管道（质感拆解/类型魂谱接口已预留） |
+| **guyin-write** | `/guyin-write`、「开书」「写第X章」「日更」「回炉」 | 长篇写作编排层：beat 任务卡循环 + 检查 + 台账 |
+| **guyin-short-write** | `/guyin-short-write`、「写短篇」「盐言故事」 | 短篇写作编排层：骨架三件（情节节点/情绪曲线/反转表） |
+| **guyin-analyze** | `/guyin-analyze`、「拆这本书」 | 长篇拆文管道（质感拆解/类型魂谱接口已预留） |
+| **guyin-short-analyze** | `/guyin-short-analyze`、「拆短篇」 | 短篇拆文全量管道：故事核/情感线/反转设计/共鸣 |
+| **guyin-review** | `/guyin-review`、「审查」「这章怎么样」 | 对抗式审查：只诊断不动刀，输出 L1/L2/L3 接大修 |
 | **guyin-deslop** | `/guyin-deslop`、「去AI味」 | lint 确定性错误 + 陌生化段落改写 |
 
 ## 安装（Claude Code 兼容环境）
 
 ```bash
-git clone <本仓库地址> ~/guyin-skills
+git clone git@github.com:zstwtfanmy/guyin-story-skills.git ~/guyin-skills
 # 方式一：软链（推荐，随仓库更新）
-ln -s ~/guyin-skills/skills/guyin-story   ~/.claude/skills/guyin-story
-ln -s ~/guyin-skills/skills/guyin-write   ~/.claude/skills/guyin-write
-ln -s ~/guyin-skills/skills/guyin-analyze ~/.claude/skills/guyin-analyze
-ln -s ~/guyin-skills/skills/guyin-deslop  ~/.claude/skills/guyin-deslop
-# 方式二：直接复制四个技能目录到 ~/.claude/skills/
+ln -s ~/guyin-skills/skills/guyin-* ~/.claude/skills/
+# 方式二：直接复制 skills/ 下七个技能目录到 ~/.claude/skills/
 ```
 
 **执行层配置**（编排/执行分离的关键）：把 [skills/guyin-write/agents/guyin-beat-writer.md](skills/guyin-write/agents/guyin-beat-writer.md) 复制到项目 `.claude/agents/` 并把 `model` 指向低模型（如 deepseek-flash）。无 subagent 环境自动降级 solo 模式（guyin-write 会声明）。
 
-**开书第一步**：把 [项目模板/](项目模板/) 复制到你的写作项目根目录，然后对 AI 说「开书」。
+**开书第一步**：把 [项目模板/](项目模板/) 复制到你的写作项目根目录，然后对 AI 说「开书」（写短篇再叠加 [项目模板-短篇/](项目模板-短篇/)，说「写短篇」）。
 
 ## 仓库结构
 
 ```
-skills/          四个 guyin- 技能（含 cards/ 四卡模板、exemplars/ 范文库、consult/ 方法论咨询库、scripts/ 检查脚本）
+skills/          七个 guyin- 技能（含 cards/ 四卡模板、exemplars/ 范文库、consult/ 方法论咨询库、scripts/ 检查脚本）
 arena/           擂台：3 个固定基准场景 + 对战记录
-项目模板/        写作项目脚手架（文件状态分层 + 双台账 + 灵感池 + 作者性五件）
+项目模板/        长篇写作项目脚手架（文件状态分层 + 双台账 + 灵感池 + 作者性五件）
+项目模板-短篇/   短篇 delta：内涵三件（情节节点/情绪曲线/反转表）叠加项目模板
 docs/            框架之魂与设计文档（README / 01-需求框架 / 02-落地计划 / 03-资产盘点）
 ```
 
