@@ -28,9 +28,12 @@ Detect high-risk AI-flavor prose patterns that need human rewrite:
   - 预告式总结收尾 (文末窗口 没人知道/才刚刚开始/正朝着…压了过去, 实战漏网句式)
   - 章尾状态总结体 (文末窗口 这一夜注定/这一切都结束了/新的人生才刚刚开始/命运的齿轮)
   - 引号强调滥用 (叙述里 1-4 字短词加引号强调，密度型)
+  - 科普腔 (台词内定义/行话讲解标记聚集，密度型 advisory)
+  - 段中预告腔 (叙述层未来指向标记出现在段中而非章尾, 实战漏网句式)
+  - 金句腔 (双短句对仗断言收拍「A是B的，C是D的。」, 实战漏网句式)
 
 Each finding carries severity: blocking by default for generation/deslop cleanup (not-is-comparison / em-dash / voice-contrast / negation-parade / reverse-not-is / trailer-ending / trailer-summary). This is a local style/readability gate, not an AIGC detector score; functional human text can be marked for review instead of hard-edited for a detector.
-或 advisory (period-stutter / long-paragraph / micro-action-tic / action-list-tic / abstract-summary-tic / cliche-density-tic / metaphor-density-tic / reasoning-chain-tic / system-notice-formality-tic / overcompressed-prose-tic / low-connective-density-tic / quote-emphasis-tic / formulaic-parallelism，是提示，justified 的长推理/氛围段可保留)。
+或 advisory (period-stutter / long-paragraph / micro-action-tic / action-list-tic / abstract-summary-tic / cliche-density-tic / metaphor-density-tic / reasoning-chain-tic / system-notice-formality-tic / overcompressed-prose-tic / low-connective-density-tic / quote-emphasis-tic / formulaic-parallelism / explain-tic / mid-trailer / aphorism-tic，是提示，justified 的长推理/氛围段可保留)。
 --fail-on=blocking 只在出现 blocking finding 时退出 1；默认 --fail-on=all 有任何 finding 即退出 1。
 
 The script reports findings only. It never rewrites text, because the safe fix is
@@ -249,6 +252,29 @@ const QUOTE_EMPHASIS_MIN_HITS = 3;
 const QUOTE_EMPHASIS_MAX_VISIBLE = 4;
 const QUOTE_EMPHASIS_SPEECH_VERB_PATTERN = /[说道问喊答念叫回吼骂写读唱嘀咕]/;
 
+// 科普腔（05 实战护栏 L1，advisory 密度型，扫引号内台词）：AI 让角色开口当教科书，
+// 一段台词连发定义/行话讲解（「会票就是商号开的借据式票据，认票不认人，凭票取银」）。
+// 只扫引号内：叙述层的解释归 reasoning-chain，角色台词里的定义连发才是科普腔指纹；
+// 【】面板是系统载体不算台词。次数与每千字双门槛，全文只报一条。
+// 校准：隐笔 ch001「认票不认人」单发静默；对照版 ch001 一段台词连发 3 形态过阈报警。
+const EXPLAIN_TIC_PATTERN = /所谓|的意思是|指的是|简单(?:地)?说|说白了|换句话说|通俗(?:地)?说|认[^\s，。！？、]{1,3}不认[^\s，。！？、]{1,3}|凭[^\s，。！？、]{1,4}[取兑]|就是[^\s，。！？、]{1,12}的[^\s，。！？、]{1,8}/g;
+const EXPLAIN_TIC_MIN_HITS = 3;
+const EXPLAIN_TIC_PER_KILO = 3;
+
+// 段中预告腔（05 实战护栏 L2，advisory 逐处，扫引号外叙述）：预告标记出现在段中而非
+// 章尾（「这笔账早晚要一样一样摆上桌」「他们迟早会想」）。章尾窗口归 trailer-ending；
+// 这里是叙述层在段中间替读者预告未来，悬念被提前泄掉。只扫引号外：角色台词里的
+// 「迟早/早晚」是人物语言，不拦。词表收窄到「要/会/得」后缀高置信形态，宁漏不拦错。
+const MID_TRAILER_PATTERN = /却不知[道]?|殊不知|迟早[要会得]|早晚[要会得]|总有一天|有朝一日|待到那时|还不知道的是/g;
+
+// 金句腔（05 实战护栏 L3，advisory 逐处，扫引号外叙述）：复盘/转折段「A是B的，C是D的。」
+// 双短句对仗断言收拍（「戏是人家排的，他是登台的。」）。列举式证据链「票是假的，
+// 章是仿的，有人见过真票」第二分句后接逗号继续流水，不命中——句号收拍独立成拍
+// 才是金句腔；修法是把结论埋回事件/动作，让读者自己得出，别在叙述层替读者盖章。
+// 校准：ch36 修复版「表是死的，人是活的。」会命中——功能性策略句人工判读后保留
+//（与 quote-emphasis 在《万疆》的 advisory 先例同理：真人也这么写，只提示不拦）。
+const APHORISM_PATTERN = /[\u4e00-\u9fa5A-Za-z0-9]{1,6}是[\u4e00-\u9fa5A-Za-z0-9]{1,10}的[，,][\u4e00-\u9fa5A-Za-z0-9]{1,6}是[\u4e00-\u9fa5A-Za-z0-9]{1,10}的[。！？]/g;
+
 const options = {
   json: false,
   files: [],
@@ -420,6 +446,9 @@ function scanProsePatterns(proseLines) {
   findings.push(...findNoticeFormalityTic(proseLines));
   findings.push(...findOvercompressedProseTic(proseLines));
   findings.push(...findLowConnectiveDensityTic(proseLines));
+  findings.push(...findExplainTic(proseLines));
+  findings.push(...findMidTrailerTic(proseLines));
+  findings.push(...findAphorismTic(proseLines));
   return findings;
 }
 
@@ -578,6 +607,102 @@ function findReverseNotIs(proseLines) {
   }
 
   return findings;
+}
+
+// 科普腔（L1）：统计引号内台词（【】面板除外）的定义标记密度。次数与每千字双门槛，
+// 全文只报一条（分布级指纹）。台词字数做分母——科普腔是台词内部的自指密度。
+function findExplainTic(proseLines) {
+  let hits = 0;
+  let speechChars = 0;
+  let firstLine = null;
+  const samples = [];
+
+  for (const { text, lineNo } of proseLines) {
+    const trimmed = text.trim();
+    if (!trimmed || isDivider(trimmed) || isStructural(trimmed)) continue;
+    const quoted = quotedOnly(text);
+    if (!quoted) continue;
+    speechChars += visibleLength(quoted);
+    EXPLAIN_TIC_PATTERN.lastIndex = 0;
+    let match;
+    while ((match = EXPLAIN_TIC_PATTERN.exec(quoted)) !== null) {
+      hits += 1;
+      if (firstLine === null) firstLine = lineNo;
+      if (samples.length < 6 && !samples.includes(match[0])) samples.push(match[0]);
+    }
+  }
+
+  if (speechChars === 0 || hits < EXPLAIN_TIC_MIN_HITS) return [];
+  const perKilo = (hits / speechChars) * 1000;
+  if (perKilo < EXPLAIN_TIC_PER_KILO) return [];
+
+  return [{
+    line: firstLine,
+    column: 1,
+    type: 'explain-tic',
+    severity: 'advisory',
+    message: `科普腔：台词内定义/行话讲解标记 ${hits} 处；角色不是教科书，把定义拆进冲突与追问里，让读者跟着案情自己弄懂，别一段台词一口气讲完。`,
+    excerpt: compact(samples.join(' ')),
+  }];
+}
+
+// 段中预告腔（L2）：引号外叙述逐处 advisory（masked 等长占位保偏移；问号占位符
+// 不在词表字符集内，命中不会落进引号区）。
+function findMidTrailerTic(proseLines) {
+  const findings = [];
+  for (const { text, lineNo } of proseLines) {
+    const trimmed = text.trim();
+    if (!trimmed || isDivider(trimmed) || isStructural(trimmed)) continue;
+    const masked = maskQuoted(text);
+    MID_TRAILER_PATTERN.lastIndex = 0;
+    let match;
+    while ((match = MID_TRAILER_PATTERN.exec(masked)) !== null) {
+      findings.push({
+        line: lineNo,
+        column: match.index + 1,
+        type: 'mid-trailer',
+        severity: 'advisory',
+        message: '段中预告腔：叙述层在段中替读者预告未来（早晚要/迟早会/总有一天/却不知）；预告把悬念提前泄掉，删掉这句或改成当下可见的证据，未来让事件自己揭晓。',
+        excerpt: compact(text.slice(Math.max(0, match.index - 6), match.index + match[0].length + 10)),
+      });
+    }
+  }
+  return findings;
+}
+
+// 金句腔（L3）：引号外叙述逐处 advisory。只认「第二分句句号收拍」的严格对仗形态，
+// 逗号续写的列举句不命中（见常量注释校准）。
+function findAphorismTic(proseLines) {
+  const findings = [];
+  for (const { text, lineNo } of proseLines) {
+    const trimmed = text.trim();
+    if (!trimmed || isDivider(trimmed) || isStructural(trimmed)) continue;
+    const masked = maskQuoted(text);
+    APHORISM_PATTERN.lastIndex = 0;
+    let match;
+    while ((match = APHORISM_PATTERN.exec(masked)) !== null) {
+      findings.push({
+        line: lineNo,
+        column: match.index + 1,
+        type: 'aphorism-tic',
+        severity: 'advisory',
+        message: '金句腔：双短句对仗断言收拍（A是B的，C是D的。）是替读者盖章的复盘腔；把结论埋回具体事件与动作，让对仗感从证据里长出来，别在叙述层直接断言。',
+        excerpt: compact(text.slice(match.index, match.index + match[0].length)),
+      });
+    }
+  }
+  return findings;
+}
+
+// 引号内文本拼接（科普腔用）：取成对引号内部（含台词内强调引号，都是角色语言），
+// 跳过【】系统面板载体。无引号返回空串。
+function quotedOnly(text) {
+  const ranges = quotedRanges(text);
+  if (ranges.length === 0) return '';
+  return ranges
+    .filter(([start]) => text[start] !== '【')
+    .map(([start, end]) => text.slice(start + 1, end - 1))
+    .join('');
 }
 
 // 预告式总结收尾（实战漏网 D）：只扫文末窗口。从文末往回收集叙述行，

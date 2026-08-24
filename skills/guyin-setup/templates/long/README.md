@@ -60,7 +60,7 @@ AGENTS.md          Codex / OpenCode 读根路由表 + 五条项目不变式
 
 三条纪律（也是 hook 的设计红线，改 hook 前先读 `guyin-hook.js` 头注）：
 
-1. **兜底不是替代**：hook 只做确定性信号（存在性 / schema / 字数 / 极短），毒句式等规则权威在 skills 四个 guyin-check 脚本；章检照跑。
+1. **兜底不是替代**：hook 只做确定性信号（存在性 / schema / 字数 / 极短），毒句式等规则权威在 skills 的 guyin-check 系脚本；章检照跑。
 2. **fail-open**：非隐笔项目、解析失败、任何不确定一律放行——宁可漏拦不可误伤；hook 是增强层，Codex / OpenCode / Web AI 宿主无 hook 时靠 `AGENTS.md` 与 SKILL.md 纪律照样成立。
 3. **豁免权在台账**：细纲/骨架缺失没有豁免通道，只能补；章检报警的豁免一律走 `追踪/豁免台账.md`（五测试），hook 不认正文内标记。
 

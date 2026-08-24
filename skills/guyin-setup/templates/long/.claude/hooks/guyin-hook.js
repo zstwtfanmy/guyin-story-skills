@@ -10,8 +10,8 @@
 //   session     SessionStart(startup|resume|compact)。stdout 注入恢复摘要；无信息完全静默。
 //
 // 设计红线（对齐框架哲学，勿"顺手增强"）：
-//   1. 确定性边界：只做存在性 / schema / 字数 / 极短四类确定性信号；毒句式、AI 句式、
-//      细纲照搬等规则权威在 skills/guyin-write/scripts/ 四个 guyin-check 脚本，本核零重复实现。
+//   1. 确定性边界：只做存在性 / schema / 字数 / 极短 / mtime 同步性五类确定性信号；毒句式、
+//      AI 句式、细纲照搬等规则权威在 skills/guyin-write/scripts/ 五个 guyin-check 脚本，本核零重复实现。
 //   2. fail-open：解析失败、非隐笔项目、任何不确定一律放行——宁可漏拦不可误伤。
 //   3. 注入面纪律：session 只注入结构状态（追踪/上下文、state、git 进度），
 //      作者性/ 目录（气卡等）永不注入——气不进自动流。
@@ -74,12 +74,16 @@ function readState(bookDir) {
 }
 
 function isBookDir(dir) {
-  try {
-    return fs.statSync(path.join(dir, '大纲')).isDirectory()
-      || fs.statSync(path.join(dir, '追踪')).isDirectory();
-  } catch (e) {
-    return false;
+  // 逐个探测：首项不存在时 statSync 抛异常，`||` 短路会直接跳 catch 把后面的探测全部
+  // 吞掉（「有大纲无追踪」「有追踪无大纲」两种半项目都会被误判非书项目）。
+  for (const sub of ['大纲', '追踪']) {
+    try {
+      if (fs.statSync(path.join(dir, sub)).isDirectory()) return true;
+    } catch (e) {
+      /* 试下一个标记目录 */
+    }
   }
+  return false;
 }
 
 // 去空白字数，与 guyin-check-wordcount.js 同口径：剥 YAML frontmatter 与 markdown 标题行。
@@ -183,6 +187,14 @@ function postWrite() {
   }
   const num = chapterNum(base);
   if (num !== null) {
+    // G5 追踪同步：写入已提交章（章号 ≤ last_committed_chapter）——改动不在追踪账本里。
+    // 只提醒不拦截：hook 分不清大修重提交的时序中间态与事故，主体靠协议纪律（S 级唯一合法
+    // 通道 = 大修场景 + tracking-commit 重提交，见 guyin-write SKILL.md 落盘硬门③）。
+    const st = readState(bookDir);
+    if (st && Number.isInteger(st.last_committed_chapter) && num <= st.last_committed_chapter) {
+      out.push(`【追踪同步】第 ${num} 章为已提交章（追踪已记至第 ${st.last_committed_chapter} 章），本次改动不在追踪账本里。`);
+      out.push('   影响事件定性/伏笔/角色状态/时间线的修复 → guyin-write 大修场景 + tracking-commit 重提交（S 级唯一合法通道）；纯文字 S3 → guyin-deslop。');
+    }
     const count = visibleChars(buf.toString('utf8'));
     if (count < CHAPTER_MIN) {
       out.push(`【字数】第 ${num} 章去空白 ${count} 字，低于默认下限 ${CHAPTER_MIN}（权威口径：guyin-check-wordcount.js，--min 可调）。`);
@@ -212,6 +224,33 @@ function session() {
   const st = readState(root);
   if (st && Number.isInteger(st.last_committed_chapter)) {
     lines.push(`追踪：已提交至第 ${st.last_committed_chapter} 章（state revision ${Number.isInteger(st.state_revision) ? st.state_revision : '?'}）。`);
+    // G5 同步性扫描（fail-open）：已提交章正文 mtime 晚于 state（改动未进账本）→ 提醒走大修重
+    // 提交；已落盘章未提交（落盘与提交之间的中断）→ 提醒先补提交。git 同步等工具 touch 全库
+    // 会整体误报——只提醒不拦截，诚实边界见 docs/05-实战护栏路线图.md §2 G5。
+    try {
+      const stateMtime = fs.statSync(path.join(root, '追踪', '_tracking-state.json')).mtimeMs;
+      const stale = [];
+      const untracked = [];
+      for (const name of fs.readdirSync(path.join(root, '正文'))) {
+        const m = /^第0*(\d+)章.*\.md$/.exec(name);
+        if (!m) continue;
+        const n = parseInt(m[1], 10);
+        const mt = fs.statSync(path.join(root, '正文', name)).mtimeMs;
+        if (n <= st.last_committed_chapter) {
+          if (mt > stateMtime) stale.push(n);
+        } else {
+          untracked.push(n);
+        }
+      }
+      if (stale.length > 0) {
+        lines.push(`追踪脱节：第 ${stale.join('、')} 章正文改动晚于最近追踪提交——若为 S 级修复，走 guyin-write 大修场景完成 tracking-commit 重提交。`);
+      }
+      if (untracked.length > 0) {
+        lines.push(`第 ${untracked.join('、')} 章已落盘但追踪未提交（last_committed_chapter=${st.last_committed_chapter}）——先跑 guyin-tracking-commit.py 补提交再续写。`);
+      }
+    } catch (e) {
+      /* 正文/ 不在或读失败则跳过这一节 */
+    }
   }
   try {
     const r = spawnSync('git', ['-C', root, 'log', '--oneline', '-3'], { encoding: 'utf8' });

@@ -13,7 +13,7 @@ description: "隐笔项目脚手架部署。把长篇/短篇项目模板（三�
 
 以正在执行的本 `SKILL.md` 所在目录为锚，核对同级 `templates/`：
 
-1. `templates/long/`：`AGENTS.md`、`README.md`、`.claude/settings.json`、`.claude/hooks/guyin-hook.js`、`.claude/agents/guyin-beat-writer.md`、`.codex/agents/guyin-beat-writer.toml`、`.opencode/agents/guyin-beat-writer.md`、`.opencode/commands/guyin.md`、`作者性/` 七件、`大纲/魂谱对表.md`、`追踪/_tracking-state.json`
+1. `templates/long/`：`AGENTS.md`、`README.md`、`.claude/settings.json`、`.claude/hooks/guyin-hook.js`、`.claude/agents/guyin-beat-writer.md`、`.codex/agents/guyin-beat-writer.toml`、`.opencode/agents/guyin-beat-writer.md`、`.opencode/commands/guyin.md`、`作者性/` 七件、`大纲/README.md`、`大纲/魂谱对表.md`、`追踪/_tracking-state.json`
 2. `templates/short/大纲/`：情节节点 / 情绪曲线 / 反转表 三件
 
 任一缺失 → **立即停止，不写任何部署文件**，报告缺哪些（区分「缺文件」与「目录为空」），给修复指令：「guyin-setup 模板包不完整，缺 {文件}。按你的安装方式重装 guyin-story-skills（skills CLI 装的重跑 `npx skills add https://github.com/zstwtfanmy/guyin-story-skills -g`；手动复制的重新复制 skills/ 目录），再执行 /guyin-setup。」

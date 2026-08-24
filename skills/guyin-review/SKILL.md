@@ -12,13 +12,13 @@ description: "隐笔对抗式审查。只诊断不动刀：多视角找问题 + 
 1. 永不修改正文/设定/大纲/追踪；唯一可写：对话报告 + 分批审查时的 `.guyin-review/state.md`。
 2. 每个 finding 必须有句位证据，无证据不报。
 3. 疑似神来之笔**不报问题**，标「豁免候选」交五测试（见 guyin-write 文末）——合规系统不消灭变异。
-4. 确定性预检只读：`node ../guyin-write/scripts/guyin-check-ai-patterns.js` 等三脚本，结果只作 finding 证据。
+4. 确定性预检只读：`node ../guyin-write/scripts/guyin-check-ai-patterns.js` 等章检脚本（含 integrity 格式门），结果只作 finding 证据。
 
 ## 模式与降级
 
 - **full（默认）**：四视角 subagent 并行（架构/角色对话/文字/一致性）；无 subagent 能力或 spawn 失败 → 自动 solo；
 - **lean**：架构 + 一致性两视角；
-- **solo**：主会话串行执行四视角。
+- **solo**：主会话串行执行四视角；底线=文字+一致性两视角必做，架构/角色可简（架构缺口由 G3 机械契约对照补位）。
 
 降级时报告开头声明 `Fallback: ... -> solo`。报告必须逐字保留五个 key：`Requested Mode` / `Effective Mode` / `Fallback` / `Rubric` / `Rubric Source`。
 
@@ -62,12 +62,14 @@ description: "隐笔对抗式审查。只诊断不动刀：多视角找问题 + 
 
 ## 分批审查（整卷/多篇）
 
-维护 `.guyin-review/state.md`（完整范围/已完/下一批/未解决 findings 摘要）；下批开头读回注入 prompt；非分批不创建。该目录只是审查状态，不是小说事实。
+维护 `.guyin-review/state.md`（完整范围/已完/下一批/未解决 findings 摘要/每轮 S1、S2 计数）；下批开头读回注入 prompt；非分批不创建。该目录只是审查状态，不是小说事实。
+
+**收敛协议（C1）**：可停判据——S1=0 且 S2 连续两轮零新增，报告附「建议收敛」交作者决断；轮次上限——同一章审查-修复循环默认 R4 停靠，第 4 轮后不再自动开新轮，待作者显式续期（过限停靠，不禁止续）。
 
 ## 衔接
 
 | 时机 | 去向 |
 |------|------|
-| 修查出的问题 | guyin-write / guyin-short-write 大修（level 已对齐 L1/L2/L3） |
+| 修查出的问题 | guyin-write / guyin-short-write 大修（level 已对齐 L1/L2/L3）；S1 全部与影响追踪的 S2（事件定性/伏笔/角色状态/时间线）落盘后必 tracking-commit 重提交（G5：S 级修复唯一合法通道，禁止会话裸改正文） |
 | 清 AI 味 | guyin-deslop |
 | 重新拆对标 | guyin-analyze / guyin-short-analyze |
