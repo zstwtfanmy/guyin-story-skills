@@ -8,7 +8,7 @@
 |---|---|---|
 | 唯一权威 | `_tracking-state.json` | schema、最后提交章、导入截止章、状态修订号、上下文结构、全部当前角色/伏笔/时间线状态 |
 | 章节记录 | `逐章记录/第NNN章.md` | 本章对未来连续性有用的紧凑变化；目标 ≤1536 字节，硬上限 3072 字节；导入范围内修订写成覆盖记录 |
-| 派生视图 | `上下文.md`、`角色状态/{角色名}.md`、`伏笔.md`、`事件定性资产.md`、`时间线/作者真相.md`、`时间线/读者已知.md` | 完全由 `_tracking-state.json` 生成；禁止手改，不作为程序输入 |
+| 派生视图 | `上下文.md`、`角色状态/{角色名}.md`、`伏笔.md`、`事件定性资产.md`、`物证台账.md`、`地理台账.md`、`场景台账.md`、`时间线/作者真相.md`、`时间线/读者已知.md` | 完全由 `_tracking-state.json` 生成；禁止手改，不作为程序输入 |
 
 Markdown 只负责给作者和 Agent 阅读，工具不再反向解析 Markdown。`check` 直接从 `_tracking-state.json` 重渲染并逐文件比较。未来“第几章揭示”的计划写在卷纲/细纲，不写成时间线既成事实。
 逐章记录只是便于人阅读的紧凑变化记录，不承诺单独无损重建全部当前状态；完整当前语义以 `_tracking-state.json` 为准。
@@ -27,7 +27,7 @@ Markdown 只负责给作者和 Agent 阅读，工具不再反向解析 Markdown�
 - `init`：只在 `_tracking-state.json` 不存在时执行，绝不覆盖已初始化项目。
 - `commit`：读取唯一权威状态，在内存中完成合并、引用检查、全部视图渲染和容量检查；随后写逐章记录与派生视图，最后原子替换 `_tracking-state.json` 作为唯一提交点。
 - `check`：严格验证 state schema、逐章记录连续性/规范性/体积、固定 7 栏、角色快照硬上限、派生文件集合，以及所有派生视图与 state 的逐字一致性。
-- `backfill`：存量迁移——把既往高潮章事件定性（G2 verdicts）/物证（T1 evidence）/地理断言（T2 geo）补录进现有 state（编排层列候选章清单、作者确认原句后产出 JSON，三个列表键均可选）；v4/v5 存量 state 在此自动升级 v6（读入兼容、写盘归一），不新增逐章记录。
+- `backfill`：存量迁移——把既往高潮章事件定性（G2 verdicts）/物证（T1 evidence）/地理断言（T2 geo）/场景锚点（P4 scenes）补录进现有 state（编排层列候选章清单、作者确认原句后产出 JSON，四个列表键均可选）；v4/v5/v6 存量 state 在此自动升级 v7（读入兼容、写盘归一），不新增逐章记录。
 
 同一本书只允许工作流串行提交，不支持多个 Agent 或终端并发写。`expected_state_revision` 用于拒绝基于旧状态构造的顺序 stale transaction，不是并发锁。
 
@@ -62,11 +62,12 @@ Markdown 只负责给作者和 Agent 阅读，工具不再反向解析 Markdown�
   "character_snapshots": {},
   "foreshadow": [],
   "timeline_events": [],
-  "verdicts": []
+  "verdicts": [],
+  "scenes": []
 }
 ```
 
-导入初始化时直接传入当前核心角色快照、伏笔当前行、时间线事件、事件定性（verdicts）和固定 7 栏状态输入。阶段/卷级回看按需查询正文，不作为每章强一致追踪产物。
+导入初始化时直接传入当前核心角色快照、伏笔当前行、时间线事件、事件定性（verdicts）、场景锚点（scenes）和固定 7 栏状态输入。阶段/卷级回看按需查询正文，不作为每章强一致追踪产物。
 
 ## 逐章事务
 
@@ -160,6 +161,7 @@ Markdown 只负责给作者和 Agent 阅读，工具不再反向解析 Markdown�
 - `verdict_changes`（G2 事件定性实体，state schema v5）：Muse 判据章（章号 1-3/卷首/卷末/大高潮、细纲标签含高潮/反转/情绪峰值、关系节点）兑付给读者的叙事资产**必须当章登记**。`verdict` 存**从正文摘出的定性句原文，禁概括**；`keywords` 1-8 条（每条 ≥2 字符）供 `guyin-check-narrative-asset.js` 双层共现检测；`status`：`active` 已兑付 / `repriced` 已重估（档 1）/ `nullified` 已没收（档 2，须过 G1 档位仲裁与补偿声明）。存量书用 `backfill` 补录，v4 state 无需手工迁移。
 - `evidence_changes`（T1 物证实体，state schema v6）：查案物证**首次登场或易主/销毁当章登记**。`anchor` 存物证登场/获得的**正文原句，禁概括**；`keywords` 1-8 条（每条 ≥2 字符）供 `guyin-check-consistency.js` 空降检测（未登记物证突然出现在结论里）；`status`：`held` 在案 / `transferred` 流转 / `destroyed` 销毁 / `archived` 归档；`holder` 当前持有人/所在（可空）。视图 `物证台账.md`，存量书用 `backfill` 补录。
 - `geo_changes`（T2 地理实体，state schema v6）：地名**首次登场当章登记**，含相对方位断言的当章登记断言。`anchor` 存断言/首次提及的**正文原句，禁概括**；`ref`+`direction` 构成「本名 在 参照地 以方向」断言（方向限东南西北/东北/东南/西北/西南，`ref` 为 `null` 时仅做新地名登记）；`keywords` 供 `guyin-check-consistency.js` 方向冲突/行程连续性检测。视图 `地理台账.md`，存量书用 `backfill` 补录。
+- `scene_changes`（P4 场景台账实体，state schema v7）：场景（反复出场且携带状态的地盘）**首次登场或状态变迁当章登记**。`anchor` 存五感锚点/布局事实的**正文原句，禁概括**——存「院里有棵歪脖枣树，树底下压着半扇磨盘」，不存「院子里有植物和农具」（低模型补全具体名词的能力远强于从抽象生成具体）；`current` 存变迁后现状（anchor+current 构成状态变迁链）；`status`：`active` 在场 / `changed` 已变迁 / `destroyed` 已毁；`keywords` 1-8 条（每条 ≥2 字符）供场景漂移检测（同场景再写时锚点物缺失即提示）。视图 `场景台账.md`，存量书用 `backfill` 补录。
 - `mode=revision` 时，逐章记录必须重算为修订后该章仍然成立的完整连续性记录；当前角色、伏笔、时间线和上下文则提交受影响对象截至最新已写章的当前值。
 - 修订导入截止章内的正文时，会新增或覆盖该章的逐章记录；`imported_through_chapter` 不变。
 

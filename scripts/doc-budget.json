@@ -15,23 +15,27 @@
   ],
   "files": [
     { "path": "skills/guyin-story/SKILL.md", "budget": 1200, "why": "主入口路由，任一场景加载" },
-    { "path": "skills/guyin-write/SKILL.md", "budget": 3500, "why": "长篇任一场景都无条件加载；2026-08-18 由 3200 调升：章检新增字数护栏 guyin-check-wordcount.js 条目；同日 v0.4.0 再调至 3420：模板并入 guyin-setup 后的部署指路 3 处（开书部署入口/部署件来源/结构源路径）为安装链路必要信息；2026-08-24 调至 3470：C1 大修收尾合问（这章更合还是只是更合格）是对抗式打磨的过度打磨刹车，每轮大修都付；同日再调至 3500：T1/T2 接线（章检序列加 guyin-check-consistency.js + 追踪提交提示 evidence/geo 当章登记）——实体与章检不接线等于没落地" },
+    { "path": "skills/guyin-write/SKILL.md", "budget": 4470, "why": "长篇任一场景都无条件加载；2026-08-18 由 3200 调升：章检新增字数护栏 guyin-check-wordcount.js 条目；同日 v0.4.0 再调至 3420：模板并入 guyin-setup 后的部署指路 3 处（开书部署入口/部署件来源/结构源路径）为安装链路必要信息；2026-08-24 调至 3470：C1 大修收尾合问（这章更合还是只是更合格）是对抗式打磨的过度打磨刹车，每轮大修都付；同日再调至 3500：T1/T2 接线（章检序列加 guyin-check-consistency.js + 追踪提交提示 evidence/geo 当章登记）——实体与章检不接线等于没落地；同日 P1 调至 3800：beat 预检+分诊卡+双 agent 接线；同日 P3 调至 3900：写章循环加摘要步骤（P2 金字塔入口）+完书场景路由——金字塔不接进写章循环等于没落地；2026-08-25 调至 4000：P4 接线（Muse 商业节点+蓄力爆发成对+追踪 scenes 登记+硬门① hook-rotation）——实体与护栏不接线等于没落地；同日调至 4070：P6-1 接线（追踪提交步骤固化段落指纹+跨章复读两档处置路径）——指纹库不接进提交通道等于没落地；同日 P6-3/4 调至 4150：场景路由加人物诊断行（显影器 --all 戏份/工具人+主角色单查）——「选择即显影」哲学缺口的唯一操作化身，不接路由等于没落地；同日 P5 调至 4470：场景路由加结构手术+读者信号两行（砍线影响面清单处置路径+掉崖归因表）——卷级/线级手术无协议是真实死法，读者信号是唯一的外部心电图，不接路由等于没落地" },
     { "path": "skills/guyin-short-write/SKILL.md", "budget": 2400, "why": "短篇任一场景都无条件加载" },
     { "path": "skills/guyin-analyze/SKILL.md", "budget": 1400, "why": "拆文管道入口" },
     { "path": "skills/guyin-short-analyze/SKILL.md", "budget": 1300, "why": "短篇拆文入口" },
-    { "path": "skills/guyin-review/SKILL.md", "budget": 2360, "why": "审查场景加载；2026-08-24 由 2300 调至 2360：C1 收敛协议（可停判据 S1=0且S2两轮零新增/R4 轮次上限/solo 底线两视角）是对抗式审查无限循环的刹车，每次分批审查都付" },
+    { "path": "skills/guyin-review/SKILL.md", "budget": 2600, "why": "审查场景加载；2026-08-24 由 2300 调至 2360：C1 收敛协议（可停判据 S1=0且S2两轮零新增/R4 轮次上限/solo 底线两视角）是对抗式审查无限循环的刹车，每次分批审查都付" },
     { "path": "skills/guyin-deslop/SKILL.md", "budget": 1500, "why": "去AI味场景加载" },
+    { "path": "skills/guyin-pitch/SKILL.md", "budget": 1900, "why": "开书文案包：书名/简介/章节标题场景按需加载（开书或改名时一次，非每会话）；2026-08-25 登记入库（P7 新技能，唯一显式获批新增）" },
     { "path": "skills/guyin-write/cards/写作卡.md", "budget": 1000, "why": "每个 beat 下发执行层都付一次；2026-08-18 由 900 调升：beat 声线锚升级为「结尾 100 字原文+文气一行」是声线连续性的显式对价" },
-    { "path": "skills/guyin-write/cards/自检卡.md", "budget": 900, "why": "每个 beat 收稿都付一次，500 token 近似" },
+    { "path": "skills/guyin-write/cards/自检卡.md", "budget": 1000, "why": "每个 beat 收稿都付一次，500 token 近似" },
     { "path": "skills/guyin-write/cards/改写卡.md", "budget": 900, "why": "报警重写路径付，500 token 近似" },
     { "path": "skills/guyin-write/cards/发散卡.md", "budget": 600, "why": "Muse 升档时付（阶段三激活），500 token 近似" },
-    { "path": "skills/guyin-write/agents/guyin-beat-writer.md", "budget": 650, "why": "执行层 subagent 系统提示，每次 spawn 都付" },
+    { "path": "skills/guyin-write/agents/guyin-beat-writer.md", "budget": 650, "why": "执行层写作 subagent 系统提示，每次 spawn 都付" },
+    { "path": "skills/guyin-write/agents/guyin-checker.md", "budget": 600, "why": "执行层检查 subagent 系统提示（低温档：自检/摘要零温、分诊中温3票），每次 spawn 都付；P1 分卡温度双 agent 落地" },
+    { "path": "skills/guyin-write/cards/分诊卡.md", "budget": 800, "why": "ai-patterns/章检报警段进分诊卡三选一+3票制；只在有报警时付，非每 beat；P1 文字视角漏斗化组件" },
+    { "path": "skills/guyin-write/cards/摘要卡.md", "budget": 800, "why": "每章拼接后下发 checker（零温）填空一次，delta.result 入库 chapter_summaries；P2 金字塔持久层入口，每章都付" },
     { "path": "skills/guyin-setup/templates/long/AGENTS.md", "budget": 1200, "why": "Codex/OpenCode 每会话注入的路由与不变式（部署后即项目根 AGENTS.md）" }
   ],
   "paths": [
     {
       "label": "长篇写章热路径（编排层会话 + 单 beat 下发）",
-      "budget": 5430,
+      "budget": 6370,
       "files": [
         "skills/guyin-write/SKILL.md",
         "skills/guyin-write/cards/写作卡.md",

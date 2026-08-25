@@ -1,6 +1,6 @@
 ---
 name: guyin-story
-version: 0.4.0
+version: 0.6.0
 description: "隐笔工具箱主入口。项目状态诊断 + 路由到写作/拆文/去AI味。触发方式：/guyin、$guyin、/隐笔、「我想写小说」「隐笔」。"
 ---
 # guyin-story：隐笔主入口
@@ -17,6 +17,7 @@ description: "隐笔工具箱主入口。项目状态诊断 + 路由到写作/�
 | 拆短篇 / 拆这篇短文 | **guyin-short-analyze**（短篇拆文） |
 | 审查 / 帮我审一下 / 这章怎么样 | **guyin-review**（对抗式诊断，只诊不改） |
 | 去AI味 / 这篇太AI了 | **guyin-deslop**（lint + 陌生化改写） |
+| 起书名 / 写简介 / 章节标题 | **guyin-pitch**（开书文案包：书名十年测试+简介钩子覆盖+标题判据） |
 | 定作者性 / 填作者性 / 换个气 | **guyin-write** 定作者性场景（逐件口述引导） |
 | 准备写书 / 搭环境 / 建项目 | **guyin-setup**（项目脚手架部署，模板随技能走） |
 | 打擂台 / 跑基准 / Arena | 仓库根 `arena/` 协议（见 arena/基准/README.md） |

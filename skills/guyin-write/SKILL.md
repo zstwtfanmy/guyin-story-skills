@@ -1,6 +1,6 @@
 ---
 name: guyin-write
-version: 0.5.0
+version: 0.6.0
 description: "隐笔长篇写作（编排层）。以 beat 任务卡驱动低模型执行层：开书、细纲、逐 beat 写章、自检、分级改写、追踪落盘。触发方式：/guyin-write、/隐笔写作、「开书」「写第X章」「日更」「续写」「回炉」「重写第X章」。"
 ---
 # guyin-write：隐笔写作（你是编排层）
@@ -19,41 +19,47 @@ description: "隐笔长篇写作（编排层）。以 beat 任务卡驱动低模
 
 | 场景 | 触发 | 动作 |
 |------|------|------|
-| 开书 | 「开书/写大纲」或项目空 | Phase A 建（/guyin-setup 部署结构）→ B 定（题材/对标 + 作者性四件逐件口述，作者不在场则默认档落盘）→ C 纲（卷纲+首批 10 章细纲），**停在细纲交付** |
+| 开书 | 「开书/写大纲」或项目空 | Phase A 建（/guyin-setup）→ B 前置[压测三问](references/consult/lifecycle-protocols.md)→定题材/对标+作者性四件口述→ C 纲（卷纲+首批 10 章细纲），**停在细纲交付** |
 | 写指定章 | 「写第N章」 | 取该章细纲 → 写章循环；空项目先补 A→C |
 | 补纲 | 「出细纲/补纲/规划剧情」且已有大纲 | 只做 Phase C 扩展（细纲落盘前过硬门①），停细纲交付 |
 | 日更续写 | 「日更/续写/继续写」且已有正文+追踪 | 循环执行写章循环，批量默认 2-3 章，单轮上限 3 章 |
-| 大修 | 「修改第X章/回炉/重写第X章」 | 读原章+追踪 → 标问题 → 改写卡分级执行（L1 段改/L2 beat 改/L3 章改须确认）→ 落盘后 tracking-commit 重提交（S 级修复唯一合法通道，硬门③）→ 收尾必问一句：这章**更合**还是只是**更合格**（只是更合格=过度打磨信号，报作者停靠，C1）；guyin-review 的输出按其 level 字段直接进入本场景 |
-| 采集 | 「采集/口述/聊聊素材」 | 经验访谈：AI 提问（生活细节向，如「你见过最穷但讲究的房间？」）→ 作者口述两三句 → 整理落盘 `灵感池/`；只注入不强插，组卡时编排层按需取 |
+| 完书 | 「完本/收线/进入尾声」 | 读`_tracking-state.json`列未回收伏笔+承诺→过堂（明收/暗收/放弃+说明）→收线清单→尾声细纲消化→[完书复盘](references/consult/lifecycle-protocols.md) |
+| 大修 | 「修改第X章/回炉/重写第X章」 | 读原章+追踪 → 标问题 → 改写卡分级执行（L1 段改/L2 beat 改/L3 章改须确认）→ 落盘后 tracking-commit 重提交（硬门③唯一通道）→ 收尾必问：这章**更合**还是只是**更合格**（过度打磨→停靠,C1）；guyin-review 的输出按其 level 字段直接进入本场景 |
+| 人物诊断 | 「显影/戏份/工具人」 | 跑 `guyin-check-flesh.js --all` 戏份+工具人概览；主角色单查（特质断裂/对话呼吸，advisory 终判归作者） |
+| 结构手术 | 「砍线/并线/这条线不对」 | 跑 `guyin-impact-map.js <关键词>` 出影响面清单（悬空债必过堂；定性资产砍线即没收须同章补偿）→ 作者定砍 → 残留处置（留闲笔/补丁章）→ 分批出补丁指令（改写卡 L1-L3 通道，S 级须 tracking-commit 重提交） |
+| 读者信号 | 「掉崖/追读/弃书」 | 读 `追踪/读者信号.md`（作者手动录入）→ 跑 `guyin-check-reader-signal.js` 出掉崖归因表+弃书点候选（连续 2 章无主线推进），归因终判归作者 |
+| 采集 | 「采集/口述/聊聊素材」 | 经验访谈：AI 提问（生活细节向，如「最穷但讲究的房间？」）→ 作者口述两三句 → 整理落盘 `灵感池/`；只注入不强插，组卡时按需取 |
 | 定作者性 | 「定作者性/填作者性/换个气」 | 按 [references/作者性引导.md](references/作者性引导.md) 逐件口述引导，**只问缺的件**；落盘四件定稿列，问完即退 |
 
-**停靠纪律**：裸调用（/guyin-write 无意图）只做项目状态诊断并列出选项；开书默认停在细纲，正文必须由用户显式点名。匹配优先级：大修 → 写指定章 → 补纲 → 日更 → 开书。
+**停靠纪律**：裸调用（/guyin-write 无意图）只做项目状态诊断并列出选项；开书默认停在细纲，正文必须由用户显式点名。匹配优先级：大修 → 写指定章 → 补纲 → 日更 → 完书 → 结构手术/人物诊断/读者信号 → 开书。
 
-**落盘硬门**：① 细纲落盘前跑 `scripts/guyin-check-outline-verdict.js`——引用既往章/事件必须有「资产影响档位」声明（档位定义见项目 `大纲/README.md`），限定语与全盘表述冲突即停作者仲裁；② 拼章后落盘前跑 `guyin-check-integrity.js`，不过不落盘、回执行层重拼；③ S 级修复（S1 及影响追踪的 S2）禁止会话裸改正文，唯一通道 = 大修 + tracking-commit 重提交。
+**落盘硬门**：① 细纲落盘前跑 `scripts/guyin-check-outline-verdict.js`——引用既往章/事件必须有「资产影响档位」声明，档位冲突即停作者仲裁；补纲批次末跑 `guyin-check-hook-rotation.js`（钩子连续同型/爆发无蓄力 advisory）；② 拼章后落盘前跑 `guyin-check-integrity.js`，不过回执行层重拼；③ S 级修复禁止会话裸改正文，唯一通道 = 大修 + tracking-commit 重提交。
 
 ## 写章循环（每章必走）
 
-1. **读盘**：本章细纲 + 上一章结尾 300 字（声线锚）+ 本章涉角色卡 + 追踪状态 + 作者性四件（编排层读，用于选切片定禁令）。四件任一为默认档/未定稿：照常写作，**章尾报告附一行升级提示**（同章一次）。
-2. **切 beat**：按细纲把章切成 500-1500 字的 beat（默认低模型档；粒度按 `作者性/粒度配置.md`），标注情绪目标。
-3. **逐 beat**：判模式（Craft/Muse，见下）→ 组装[写作卡](cards/写作卡.md) → 下发执行层 → 收正文 → 跑[自检卡](cards/自检卡.md) → 不过则[改写卡](cards/改写卡.md)分级改 → 过则进下一 beat。
+1. **读盘**：本章细纲 + 上一章结尾 300 字（声线锚）+ 本章涉角色卡 + 追踪状态 + 作者性四件（选切片定禁令）。四件为默认档/未定稿：照常写，附升级提示（同章一次）。
+2. **切 beat**：按细纲把章切成 500-1500 字的 beat（默认；粒度按 `作者性/粒度配置.md`），标注情绪目标。
+3. **逐 beat**：判模式（Craft/Muse，见下）→ 组装[写作卡](cards/写作卡.md) → 下发执行层 → 收正文 → 跑 `guyin-check-beat.js`（确定性预检 Q1-Q6，零 token）→ blocking 不过直接[改写卡](cards/改写卡.md)、pass 进[自检卡](cards/自检卡.md)（先抄后判 Q7/Q8）→ 不过则改写卡分级改 → 过则进下一 beat。
 4. **拼接**：按序拼章，检查拼接点衔接；过硬门②；落盘 `正文/第XXX章_标题.md`。
-5. **追踪提交**：运行 `scripts/guyin-tracking-commit.py`（全部实体一事务提交；Muse 章必登 verdicts，查案物证/地名首现当章登 evidence/geo，存原句禁概括）。
-6. **章检**：依次跑 `guyin-check-degeneration.js`、`guyin-check-integrity.js`、`guyin-check-ai-patterns.js`、`guyin-check-narrative-asset.js`、`guyin-check-consistency.js`、`guyin-check-outline-copy.js`、`guyin-check-wordcount.js`（字数 2000-6000、`--min/--max` 可调，缺则补 beat 勿注水）；报警项标为**待审**，逐条定：改写卡修 / 豁免（文末五测试）/ 保留。
-7. **灵感登记**：正文里长出的细纲外新元素（道具/习惯/闲笔）登 `追踪/灵感台账.md`，下批细纲时决定转正。
+5. **摘要**：组[摘要卡](cards/摘要卡.md)→checker（零温）填空→`delta.result` 章摘要（约300字）。
+6. **追踪提交**：运行 `scripts/guyin-tracking-commit.py`（delta.result 入库 chapter_summaries；全部实体一事务提交；Muse 章必登 verdicts，物证/地名首现当章登 evidence/geo，场景首现/变迁当章登 scenes，锚点存原句禁概括）；随后跑 `guyin-check-repetition.js --commit` 固化段落指纹，跨章复读同报：near 照抄→改写卡两段并排换比喻域，pattern 换词复读→结合意象台账判回环/坍缩。
+7. **章检**：依次跑 `guyin-check-degeneration.js`、`guyin-check-integrity.js`、`guyin-check-ai-patterns.js`、`guyin-check-narrative-asset.js`、`guyin-check-consistency.js`、`guyin-check-outline-copy.js`、`guyin-check-wordcount.js`（字数2000-6000，缺则补beat勿注水）；报警标**待审**，定：改写/豁免/保留。advisory 报警段进[分诊卡](cards/分诊卡.md)三选一+3票制。
+8. **灵感登记**：正文里长出的细纲外新元素（道具/习惯/闲笔）登 `追踪/灵感台账.md`，下批细纲时决定转正。
 
-**卷末附加**：卷末章追踪提交后，提醒作者**口述重说气句**（不是抄旧句），刷新 `作者性/气卡.md`，旧句入魂档案「历次气句」；并核对豁免台账限额与消化完成度。作者性仍为默认档/魂档案未定稿的，**主动询问**是否现在定。
+**卷末附加**：卷末章追踪提交后，提醒**口述重说气句**（非抄旧句），刷新 `作者性/气卡.md`，旧句入魂档案；核对豁免台账与消化度。作者性仍为默认档/魂档案未定稿的，**主动询问**是否现在定。
 
 ## Craft / Muse 双模式（机械判据，无语义判断）
 
-Muse 升档（满足任一）：本章细纲标签含「高潮/反转/情绪峰值」；章号为 1-3/卷首/卷末/大高潮；关系节点（告白/决裂/死别/重逢）；用户显式说「这章要出彩」。
-Muse 动作：情绪峰值 beat 前置[发散卡](cards/发散卡.md)。降档保护：连续 Muse ≤3 章自动回落 Craft。
+Muse 升档（满足任一）：本章细纲标签含「高潮/反转/情绪峰值」；章号为 1-3/卷首/卷末/大高潮；关系节点（告白/决裂/死别/重逢）；商业节点（上架前末章/入V首章）；用户显式说「这章要出彩」。
+Muse 动作：情绪峰值 beat 前置[发散卡](cards/发散卡.md)；细纲节奏标记「爆发/蓄力」成对（爆发章前 1-2 章标蓄力：禁发散、收敛感官、降字数）。降档保护：连续 Muse ≤3 章自动回落 Craft。
 
 ## 执行层调用协议
 
-- 首选 subagent：`guyin-beat-writer`（低模型，定义见 [agents/guyin-beat-writer.md](agents/guyin-beat-writer.md)）；三端部署件随 guyin-setup 模板分发，部署即得；
-- 无 subagent 环境（或 Codex 报 unknown agent_type）降级：主会话直接扮演执行层填卡，但**先声明「Fallback: solo 执行，声线与节奏由编排层兜底」**；
-- 多采样：情绪峰值 beat 同卡抽 3-5 版（便宜是红利），自检卡淘汰硬错误后进入外选；
-- **外选判词（合问进选择器）**：先机械筛超档（G4，判据见 cards/README.md 组装纪律 6）——反转/复盘/识破 beat 的候选版否定强度超过本章声明档位即出局，气句再好不选；再在合规候选里只问一句「哪版更接近气句」（编排层读 `作者性/气卡.md`，**永不下发执行层**）；选中版编号+理由留在对话（备魂档案回响收编）；难分时任选。
+- 写作 subagent：`guyin-beat-writer`（高温，定义见 [agents/guyin-beat-writer.md](agents/guyin-beat-writer.md)）；
+- 检查 subagent：`guyin-checker`（低温，定义见 [agents/guyin-checker.md](agents/guyin-checker.md)）——自检/摘要零温、分诊中温3票；三端部署件随 guyin-setup 模板分发；
+- 无 subagent 环境（或 Codex 报 unknown agent_type）降级：主会话直接扮演执行层填卡，但**先声明「Fallback: solo 执行，声线与节奏由编排层兜底」**；检查类卡卡头加「本次输出保持确定，不要发挥」弱补偿；
+- 多采样：情绪峰值 beat 同卡抽 3-5 版（便宜是红利），guyin-check-beat.js + 自检卡淘汰硬错误后进入外选；
+- **外选判词（合问进选择器）**：先机械筛超档（G4，判据见 cards/README.md 组装纪律 6）——反转/复盘/识破 beat 的候选版否定强度超过本章声明档位即出局，气句再好不选；再在合规候选里只问一句「哪版更接近气句」（读 `作者性/气卡.md`，永不下发）；选中版编号+理由留在对话（备魂档案回响收编）；难分时任选。
 
 ## 文件契约
 
@@ -62,10 +68,10 @@ Muse 动作：情绪峰值 beat 前置[发散卡](cards/发散卡.md)。降档�
     追踪/{伏笔,上下文,事件定性资产}.md、追踪/时间线/*、追踪/角色状态/*、追踪/{灵感,豁免}台账.md、
     作者性/{指纹,偏执点,气卡,魂档案,粒度配置}.md、references/exemplars/{题材}.md
 写：正文/第XXX章_标题.md、追踪/*（经 tracking-commit）、追踪/灵感台账.md、追踪/豁免台账.md
-项目结构按 skills/guyin-setup/templates/long/；新项目第一步 /guyin-setup 或手动复制。
+项目结构按 guyin-setup 模板；新项目先 /guyin-setup。
 ```
 
-**硬护栏**：guyin-setup 模板自带 Claude Code hook（写前守卫/写后兜底/会话注入）；兜底非替代，章检照跑；无 hook 宿主靠本文件纪律成立。
+**硬护栏**：guyin-setup 模板自带 Claude Code hook（写前守卫/写后兜底/会话注入）；兜底不替章检；无 hook 宿主靠本文件纪律成立。
 
 ## 豁免五测试（报警待审的处理，作者主判）
 

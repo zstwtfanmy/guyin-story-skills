@@ -1,6 +1,6 @@
 ---
 name: guyin-setup
-version: 0.4.0
+version: 0.6.0
 description: "隐笔项目脚手架部署。把长篇/短篇项目模板（三端执行层部署件 + 硬护栏 hook + 双台账 + 作者性）部署到当前目录；模板随本技能分发，无需克隆仓库。触发方式：/guyin-setup、$guyin-setup、「准备写书」「搭环境」「建项目」「初始化写作项目」。"
 ---
 # guyin-setup：隐笔项目部署器
@@ -13,7 +13,7 @@ description: "隐笔项目脚手架部署。把长篇/短篇项目模板（三�
 
 以正在执行的本 `SKILL.md` 所在目录为锚，核对同级 `templates/`：
 
-1. `templates/long/`：`AGENTS.md`、`README.md`、`.claude/settings.json`、`.claude/hooks/guyin-hook.js`、`.claude/agents/guyin-beat-writer.md`、`.codex/agents/guyin-beat-writer.toml`、`.opencode/agents/guyin-beat-writer.md`、`.opencode/commands/guyin.md`、`作者性/` 七件、`大纲/README.md`、`大纲/魂谱对表.md`、`追踪/_tracking-state.json`
+1. `templates/long/`：`AGENTS.md`、`README.md`、`.claude/settings.json`、`.claude/hooks/guyin-hook.js`、`.claude/agents/guyin-beat-writer.md`、`.claude/agents/guyin-checker.md`、`.codex/agents/guyin-beat-writer.toml`、`.codex/agents/guyin-checker.toml`、`.opencode/agents/guyin-beat-writer.md`、`.opencode/agents/guyin-checker.md`、`.opencode/commands/guyin.md`、`作者性/` 七件、`大纲/README.md`、`大纲/魂谱对表.md`、`追踪/_tracking-state.json`
 2. `templates/short/大纲/`：情节节点 / 情绪曲线 / 反转表 三件
 
 任一缺失 → **立即停止，不写任何部署文件**，报告缺哪些（区分「缺文件」与「目录为空」），给修复指令：「guyin-setup 模板包不完整，缺 {文件}。按你的安装方式重装 guyin-story-skills（skills CLI 装的重跑 `npx skills add https://github.com/zstwtfanmy/guyin-story-skills -g`；手动复制的重新复制 skills/ 目录），再执行 /guyin-setup。」
@@ -49,9 +49,9 @@ description: "隐笔项目脚手架部署。把长篇/短篇项目模板（三�
 
    | 端 | 部署件 | model 写法 |
    |----|--------|-----------|
-   | OpenCode | `.opencode/agents/guyin-beat-writer.md` | `model: deepseek/deepseek-chat`（provider/model-id） |
-   | Claude Code | `.claude/agents/guyin-beat-writer.md` | `model: <低模型>` |
-   | Codex | `.codex/agents/guyin-beat-writer.toml` | 视版本支持 `model =`；不支持则 solo 降级（AGENTS.md 已约定） |
+   | OpenCode | `.opencode/agents/guyin-{beat-writer,checker}.md` | `model: deepseek/deepseek-chat`（provider/model-id） |
+   | Claude Code | `.claude/agents/guyin-{beat-writer,checker}.md` | `model: <低模型>` |
+   | Codex | `.codex/agents/guyin-{beat-writer,checker}.toml` | 视版本支持 `model =`；不支持则 solo 降级（AGENTS.md 已约定） |
 
    - Claude Code 端 hook 已随 settings.json 注册，**新开会话生效**；Codex custom agent 亦须新开会话；
    - 下一步：说「开书」进 guyin-write（停在细纲交付），或「写短篇」进 guyin-short-write（停在骨架交付）。

@@ -23,11 +23,11 @@ from typing import Any
 
 
 INPUT_SCHEMA_VERSION = 1
-TRACKING_SCHEMA_VERSION = 6
+TRACKING_SCHEMA_VERSION = 7
 # v5 新增 verdicts（G2 事件定性实体）；v6 新增 evidence（T1 物证实体）与 geo（T2 地理
-# 实体）；读入仍接受 v4/v5（缺键视为空），写盘统一 v6，存量项目无需手工迁移——下一次
-# commit/backfill 即自动升级。
-SUPPORTED_STATE_VERSIONS = (4, 5, 6)
+# 实体）；v7 新增 scenes（P4 场景台账实体）；读入仍接受 v4/v5/v6（缺键视为空），写盘
+# 统一 v7，存量项目无需手工迁移——下一次 commit/backfill 即自动升级。
+SUPPORTED_STATE_VERSIONS = (4, 5, 6, 7)
 DELTA_TARGET_BYTES = 1536
 DELTA_MAX_BYTES = 3072
 CONTEXT_TARGET_BYTES = 8192
@@ -56,12 +56,17 @@ EVIDENCE_STATUS_LABELS = {"held": "在案", "transferred": "流转", "destroyed"
 # T2 地理实体：规范名+别名+相对方位断言（本名 在 参照地 以方向）。断言存正文原句，
 # 供 guyin-check-consistency.js 方向冲突/行程连续性检测；无参照地的仅做新地名登记。
 GEO_DIRECTIONS = ("东", "南", "西", "北", "东北", "东南", "西北", "西南")
+# P4 场景台账实体：场景状态与角色状态同构——五感锚点/布局事实存正文原句（禁概括），
+# 低模型补全具体名词的能力远强于从抽象生成具体；keywords 供场景漂移检测。
+SCENE_STATUSES = ("active", "changed", "destroyed")
+SCENE_STATUS_LABELS = {"active": "在场", "changed": "已变迁", "destroyed": "已毁"}
 INVALID_FILE_CHARS = re.compile(r"[<>:\"/\\|?*\x00-\x1f]")
 FORESHADOW_ID = re.compile(r"^F\d{3,}$")
 EVENT_ID = re.compile(r"^E\d{3,}$")
 VERDICT_ID = re.compile(r"^V\d{3,}$")
 EVIDENCE_ID = re.compile(r"^W\d{3,}$")
 GEO_ID = re.compile(r"^G\d{3,}$")
+SCENE_ID = re.compile(r"^S\d{3,}$")
 WINDOWS_RESERVED_NAMES = {
     "CON",
     "PRN",
@@ -643,6 +648,20 @@ def normalize_geo_state(value: object, last_chapter: int) -> dict[str, dict[str,
     return normalized
 
 
+# P2 章节金字塔：chapter_summaries 存全量章摘要（近三章速记是滚动窗口，此为持久层）。
+# 编排层写完一章后由摘要卡（零温）生成 delta.result，commit 时自动入库。
+def normalize_chapter_summaries(value: object, last_chapter: int) -> dict[str, str]:
+    raw = as_mapping(value, "tracking state.chapter_summaries")
+    normalized: dict[str, str] = {}
+    for key, summary in raw.items():
+        require(isinstance(key, str) and key.isdigit(), f"chapter_summaries key {key!r} must be a chapter number string")
+        chapter = int(key)
+        require(chapter >= 1, f"chapter_summaries key {key!r} must be >= 1")
+        require(chapter <= last_chapter, f"chapter_summaries[{key}] exceeds last_committed_chapter")
+        normalized[key] = clean_text(summary, f"chapter_summaries[{key}]", max_bytes=768)
+    return normalized
+
+
 def render_geo(rows: dict[str, dict[str, Any]], revision: int) -> str:
     lines = [
         "# 地理台账",
@@ -657,6 +676,89 @@ def render_geo(rows: dict[str, dict[str, Any]], revision: int) -> str:
         lines.append(
             f"| {identifier} | {row['name']} | {'、'.join(row['aliases']) or '—'} | 第{row['chapter']}章 | "
             f"{row['anchor']} | {row['ref'] or '—'} | {row['direction'] or '—'} | "
+            f"{'、'.join(row['keywords'])} | 第{row['updated_chapter']}章 |"
+        )
+    return "\n".join(lines) + "\n"
+
+
+def normalize_scene_change(
+    value: object,
+    label: str,
+    *,
+    allow_delete: bool,
+    through_chapter: int,
+) -> dict[str, Any]:
+    """P4 场景台账实体：anchor 存五感锚点/布局事实的正文原句（禁概括）——存「院里有棵
+    歪脖枣树，树底下压着半扇磨盘」，不存「院子里有植物和农具」；current 存变迁后现状
+    （「那场火之后西厢塌了」），anchor+current 构成状态变迁链。"""
+    row = as_mapping(value, label)
+    require_known_keys(row, {"action", "id", "chapter", "name", "anchor", "status", "current", "keywords"}, label)
+    action = clean_text(row.get("action", "upsert"), f"{label}.action", max_bytes=24)
+    require(action in ({"upsert", "delete"} if allow_delete else {"upsert"}), f"{label}.action is invalid")
+    identifier = clean_text(row.get("id"), f"{label}.id", max_bytes=24)
+    require(SCENE_ID.fullmatch(identifier) is not None, f"{label}.id must look like S001")
+    if action == "delete":
+        return {"action": action, "id": identifier}
+    chapter = as_int(row.get("chapter"), f"{label}.chapter", minimum=1)
+    require(chapter <= through_chapter, f"{label}.chapter cannot be in the future")
+    status = clean_text(row.get("status"), f"{label}.status", max_bytes=24)
+    require(status in SCENE_STATUSES, f"{label}.status must be one of {SCENE_STATUSES}")
+    keywords = clean_string_list(row.get("keywords", []), f"{label}.keywords", maximum=8, item_max_bytes=64)
+    require(len(keywords) >= 1, f"{label}.keywords needs at least one anchor for drift checks")
+    require(all(len(keyword) >= 2 for keyword in keywords), f"{label}.keywords items must be at least 2 characters")
+    return {
+        "action": action,
+        "id": identifier,
+        "chapter": chapter,
+        "name": clean_text(row.get("name"), f"{label}.name", max_bytes=120),
+        "anchor": clean_text(row.get("anchor"), f"{label}.anchor", max_bytes=480),
+        "status": status,
+        "current": clean_text(row.get("current", ""), f"{label}.current", allow_empty=True, max_bytes=480),
+        "keywords": keywords,
+    }
+
+
+def normalize_scene_state(value: object, last_chapter: int) -> dict[str, dict[str, Any]]:
+    scenes = as_mapping(value, "tracking state.scenes")
+    normalized: dict[str, dict[str, Any]] = {}
+    for raw_identifier, raw_row in scenes.items():
+        identifier = clean_text(raw_identifier, "tracking state.scenes ID", max_bytes=24)
+        row = as_mapping(raw_row, f"tracking state.scenes.{identifier}")
+        require_known_keys(
+            row,
+            {"id", "chapter", "name", "anchor", "status", "current", "keywords", "updated_chapter"},
+            f"tracking state.scenes.{identifier}",
+        )
+        require(row.get("id") == identifier, f"tracking state.scenes.{identifier}.id does not match its key")
+        change = normalize_scene_change(
+            {"action": "upsert", **{key: item for key, item in row.items() if key != "updated_chapter"}},
+            f"tracking state.scenes.{identifier}",
+            allow_delete=False,
+            through_chapter=last_chapter,
+        )
+        change.pop("action")
+        updated = as_int(row.get("updated_chapter"), f"tracking state.scenes.{identifier}.updated_chapter", minimum=1)
+        require(updated <= last_chapter, f"scene {identifier} updates after current chapter")
+        require(updated >= change["chapter"], f"scene {identifier} is updated before its own first chapter")
+        change["updated_chapter"] = updated
+        normalized[identifier] = change
+    return normalized
+
+
+def render_scene(rows: dict[str, dict[str, Any]], revision: int) -> str:
+    lines = [
+        "# 场景台账",
+        "",
+        f"> 状态修订：{revision}。场景实体登记（P4）：五感锚点/布局事实存正文原句（禁概括），current 存变迁后现状——anchor+current 构成状态变迁链；keywords 供场景漂移检测（同场景再写时锚点物缺失即提示）。",
+        "",
+        "| ID | 场景 | 登场章 | 五感锚点（正文原句，禁概括） | 状态 | 现状/变迁 | 关键词 | 最近变更章 |",
+        "|---|---|---:|---|---|---|---|---:|",
+    ]
+    for identifier in sorted(rows):
+        row = rows[identifier]
+        lines.append(
+            f"| {identifier} | {row['name']} | 第{row['chapter']}章 | {row['anchor']} | "
+            f"{SCENE_STATUS_LABELS.get(row['status'], row['status'])} | {row['current'] or '—'} | "
             f"{'、'.join(row['keywords'])} | 第{row['updated_chapter']}章 |"
         )
     return "\n".join(lines) + "\n"
@@ -885,7 +987,7 @@ def normalize_delta(
         delta,
         {
             "result", "character_changes", "foreshadow_changes", "timeline_events", "verdict_changes",
-            "evidence_changes", "geo_changes",
+            "evidence_changes", "geo_changes", "scene_changes",
             "constraints", "next_chapter_commitments", "retired_context_items", "retired_characters",
         },
         "delta",
@@ -944,6 +1046,12 @@ def normalize_delta(
         )
         for index, raw in enumerate(as_list(delta.get("geo_changes", []), "delta.geo_changes"))
     ]
+    scene_changes = [
+        normalize_scene_change(
+            raw, f"delta.scene_changes[{index}]", allow_delete=True, through_chapter=through_chapter
+        )
+        for index, raw in enumerate(as_list(delta.get("scene_changes", []), "delta.scene_changes"))
+    ]
     require(
         len({item["id"] for item in foreshadow_changes}) == len(foreshadow_changes),
         "delta.foreshadow_changes contains duplicate IDs",
@@ -965,6 +1073,10 @@ def normalize_delta(
         "delta.geo_changes contains duplicate IDs",
     )
     require(
+        len({item["id"] for item in scene_changes}) == len(scene_changes),
+        "delta.scene_changes contains duplicate IDs",
+    )
+    require(
         set(snapshots).issubset({item["name"] for item in character_changes}),
         "character_snapshots must contain exactly the core characters changed by this transaction",
     )
@@ -976,6 +1088,7 @@ def normalize_delta(
         "verdict_changes": verdict_changes,
         "evidence_changes": evidence_changes,
         "geo_changes": geo_changes,
+        "scene_changes": scene_changes,
         "constraints": clean_string_list(delta.get("constraints", []), "delta.constraints", maximum=6),
         "next_chapter_commitments": clean_string_list(
             delta.get("next_chapter_commitments", []), "delta.next_chapter_commitments", maximum=5
@@ -1046,6 +1159,14 @@ def render_delta(chapter: int, title: str, delta: dict[str, Any], core_names: se
             lines.append(f"- {item['id']}｜{item['name']}｜{bearing}")
     if not delta["geo_changes"]:
         lines.append("- 无")
+    lines.extend(["", "## 场景变化"])
+    for item in delta["scene_changes"]:
+        if item["action"] == "delete":
+            lines.append(f"- {item['id']}｜删除当前登记")
+        else:
+            lines.append(f"- {item['id']}｜{item['name']}｜{item['status']}｜{item['current'] or item['anchor']}")
+    if not delta["scene_changes"]:
+        lines.append("- 无")
     lines.extend(["", "## 连贯性约束"])
     lines.extend(f"- {item}" for item in delta["constraints"])
     if not delta["constraints"]:
@@ -1070,7 +1191,7 @@ def normalize_state(document: object) -> dict[str, Any]:
         {
             "schema_version", "book_title", "last_committed_chapter", "imported_through_chapter",
             "state_revision", "context", "characters", "foreshadow", "timeline", "verdicts",
-            "evidence", "geo",
+            "evidence", "geo", "scenes", "chapter_summaries",
         },
         "tracking state",
     )
@@ -1095,16 +1216,19 @@ def normalize_state(document: object) -> dict[str, Any]:
         require(name in characters, f"active core character {name} has no current snapshot")
     foreshadow = normalize_foreshadow_state(root.get("foreshadow", {}), last_chapter)
     timeline = normalize_timeline_state(root.get("timeline", {}), last_chapter)
-    # v4/v5 存量读入时无 verdicts/evidence/geo 键 → 空 dict；写盘统一归一化为 v6（见模块头注释）。
+    # v4/v5/v6 存量读入时无 verdicts/evidence/geo/scenes 键 → 空 dict；写盘统一归一化为 v7（见模块头注释）。
     verdicts = normalize_verdict_state(root.get("verdicts", {}), last_chapter)
     evidence = normalize_evidence_state(root.get("evidence", {}), last_chapter)
     geo = normalize_geo_state(root.get("geo", {}), last_chapter)
+    scenes = normalize_scene_state(root.get("scenes", {}), last_chapter)
+    chapter_summaries = normalize_chapter_summaries(root.get("chapter_summaries", {}), last_chapter)
     if last_chapter == 0:
         require(not foreshadow, "a chapter-0 project cannot have planted foreshadow facts")
         require(not timeline, "a chapter-0 project cannot have established timeline facts")
         require(not verdicts, "a chapter-0 project cannot have established verdict assets")
         require(not evidence, "a chapter-0 project cannot have registered evidence")
         require(not geo, "a chapter-0 project cannot have registered geography")
+        require(not scenes, "a chapter-0 project cannot have registered scenes")
     return {
         "schema_version": TRACKING_SCHEMA_VERSION,
         "book_title": clean_text(root.get("book_title"), "tracking state.book_title", max_bytes=240),
@@ -1118,6 +1242,8 @@ def normalize_state(document: object) -> dict[str, Any]:
         "verdicts": verdicts,
         "evidence": evidence,
         "geo": geo,
+        "scenes": scenes,
+        "chapter_summaries": chapter_summaries,
     }
 
 
@@ -1131,7 +1257,7 @@ def normalize_initial_document(document: object) -> dict[str, Any]:
     root = as_mapping(document, "init input")
     require_known_keys(
         root,
-        {"schema_version", "book_title", "last_chapter", "context", "character_snapshots", "foreshadow", "timeline_events", "verdicts", "evidence", "geo"},
+        {"schema_version", "book_title", "last_chapter", "context", "character_snapshots", "foreshadow", "timeline_events", "verdicts", "evidence", "geo", "scenes", "chapter_summaries"},
         "init input",
     )
     require(root.get("schema_version") == INPUT_SCHEMA_VERSION, "init input schema_version is unsupported")
@@ -1184,6 +1310,15 @@ def normalize_initial_document(document: object) -> dict[str, Any]:
         item.pop("action")
         item["updated_chapter"] = max(1, last_chapter)
         geo[item["id"]] = item
+    scenes: dict[str, dict[str, Any]] = {}
+    for index, raw_item in enumerate(as_list(root.get("scenes", []), "scenes")):
+        item = normalize_scene_change(
+            raw_item, f"scenes[{index}]", allow_delete=False, through_chapter=last_chapter
+        )
+        require(item["id"] not in scenes, f"duplicate scene ID {item['id']}")
+        item.pop("action")
+        item["updated_chapter"] = max(1, last_chapter)
+        scenes[item["id"]] = item
     return normalize_state(
         {
             "schema_version": TRACKING_SCHEMA_VERSION,
@@ -1198,6 +1333,8 @@ def normalize_initial_document(document: object) -> dict[str, Any]:
             "verdicts": verdicts,
             "evidence": evidence,
             "geo": geo,
+            "scenes": scenes,
+            "chapter_summaries": normalize_chapter_summaries(root.get("chapter_summaries", {}), last_chapter),
         }
     )
 
@@ -1335,11 +1472,20 @@ def merge_transaction(state: dict[str, Any], transaction: dict[str, Any]) -> dic
             next_state["geo"][change["id"]] = checkpoint_record(
                 change, chapter, next_state["geo"].get(change["id"])
             )
+    for change in transaction["delta"]["scene_changes"]:
+        if change["action"] == "delete":
+            next_state["scenes"].pop(change["id"], None)
+        else:
+            next_state["scenes"][change["id"]] = checkpoint_record(
+                change, chapter, next_state["scenes"].get(change["id"])
+            )
 
     recent_by_chapter = {item["chapter"]: item for item in state["context"]["recent_chapters"]}
     if chapter in recent_by_chapter or transaction["mode"] == "append":
         recent_by_chapter[chapter] = {"chapter": chapter, "summary": transaction["delta"]["result"]}
     recent = sorted(recent_by_chapter.values(), key=lambda item: item["chapter"])[-3:]
+    # P2 金字塔：章摘要持久层（近三章速记是滚动窗口，chapter_summaries 存全量）
+    next_state.setdefault("chapter_summaries", {})[str(chapter)] = transaction["delta"]["result"]
     current_last = next_state["last_committed_chapter"]
     next_commitments = (
         transaction["delta"]["next_chapter_commitments"]
@@ -1354,6 +1500,38 @@ def merge_transaction(state: dict[str, Any], transaction: dict[str, Any]) -> dic
     return normalize_state(next_state)
 
 
+# P2 章节金字塔派生视图：全量章摘要表 + 10章聚合标记。
+# 消费方：review 架构视角（审第N章 = 卷摘要 + 近10章章摘要 + 本章全文 ≈ 5K 字）、
+# 写章读盘、P3 收线审计。聚合层与卷摘要由编排层按需生成，不在此渲染。
+def render_pyramid(state: dict[str, Any]) -> str:
+    summaries = state.get("chapter_summaries", {})
+    last_chapter = state["last_committed_chapter"]
+    revision = state["state_revision"]
+    lines = [
+        f"# 章节金字塔 — {state['book_title']}",
+        "",
+        f"> 状态修订：{revision}。按需取层：审第N章 = 卷摘要 + 近10章章摘要 + 本章全文。",
+        "",
+        "## 章摘要（全量）",
+        "",
+        "| 章 | 摘要 |",
+        "|---|---|",
+    ]
+    if last_chapter == 0:
+        lines.append("| — | 尚未开篇 |")
+    for chapter in range(1, last_chapter + 1):
+        summary = summaries.get(str(chapter), "—")
+        lines.append(f"| {chapter} | {summary} |")
+    # 10章聚合标记（编排层按需生成，二叉树两两合并）
+    if last_chapter >= 10:
+        lines.extend(["", "## 10章聚合", "", "| 范围 | 状态 |", "|---|---|"])
+        for start in range(1, last_chapter + 1, 10):
+            end = min(start + 9, last_chapter)
+            lines.append(f"| {start}-{end} | 待生成 |")
+    lines.append("")
+    return "\n".join(lines).rstrip() + "\n"
+
+
 def render_views(state: dict[str, Any]) -> dict[str, str]:
     revision = state["state_revision"]
     views = {
@@ -1362,6 +1540,8 @@ def render_views(state: dict[str, Any]) -> dict[str, str]:
         "事件定性资产.md": render_verdict(state["verdicts"], revision),
         "物证台账.md": render_evidence(state["evidence"], revision),
         "地理台账.md": render_geo(state["geo"], revision),
+        "场景台账.md": render_scene(state["scenes"], revision),
+        "章节金字塔.md": render_pyramid(state),
     }
     author, reader = render_timeline_views(state["timeline"], revision)
     views["时间线/作者真相.md"] = author
@@ -1466,13 +1646,13 @@ def apply_transaction(project: Path, document: object) -> dict[str, Any]:
 def backfill_entities(project: Path, document: object) -> dict[str, Any]:
     """存量迁移：把既往高潮章事件定性 / 物证 / 地理断言补录进现有 state。
 
-    G2 verdicts（05 §2）与 T1/T2 evidence/geo（05 §5）同一入口：编排层列候选清单、
-    作者确认原句后产出 JSON；v4/v5 存量 state 在此自动升级 v6（读入兼容、写盘归一）。
-    三个列表键均可选，旧版只有 verdicts 的输入照常工作。不新增逐章记录——补录的是
-    历史事实，不谎报「变更发生在某一章」。
+    G2 verdicts（05 §2）、T1/T2 evidence/geo（05 §5）与 P4 scenes 同一入口：编排层列候选
+    清单、作者确认原句后产出 JSON；v4/v5/v6 存量 state 在此自动升级 v7（读入兼容、写盘
+    归一）。四个列表键均可选，旧版只有 verdicts 的输入照常工作。不新增逐章记录——补录
+    的是历史事实，不谎报「变更发生在某一章」。
     """
     root = as_mapping(document, "backfill input")
-    require_known_keys(root, {"schema_version", "verdicts", "evidence", "geo"}, "backfill input")
+    require_known_keys(root, {"schema_version", "verdicts", "evidence", "geo", "scenes"}, "backfill input")
     require(root.get("schema_version") == INPUT_SCHEMA_VERSION, "backfill input schema_version is unsupported")
     tracking = tracking_root(project)
     require_no_retired_tracking_paths(tracking)
@@ -1496,6 +1676,12 @@ def backfill_entities(project: Path, document: object) -> dict[str, Any]:
         )
         for index, raw in enumerate(as_list(root.get("geo", []), "backfill geo"))
     ]
+    scene_changes = [
+        normalize_scene_change(
+            raw, f"backfill scenes[{index}]", allow_delete=True, through_chapter=last_chapter
+        )
+        for index, raw in enumerate(as_list(root.get("scenes", []), "backfill scenes"))
+    ]
     require(
         len({item["id"] for item in verdict_changes}) == len(verdict_changes),
         "backfill verdicts contains duplicate IDs",
@@ -1507,6 +1693,10 @@ def backfill_entities(project: Path, document: object) -> dict[str, Any]:
     require(
         len({item["id"] for item in geo_changes}) == len(geo_changes),
         "backfill geo contains duplicate IDs",
+    )
+    require(
+        len({item["id"] for item in scene_changes}) == len(scene_changes),
+        "backfill scenes contains duplicate IDs",
     )
     for change in verdict_changes:
         if change["action"] == "delete":
@@ -1528,6 +1718,13 @@ def backfill_entities(project: Path, document: object) -> dict[str, Any]:
         else:
             state["geo"][change["id"]] = checkpoint_record(
                 change, last_chapter, state["geo"].get(change["id"])
+            )
+    for change in scene_changes:
+        if change["action"] == "delete":
+            state["scenes"].pop(change["id"], None)
+        else:
+            state["scenes"][change["id"]] = checkpoint_record(
+                change, last_chapter, state["scenes"].get(change["id"])
             )
     state["state_revision"] += 1
     state = normalize_state(state)

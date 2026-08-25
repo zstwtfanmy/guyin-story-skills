@@ -537,6 +537,82 @@ console.log('== guyin-check-consistency（T1/T2 物证·能力·地理章检，�
 }
 
 // ============================================================
+console.log('== guyin-check-beat（P1 beat 级确定性预检，自检卡下沉） ==');
+{
+  // 工程词检测：beat 正文含「细纲」「伏笔」等 → blocking
+  const metaLeak = fixture('beat/第001章_漏.md',
+    '他翻开细纲，想起上一章的伏笔，觉得这事不简单。\n');
+  let r = run('guyin-check-beat.js', ['--json', '--min=10', metaLeak]);
+  let report = parseJson(r.stdout);
+  check('beat 工程词泄漏报 meta-leak-beat', r.status === 1 && report
+    && report.findings.some((f) => f.type === 'meta-leak-beat'),
+    `status=${r.status} types=${JSON.stringify(report && report.findings.map((f) => f.type))}`);
+
+  // 禁止项检测：--ban 列表词出现 → blocking
+  const banned = fixture('beat/第002章_禁.md',
+    '他把凑数字的东西收起来，随便看了看就走了。\n');
+  r = run('guyin-check-beat.js', ['--json', '--min=10', '--ban=凑数,随便', banned]);
+  report = parseJson(r.stdout);
+  check('beat 禁止项报 ban-violation', r.status === 1 && report
+    && report.findings.some((f) => f.type === 'ban-violation'),
+    `status=${r.status} types=${JSON.stringify(report && report.findings.map((f) => f.type))}`);
+
+  // 字数不足 → blocking
+  const tiny = fixture('beat/第003章_短.md', '他走了。\n');
+  r = run('guyin-check-beat.js', ['--json', '--min=500', tiny]);
+  report = parseJson(r.stdout);
+  check('beat 字数不足报 beat-too-short', r.status === 1 && report
+    && report.findings.some((f) => f.type === 'beat-too-short' && f.severity === 'blocking'),
+    `status=${r.status} types=${JSON.stringify(report && report.findings.map((f) => f.type))}`);
+
+  // 跳写检测：含「此处省略」→ blocking
+  const skip = fixture('beat/第004章_跳.md',
+    '他走进屋子。（此处省略三百字）然后天亮了。\n');
+  r = run('guyin-check-beat.js', ['--json', '--min=10', skip]);
+  report = parseJson(r.stdout);
+  check('beat 跳写报 skip-write', r.status === 1 && report
+    && report.findings.some((f) => f.type === 'skip-write' && f.severity === 'blocking'),
+    `status=${r.status} types=${JSON.stringify(report && report.findings.map((f) => f.type))}`);
+
+  // 连续对话：4+ 句对话无动作 → advisory
+  const dialogue = fixture('beat/第005章_话.md',
+    '「你来干什么？」\n「找你算账。」\n「凭什么？」\n「就凭这个。」\n「你疯了。」\n');
+  r = run('guyin-check-beat.js', ['--json', '--min=10', dialogue]);
+  report = parseJson(r.stdout);
+  check('beat 连续对话报 dialogue-run（advisory）', r.status === 1 && report
+    && report.findings.some((f) => f.type === 'dialogue-run' && f.severity === 'advisory'),
+    `status=${r.status} types=${JSON.stringify(report && report.findings.map((f) => f.type))}`);
+
+  // 心理独白超限 → advisory
+  const mono = fixture('beat/第006章_独.md',
+    '他心想这事不对。他觉得背后有人。他暗想这一定是圈套。他琢磨着怎么脱身。\n');
+  r = run('guyin-check-beat.js', ['--json', '--min=10', '--mono-limit=2', mono]);
+  report = parseJson(r.stdout);
+  check('beat 心理独白超限报 mono-count（advisory）', r.status === 1 && report
+    && report.findings.some((f) => f.type === 'mono-count' && f.severity === 'advisory'),
+    `status=${r.status} types=${JSON.stringify(report && report.findings.map((f) => f.type))}`);
+
+  // 干净 beat 静默
+  const clean = fixture('beat/第007章_净.md',
+    '他把竹竿靠在墙根，拍了拍手上的灰。\n母亲从灶房探出头：「饭好了。」\n他应了一声，进屋洗手。\n');
+  r = run('guyin-check-beat.js', ['--json', '--min=10', clean]);
+  report = parseJson(r.stdout);
+  check('beat 干净正文静默', r.status === 0 && report && report.findings.length === 0,
+    `status=${r.status} findings=${JSON.stringify(report && report.findings.map((f) => f.type))}`);
+
+  // --fail-on=blocking：advisory 不触发
+  r = run('guyin-check-beat.js', ['--fail-on=blocking', '--min=10', dialogue]);
+  check('beat advisory 不触发 --fail-on=blocking', r.status === 0, `status=${r.status}`);
+
+  // summary 验证：脚本处理 Q1-Q6，模型只剩 Q7/Q8
+  r = run('guyin-check-beat.js', ['--json', '--min=10', clean]);
+  report = parseJson(r.stdout);
+  check('beat summary 含 modelRemaining=[Q7,Q8]', report
+    && JSON.stringify(report.summary.modelRemaining) === JSON.stringify(['Q7', 'Q8']),
+    `summary=${JSON.stringify(report && report.summary)}`);
+}
+
+// ============================================================
 console.log('== guyin-tracking-commit.py G2 事件定性实体（行为断言） ==');
 {
   const py = ['python3', 'python', 'py'].find((bin) => {
@@ -555,7 +631,7 @@ console.log('== guyin-tracking-commit.py G2 事件定性实体（行为断言）
     const SCRIPT = path.join(S, 'guyin-tracking-commit.py');
     const runPy = (args, project) => spawnSync(py, [SCRIPT, ...args, '--project', project], { encoding: 'utf8' });
 
-    // init 带 verdicts：state v6（写盘统一归一，G2 后 T1/T2 已升版）+ 事件定性资产.md 视图。
+    // init 带 verdicts：state v7（写盘统一归一，G2 后 T1/T2/P4 已升版）+ 事件定性资产.md 视图。
     const book1 = path.join(TMP, 'g2py', '甲');
     fixture('g2py/甲/init.json', JSON.stringify({
       schema_version: 1, book_title: '白银案录', last_chapter: 1,
@@ -580,14 +656,14 @@ console.log('== guyin-tracking-commit.py G2 事件定性实体（行为断言）
       ? JSON.parse(fs.readFileSync(path.join(book1, '追踪', '_tracking-state.json'), 'utf8')) : null;
     const view = r.status === 0
       ? fs.readFileSync(path.join(book1, '追踪', '事件定性资产.md'), 'utf8') : '';
-    check('init 登记 verdicts：state v6 + 资产视图', r.status === 0 && state
-      && state.schema_version === 6 && state.verdicts.V001
+    check('init 登记 verdicts：state v7 + 资产视图', r.status === 0 && state
+      && state.schema_version === 7 && state.verdicts.V001
       && view.includes('V001') && view.includes('拆神'),
       `status=${r.status} err=${r.stderr.trim().slice(0, 160)}`);
     r = runPy(['check'], book1);
     check('init 后 check 一致', r.status === 0, `status=${r.status} err=${r.stderr.trim().slice(0, 160)}`);
 
-    // v4 存量（无 verdicts 键）→ backfill → v6：无需手工迁移。
+    // v4 存量（无 verdicts 键）→ backfill → v7：无需手工迁移。
     const book2 = path.join(TMP, 'g2py', '乙');
     const baseContext = {
       position: { volume: '卷一', volume_start_chapter: 1, story_time: '景和三年春', scene: '县衙' },
@@ -625,8 +701,8 @@ console.log('== guyin-tracking-commit.py G2 事件定性实体（行为断言）
     r = runPy(['backfill', '--input', path.join(TMP, 'g2py', '乙', 'backfill.json')], book2);
     state = r.status === 0
       ? JSON.parse(fs.readFileSync(path.join(book2, '追踪', '_tracking-state.json'), 'utf8')) : null;
-    check('backfill v4 存量自动升级 v6 并登记 verdicts', r.status === 0 && state
-      && state.schema_version === 6 && state.verdicts.V027
+    check('backfill v4 存量自动升级 v7 并登记 verdicts', r.status === 0 && state
+      && state.schema_version === 7 && state.verdicts.V027
       && state.verdicts.V027.updated_chapter === 27,
       `status=${r.status} err=${r.stderr.trim().slice(0, 160)}`);
     r = runPy(['check'], book2);
@@ -686,10 +762,10 @@ console.log('== guyin-tracking-commit.py T1/T2 实体（evidence/geo，行为断
     }
   });
   if (!py) {
-    skip('init 登记 evidence/geo：state v6 + 双台账视图', '未找到可用 python 解释器');
-    skip('init 后 check 一致（v6）', '未找到可用 python 解释器');
+    skip('init 登记 evidence/geo：state v7 + 双台账视图', '未找到可用 python 解释器');
+    skip('init 后 check 一致（v7）', '未找到可用 python 解释器');
     skip('backfill 未来章 evidence 拒绝', '未找到可用 python 解释器');
-    skip('backfill v5 存量自动升级 v6 并登记 evidence/geo', '未找到可用 python 解释器');
+    skip('backfill v5 存量自动升级 v7 并登记 evidence/geo', '未找到可用 python 解释器');
     skip('commit evidence_changes/geo_changes 渲染双变化段', '未找到可用 python 解释器');
   } else {
     const SCRIPT = path.join(S, 'guyin-tracking-commit.py');
@@ -727,16 +803,16 @@ console.log('== guyin-tracking-commit.py T1/T2 实体（evidence/geo，行为断
       ? fs.readFileSync(path.join(book1, '追踪', '物证台账.md'), 'utf8') : '';
     const geoView = r.status === 0
       ? fs.readFileSync(path.join(book1, '追踪', '地理台账.md'), 'utf8') : '';
-    check('init 登记 evidence/geo：state v6 + 双台账视图', r.status === 0 && state
-      && state.schema_version === 6 && state.evidence.W001 && state.geo.G001
+    check('init 登记 evidence/geo：state v7 + 双台账视图', r.status === 0 && state
+      && state.schema_version === 7 && state.evidence.W001 && state.geo.G001
       && state.geo.G001.direction === '南' && state.evidence.W001.updated_chapter === 2
       && evView.includes('W001') && evView.includes('在案')
       && geoView.includes('G001') && geoView.includes('通州以南'),
       `status=${r.status} err=${r.stderr.trim().slice(0, 160)}`);
     r = runPy(['check'], book1);
-    check('init 后 check 一致（v6）', r.status === 0, `status=${r.status} err=${r.stderr.trim().slice(0, 160)}`);
+    check('init 后 check 一致（v7）', r.status === 0, `status=${r.status} err=${r.stderr.trim().slice(0, 160)}`);
 
-    // v5 存量（无 evidence/geo 键）→ backfill 自动升级 v6；未来章 evidence 先拒绝。
+    // v5 存量（无 evidence/geo 键）→ backfill 自动升级 v7；未来章 evidence 先拒绝。
     const book2 = path.join(TMP, 'ttpy', '乙');
     const baseContext = {
       position: { volume: '卷一', volume_start_chapter: 1, story_time: '景和三年春', scene: '运河' },
@@ -779,12 +855,12 @@ console.log('== guyin-tracking-commit.py T1/T2 实体（evidence/geo，行为断
     r = runPy(['backfill', '--input', path.join(TMP, 'ttpy', '乙', 'backfill.json')], book2);
     state = r.status === 0
       ? JSON.parse(fs.readFileSync(path.join(book2, '追踪', '_tracking-state.json'), 'utf8')) : null;
-    check('backfill v5 存量自动升级 v6 并登记 evidence/geo', r.status === 0 && state
-      && state.schema_version === 6 && state.evidence.W001 && state.geo.G001
+    check('backfill v5 存量自动升级 v7 并登记 evidence/geo', r.status === 0 && state
+      && state.schema_version === 7 && state.evidence.W001 && state.geo.G001
       && state.state_revision === 2,
       `status=${r.status} err=${r.stderr.trim().slice(0, 160)}`);
     r = runPy(['check'], book2);
-    check('backfill 后 check 一致（v6）', r.status === 0, `status=${r.status} err=${r.stderr.trim().slice(0, 160)}`);
+    check('backfill 后 check 一致（v7）', r.status === 0, `status=${r.status} err=${r.stderr.trim().slice(0, 160)}`);
 
     // commit evidence_changes/geo_changes：状态流转 + 新登记，逐章记录渲染双变化段。
     fixture('ttpy/乙/commit.json', JSON.stringify({
@@ -832,8 +908,364 @@ console.log('== guyin-tracking-commit.py T1/T2 实体（evidence/geo，行为断
       && delta.includes('## 地理变化') && delta.includes('G002｜济宁｜济宁在临清以南'),
       `status=${r.status} err=${r.stderr.trim().slice(0, 160)}`);
     r = runPy(['check'], book2);
-    check('commit 后 check 一致（v6）', r.status === 0, `status=${r.status} err=${r.stderr.trim().slice(0, 160)}`);
+    check('commit 后 check 一致（v7）', r.status === 0, `status=${r.status} err=${r.stderr.trim().slice(0, 160)}`);
   }
+}
+
+// ============================================================
+console.log('== guyin-tracking-commit.py P4 场景台账（scenes，行为断言） ==');
+{
+  const py = ['python3', 'python', 'py'].find((bin) => {
+    try {
+      return spawnSync(bin, ['-c', ''], { encoding: 'utf8' }).status === 0;
+    } catch (e) {
+      return false;
+    }
+  });
+  if (!py) {
+    skip('init 登记 scenes：state v7 + 场景台账视图', '未找到可用 python 解释器');
+    skip('commit scene_changes：变迁链 + 逐章记录场景变化段', '未找到可用 python 解释器');
+  } else {
+    const SCRIPT = path.join(S, 'guyin-tracking-commit.py');
+    const runPy = (args, project) => spawnSync(py, [SCRIPT, ...args, '--project', project], { encoding: 'utf8' });
+
+    // init 带 scenes：state v7 + 场景台账视图（锚点原句 + 状态链）。
+    const book = path.join(TMP, 'p4py', '甲');
+    fixture('p4py/甲/init.json', JSON.stringify({
+      schema_version: 1, book_title: '白银案录', last_chapter: 1,
+      context: {
+        position: { volume: '卷一', volume_start_chapter: 1, story_time: '景和三年春', scene: '西厢院' },
+        long_term_constraints: [], active_character_names: ['燕衡'], continuity_risks: [],
+        recent_chapters: [{ chapter: 1, summary: '验银' }], next_chapter_commitments: [],
+      },
+      character_snapshots: {
+        燕衡: { identity: '主角', location: '西厢院', goal: '查银案', state: '冷静',
+          abilities_resources: [], relationships: [], knowledge: [], open_threads: [] },
+      },
+      foreshadow: [], timeline_events: [],
+      scenes: [{
+        id: 'S001', chapter: 1, name: '西厢院',
+        anchor: '院里有棵歪脖枣树，树底下压着半扇磨盘。',
+        status: 'active', current: '', keywords: ['歪脖枣树', '磨盘'],
+      }],
+    }));
+    let r = runPy(['init', '--input', path.join(TMP, 'p4py', '甲', 'init.json')], book);
+    let state = r.status === 0
+      ? JSON.parse(fs.readFileSync(path.join(book, '追踪', '_tracking-state.json'), 'utf8')) : null;
+    const sceneView = r.status === 0
+      ? fs.readFileSync(path.join(book, '追踪', '场景台账.md'), 'utf8') : '';
+    check('init 登记 scenes：state v7 + 场景台账视图', r.status === 0 && state
+      && state.schema_version === 7 && state.scenes.S001
+      && state.scenes.S001.updated_chapter === 1
+      && sceneView.includes('S001') && sceneView.includes('歪脖枣树') && sceneView.includes('在场'),
+      `status=${r.status} err=${r.stderr.trim().slice(0, 160)}`);
+    r = runPy(['check'], book);
+    check('P4 init 后 check 一致', r.status === 0, `status=${r.status} err=${r.stderr.trim().slice(0, 160)}`);
+
+    // commit scene_changes：S001 状态变迁（active→changed），逐章记录渲染场景变化段。
+    // init 写盘 state_revision=0，首次 commit 期望 0（乐观锁），成功后 +1。
+    fixture('p4py/甲/commit.json', JSON.stringify({
+      schema_version: 1, mode: 'append', chapter: 2, chapter_title: '西厢走水',
+      expected_state_revision: 0,
+      delta: {
+        result: '西厢走水，燕衡从火场里抢出半扇磨盘。',
+        character_changes: [{ name: '燕衡', change: '从验银转向查火源' }],
+        scene_changes: [{
+          id: 'S001', chapter: 1, name: '西厢院',
+          anchor: '院里有棵歪脖枣树，树底下压着半扇磨盘。',
+          status: 'changed',
+          current: '那场火之后，西厢塌了，只剩半堵焦墙，枣树还立在原地。',
+          keywords: ['歪脖枣树', '磨盘'],
+        }],
+      },
+      context: {
+        position: { volume: '卷一', volume_start_chapter: 1, story_time: '景和三年夏', scene: '西厢院火场' },
+        long_term_constraints: [], active_character_names: ['燕衡'], continuity_risks: [],
+      },
+      character_snapshots: {
+        燕衡: { identity: '主角', location: '西厢院火场', goal: '查火源', state: '冷静带狠劲',
+          abilities_resources: [], relationships: [], knowledge: [], open_threads: [] },
+      },
+    }));
+    r = runPy(['commit', '--input', path.join(TMP, 'p4py', '甲', 'commit.json')], book);
+    state = r.status === 0
+      ? JSON.parse(fs.readFileSync(path.join(book, '追踪', '_tracking-state.json'), 'utf8')) : null;
+    const delta = r.status === 0
+      ? fs.readFileSync(path.join(book, '追踪', '逐章记录', '第002章.md'), 'utf8') : '';
+    const sceneView2 = r.status === 0
+      ? fs.readFileSync(path.join(book, '追踪', '场景台账.md'), 'utf8') : '';
+    check('commit scene_changes：变迁链 + 逐章记录场景变化段', r.status === 0 && state
+      && state.scenes.S001.status === 'changed'
+      && state.scenes.S001.updated_chapter === 2
+      && state.scenes.S001.anchor.includes('歪脖枣树')
+      && state.scenes.S001.current.includes('焦墙')
+      && delta.includes('## 场景变化') && delta.includes('S001｜西厢院｜changed')
+      && sceneView2.includes('已变迁') && sceneView2.includes('焦墙'),
+      `status=${r.status} err=${r.stderr.trim().slice(0, 160)}`);
+    r = runPy(['check'], book);
+    check('P4 commit 后 check 一致', r.status === 0, `status=${r.status} err=${r.stderr.trim().slice(0, 160)}`);
+  }
+}
+
+// ============================================================
+console.log('== guyin-check-hook-rotation (P4 钩子轮换/蓄力成对) ==');
+{
+  const mkOutline = (name, hookLine, mark) =>
+    fixture(`hr/大纲/${name}`,
+      `# 细纲\n\n- 章尾钩子：${hookLine}\n${mark ? `- 节奏标记：${mark}\n` : ''}`);
+  // ch1-3 连续悬念钩 → hook-run；ch4 无标注断开计数；ch5 爆发前无蓄力 → burst-without-charge；ch7 蓄力 + ch8 爆发成对 → 静默
+  mkOutline('细纲_第001章.md', '悬念·封口式——他把账册塞进怀里', null);
+  mkOutline('细纲_第002章.md', '悬念·断章式——门外来人', null);
+  mkOutline('细纲_第003章.md', '悬念·留白式——灯灭了', null);
+  mkOutline('细纲_第004章.md', 'S级·决意式——那就让他以为，我还在信', null);
+  mkOutline('细纲_第005章.md', '危机·绝境式——银子对不上', '爆发');
+  mkOutline('细纲_第007章.md', '反转·打脸式——来人是自己人', '蓄力');
+  mkOutline('细纲_第008章.md', '情绪·决意式——他要还回去', '爆发');
+  const dir = path.join(TMP, 'hr', '大纲');
+  let r = run('guyin-check-hook-rotation.js', ['--json', dir]);
+  let report = parseJson(r.stdout);
+  check('钩子坍缩：连续 3 章悬念钩报 hook-run', r.status === 1 && report
+    && report.findings.some((f) => f.type === 'hook-run' && f.message.includes('悬念')),
+    `status=${r.status} out=${r.stdout.trim().slice(0, 200)}`);
+  check('爆发无蓄力报 burst-without-charge（第5章）', report
+    && report.findings.some((f) => f.type === 'burst-without-charge' && f.message.includes('第5章')),
+    `findings=${JSON.stringify(report && report.findings.map((f) => f.type))}`);
+  check('蓄力+爆发成对静默（第8章不报）', report
+    && !report.findings.some((f) => f.type === 'burst-without-charge' && f.message.includes('第8章')),
+    `findings=${JSON.stringify(report && report.findings.map((f) => f.type))}`);
+  check('summary 统计已标注/未标注章', report && report.summary
+    && report.summary.chapters_scanned === 7 && report.summary.annotated === 6
+    && report.summary.unannotated === 1 && report.summary.burst_marked === 2
+    && report.summary.charge_marked === 1,
+    `summary=${JSON.stringify(report && report.summary)}`);
+
+  // 类型轮换正常（危机→反转→期待）→ 全静默。
+  const dir2 = path.join(TMP, 'hr2', '大纲');
+  fixture('hr2/大纲/细纲_第001章.md', '- 章尾钩子：危机·绝境式——银子对不上\n');
+  fixture('hr2/大纲/细纲_第002章.md', '- 章尾钩子：反转·打脸式——来人是自己人\n');
+  fixture('hr2/大纲/细纲_第003章.md', '- 章尾钩子：期待·预告式——明日开审\n');
+  r = run('guyin-check-hook-rotation.js', ['--json', dir2]);
+  report = parseJson(r.stdout);
+  check('类型轮换正常零报警', r.status === 0 && report && report.findings.length === 0,
+    `status=${r.status} out=${r.stdout.trim().slice(0, 200)}`);
+}
+
+// ============================================================
+console.log('== guyin-check-repetition (P6 段落指纹库) ==');
+{
+  // 台词段不入库（只比叙述段）；雨段/雪段换词复读；照抄段近乎相同。
+  const rain = '雨下了一夜，青石板路上积着浅浅的水洼，倒映出两侧歪斜的屋檐。他撑着一把旧油纸伞，沿着巷子慢慢往里走，鞋底踩过水洼，溅起的泥点打在裤脚上，他也不在意。';
+  const snow = '雪下了一夜，青石板路上积着浅浅的雪洼，倒映出两侧歪斜的屋檐。他撑着一把旧油纸伞，沿着巷子慢慢往里走，鞋底踩过雪洼，溅起的雪点打在裤脚上，他也不在意。';
+  const fresh = '天色将暮，远处的山峦像一头伏卧的巨兽，脊背在暮色里起伏，轮廓被最后一线天光描出金边。';
+  const nearCopy = '雨下了一整夜，青石板路上积着浅浅的水洼，倒映出两侧歪斜的屋檐。他撑着一把旧油纸伞，沿着巷子慢慢往里走，鞋底踩过水洼，溅起的泥点打在裤脚上，他也不在意。';
+  const proj = path.join(TMP, 'rep');
+  const ch1 = fixture('rep/正文/第001章.md', `第一章\n\n${rain}\n\n「客官里边请，慢走带伞。」店小二躬身掀开帘子，又补了一句客套话，转身去了后厨。\n`);
+  fixture('rep/正文/第002章.md', `第二章\n\n${snow}\n\n${fresh}\n`);
+  fixture('rep/正文/第003章.md', `第三章\n\n${nearCopy}\n`);
+
+  // 首章 --commit：库建立，叙述段 1 条（台词段不入库）。
+  let r = run('guyin-check-repetition.js', ['--json', '--project', proj, '--commit', ch1]);
+  let report = parseJson(r.stdout);
+  const libPath = path.join(proj, '追踪', '段落指纹库.json');
+  let lib = fs.existsSync(libPath) ? JSON.parse(fs.readFileSync(libPath, 'utf8')) : null;
+  check('首章 commit：库建立且台词段不入库', r.status === 0 && report && report.summary.committed === 1
+    && lib && lib.entries.length === 1 && lib.entries[0].chapter === 1,
+    `status=${r.status} out=${r.stdout.trim().slice(0, 200)}`);
+
+  // 第002章：雪段（换词复读）报 pattern，全新段静默。
+  r = run('guyin-check-repetition.js', ['--json', '--project', proj, path.join(proj, '正文', '第002章.md')]);
+  report = parseJson(r.stdout);
+  const pattern = report && report.findings.find((f) => f.type === 'para-repeat-pattern');
+  check('换词复读报 para-repeat-pattern（雪段 vs 雨段）', r.status === 1 && pattern
+    && pattern.match.chapter === 1 && pattern.match.similarity >= 0.72 && pattern.match.similarity < 0.9,
+    `status=${r.status} findings=${JSON.stringify(report && report.findings.map((f) => f.type))}`);
+  check('全新段落零误报（山峦段不报）', report
+    && !report.findings.some((f) => f.excerpt.startsWith('天色将暮')),
+    `findings=${JSON.stringify(report && report.findings.map((f) => f.excerpt.slice(0, 8)))}`);
+
+  // 第003章：近乎照抄报 near，带改写卡处置提示。
+  r = run('guyin-check-repetition.js', ['--json', '--project', proj, path.join(proj, '正文', '第003章.md')]);
+  report = parseJson(r.stdout);
+  const near = report && report.findings.find((f) => f.type === 'para-repeat-near');
+  check('近乎照抄报 para-repeat-near（改写卡路径）', r.status === 1 && near
+    && near.match.similarity >= 0.9 && near.message.includes('改写卡'),
+    `status=${r.status} findings=${JSON.stringify(report && report.findings.map((f) => f.type))}`);
+
+  // 幂等：重 commit 第001章，同章先清后插，库仍 1 条。
+  r = run('guyin-check-repetition.js', ['--json', '--project', proj, '--commit', ch1]);
+  lib = fs.existsSync(libPath) ? JSON.parse(fs.readFileSync(libPath, 'utf8')) : null;
+  check('重 commit 幂等（同章先清后插）', r.status === 0 && lib && lib.entries.length === 1,
+    `status=${r.status} entries=${lib && lib.entries.length}`);
+}
+
+// ============================================================
+console.log('== guyin-check-repetition P6-2 意象台账 ==');
+{
+  // 三章各含一句自然域比喻（喻体侧：海潮/雷霜）；同批 commit 验证 batchImagery 窗口统计。
+  const proj = path.join(TMP, 'imgp');
+  fixture('imgp/追踪/_tracking-state.json', JSON.stringify({
+    schema_version: 7, characters: { 燕衡: { identity: '主角' }, 周砚: { identity: '账房' } },
+  }));
+  fixture('imgp/正文/第001章.md', `第一章\n\n云像海潮一样涌过来，一层压着一层，把半边天都盖住了。燕衡站在城头看了很久，直到暮色把最后一道光收走，他才转身下楼。\n`);
+  fixture('imgp/正文/第002章.md', `第二章\n\n闷响从远处传来，像滚过山谷的雷，一声接一声压得人心里发慌。燕衡按住剑柄没动，盯着城下那条黑黢黢的路看了半晌。\n`);
+  const ch3 = fixture('imgp/正文/第003章.md', `第三章\n\n月光如霜，铺了满院，青砖地上泛着一层冷白。燕衡推门进去，看见周砚伏在案上睡着了，笔还捏在手里。\n`);
+
+  // 同批 commit 三章：第3章窗口（1-3 章）自然域 3 次 → imagery-domain-run（本批已处理章计入窗口）。
+  let r = run('guyin-check-repetition.js', ['--json', '--project', proj, '--commit',
+    path.join(proj, '正文', '第001章.md'), path.join(proj, '正文', '第002章.md'), ch3]);
+  let report = parseJson(r.stdout);
+  check('同域比喻密度报 imagery-domain-run（第3章窗口自然×3）', r.status === 1 && report
+    && report.findings.some((f) => f.type === 'imagery-domain-run' && f.message.includes('自然')),
+    `status=${r.status} findings=${JSON.stringify(report && report.findings.map((f) => f.type))}`);
+  const lib = JSON.parse(fs.readFileSync(path.join(proj, '追踪', '段落指纹库.json'), 'utf8'));
+  check('比喻句入库且角色就近归属（周砚）', Array.isArray(lib.imagery) && lib.imagery.length >= 3
+    && lib.imagery.some((m) => m.domain === '自然' && m.character === '周砚' && m.chapter === 3),
+    `imagery=${JSON.stringify(lib.imagery)}`);
+  const view = fs.readFileSync(path.join(proj, '追踪', '意象台账.md'), 'utf8');
+  check('意象台账视图含域统计与明细', view.includes('自然') && view.includes('周砚') && view.includes('月光如霜'),
+    `view=${view.slice(0, 200)}`);
+}
+
+// ============================================================
+console.log('== guyin-check-flesh P6-3 人物显影器 ==');
+{
+  // 林彻卡标「果决」，正文反特质行为 ×3（犹豫×2+退缩×1）零正特质 → 断裂；
+  // 周砚卡无特质词 → 静默。对话呼吸回归锚：「我再想想」(5) + 「查」(1)。
+  // 老赵（P6-4）：连续 3 章每章 2 句纯递话 → tool-character；主角色零误报。
+  const proj = path.join(TMP, 'fleshp');
+  fixture('fleshp/设定/角色/林彻.md', '# 林彻\n\n- 身份：刑警队长，行事果决\n- 目标：查清白银案\n- 说话习惯：短句，不废话\n');
+  fixture('fleshp/设定/角色/周砚.md', '# 周砚\n\n- 身份：退休法医\n- 目标：安度晚年\n- 说话习惯：慢条斯理\n');
+  fixture('fleshp/设定/角色/老赵.md', '# 老赵\n\n- 身份：线人\n- 说话习惯：报信快\n');
+  const ch1 = fixture('fleshp/正文/第001章.md', '雨夜。林彻犹豫了一下，没接周砚递来的伞。\n\n周砚说：「你来晚了。」\n\n林彻犹豫着没接话。灯影里他迟疑半晌，才抬手敲了敲门。\n\n老赵说：「头儿，人找到了。」\n老赵又说：「在城西巷子。」\n');
+  const ch2 = fixture('fleshp/正文/第002章.md', '档案室积灰。林彻翻着卷宗，指尖停在一张照片上。\n\n「这是九八年那桩。」周砚说。\n\n林彻没说话，退缩半步，靠在柜子上。「我再想想。」\n\n老赵来报：「档案借出过。」\n老赵补了一句：「借的是内勤。」\n');
+  const ch3 = fixture('fleshp/正文/第003章.md', '雨停了。林彻说「查」，转身出门。\n\n周砚站在门口，看他的背影消失在楼道尽头。\n\n老赵拦住他：「别回队里。」\n老赵只说了四个字：「有人等着。」\n');
+  const chapters = [ch1, ch2, ch3];
+
+  let r = run('guyin-check-flesh.js', ['--json', '--project', proj, '林彻', ...chapters]);
+  let report = parseJson(r.stdout);
+  check('卡标果决+反特质×3零正特质报 flesh-trait-break', r.status === 0 && report
+    && report.findings.some((f) => f.type === 'flesh-trait-break' && f.message.includes('果决'))
+    && report.axes.some((a) => a.trait === '果决' && a.in_card && a.pro === 0 && a.anti === 3),
+    `status=${r.status} findings=${JSON.stringify(report && report.findings.map((f) => f.type))}`);
+
+  r = run('guyin-check-flesh.js', ['--json', '--project', proj, '周砚', ...chapters]);
+  report = parseJson(r.stdout);
+  check('无特质卡角色零报警（无卡轴不判，终判归作者）', r.status === 0 && report
+    && report.findings.length === 0 && report.summary.breaks === 0,
+    `status=${r.status} findings=${JSON.stringify(report && report.findings)}`);
+
+  r = run('guyin-check-flesh.js', ['--json', '--project', proj, '林彻', ...chapters]);
+  report = parseJson(r.stdout);
+  check('对话呼吸：引号感知切分+归属继承（「引文」XX说不误归）', report && report.breath
+    && report.breath.turns === 2 && report.breath.max_len === 5 && report.breath.min_len === 1,
+    `breath=${JSON.stringify(report && report.breath)}`);
+
+  r = run('guyin-check-flesh.js', ['--json', '--project', proj, '--all', ...chapters]);
+  report = parseJson(r.stdout);
+  const sorted = report && report.roles.every((row, k) => k === 0 || report.roles[k - 1].sentences >= row.sentences);
+  check('--all 戏份概览按句数降序且断裂随报', r.status === 0 && report
+    && report.roles.length === 3 && sorted
+    && report.findings.some((f) => f.type === 'flesh-trait-break'),
+    `roles=${JSON.stringify(report && report.roles)} findings=${JSON.stringify(report && report.findings.map((f) => f.type))}`);
+
+  check('P6-4 工具人检测：连续 3 章纯递话报 tool-character（老赵）', report
+    && report.findings.some((f) => f.type === 'tool-character' && f.message.includes('老赵') && f.message.includes('递话'))
+    && report.roles.some((row) => row.name === '老赵' && row.dialogue === 6),
+    `findings=${JSON.stringify(report && report.findings.map((f) => f.type))} roles=${JSON.stringify(report && report.roles)}`);
+  check('P6-4 主角色零误报（林彻/周砚无 tool-character）', report
+    && !report.findings.some((f) => f.type === 'tool-character' && (f.message.includes('林彻') || f.message.includes('周砚'))),
+    `findings=${JSON.stringify(report && report.findings)}`);
+}
+
+// ============================================================
+console.log('== P5 impact-map + reader-signal ==');
+{
+  // P5-1 影响面：白银线→悬空债+定性资产+补丁面；周砚→角色名一级扩散命中其事件。
+  // P5-2/3：第3/5章掉崖（-37%/-31%），第4-5章无推进×2 弃书点含信号佐证。
+  const proj = path.join(TMP, 'p5p');
+  fixture('p5p/追踪/_tracking-state.json', JSON.stringify({
+    schema_version: 7, book_title: '白银案录', last_committed_chapter: 5, imported_through_chapter: 0, state_revision: 3,
+    context: {},
+    characters: { 林彻: { identity: '刑警队长', state: '追查白银案', goal: '破案' }, 周砚: { identity: '退休法医', state: '协助查案', goal: '安度晚年' } },
+    foreshadow: {
+      F001: { id: 'F001', summary: '白银首饰的真伪存疑', planted_chapter: 1, planned_resolution_chapter: null, status: '已埋', importance: '高', updated_chapter: 1 },
+      F002: { id: 'F002', summary: '周砚的旧档案', planted_chapter: 2, planned_resolution_chapter: null, status: '已回收', importance: '中', updated_chapter: 3 },
+    },
+    timeline: { E001: { id: 'E001', story_time: '1998年冬', objective_fact: '白银作坊起火', reader_knowledge: '知道起火不知道人为', reveal_status: '部分揭示', reveal_chapter: 2, characters: ['周砚'] } },
+    verdicts: { V001: { id: 'V001', chapter: 3, event: '白银案重启调查', verdict: '林彻确认旧案有遗漏', status: 'active', keywords: ['白银案'], updated_chapter: 3 } },
+    evidence: { W001: { id: 'W001', chapter: 1, name: '白银镯', anchor: '他从灰里捡起一只白银镯。', status: 'held', holder: '林彻', keywords: ['白银'], updated_chapter: 1 } },
+    geo: {}, scenes: {},
+    chapter_summaries: {
+      1: '林彻到城西巷勘察作坊废墟。', 2: '周砚交出旧档案，揭示起火另有隐情。',
+      3: '林彻重启白银案，确认旧案有遗漏。', 4: '林彻整理卷宗，回忆旧案细节。', 5: '林彻在办公室过夜，等周砚的消息。',
+    },
+  }));
+  fixture('p5p/大纲/细纲_第003章.md', '# 第003章\n\n- 章尾钩子：危机·门后黑影 — 有人等着他\n');
+  fixture('p5p/追踪/读者信号.md', '# 读者信号\n\n| 章 | 追读 | 评论关键词 |\n|----|------|-----------|\n| 1 | 1000 | 开头快 |\n| 2 | 950 | 节奏稳 |\n| 3 | 600 | 水了 |\n| 4 | 580 | 注水 |\n| 5 | 400 | 弃了 |\n');
+
+  let r = run('guyin-impact-map.js', ['--json', '--project', proj, '白银']);
+  let report = parseJson(r.stdout);
+  check('P5-1 白银线影响面：悬空债+定性资产+风险双报', r.status === 0 && report
+    && report.summary.dangling === 1 && report.summary.verdicts === 1
+    && report.result.warnings.some((w) => w.type === 'impact-dangling-foreshadow')
+    && report.result.warnings.some((w) => w.type === 'impact-verdict-asset'),
+    `summary=${JSON.stringify(report && report.summary)} warn=${JSON.stringify(report && report.result.warnings.map((w) => w.type))}`);
+
+  r = run('guyin-impact-map.js', ['--json', '--project', proj, '周砚']);
+  report = parseJson(r.stdout);
+  check('P5-1 角色名一级扩散：周砚命中其关联事件', r.status === 0 && report
+    && report.summary.characters === 1 && report.summary.events === 1
+    && report.result.events.some((e) => e.id === 'E001'),
+    `summary=${JSON.stringify(report && report.summary)}`);
+
+  r = run('guyin-check-reader-signal.js', ['--json', '--project', proj]);
+  report = parseJson(r.stdout);
+  const cliff3 = report && report.findings.find((f) => f.type === 'reader-cliff' && f.excerpt.includes('第3章'));
+  check('P5-2 掉崖检测+±2章归因表（钩子/推进列）', r.status === 0 && report
+    && report.summary.cliffs === 2 && cliff3 && cliff3.table.length >= 4
+    && cliff3.table.some((row) => row.chapter === 3 && row.hook === '危机' && row.progress === '有推进'),
+    `summary=${JSON.stringify(report && report.summary)} cliff3=${JSON.stringify(cliff3 && cliff3.table)}`);
+
+  check('P5-3 弃书点：连续 2 章无推进含信号佐证', report
+    && report.findings.some((f) => f.type === 'drop-point' && f.excerpt.includes('第4-5章') && f.excerpt.includes('信号佐证')),
+    `findings=${JSON.stringify(report && report.findings.map((f) => f.type + '|' + f.excerpt))}`);
+}
+
+// ============================================================
+console.log('== P7 guyin-check-pitch 开书文案三判据 ==');
+{
+  const proj = path.join(TMP, 'p7p');
+  fixture('p7p/大纲/细纲_第001章.md', '# 第001章\n\n- 章尾钩子：危机·门后黑影 — 有人在他家门口等他动手\n');
+  fixture('p7p/大纲/细纲_第002章.md', '# 第002章\n\n- 章尾钩子：期待·师父的剑 — 师父说过剑冢里藏着天下第一的剑\n');
+  fixture('p7p/大纲/细纲_第003章.md', '# 第003章\n\n- 章尾钩子：悬念·半张画像 — 画像上只有母亲的脸另一半被烧掉\n');
+  const blurb = fixture('p7p/简介.md', '刑警林彻重启白银旧案，有人不想让他查。师父留下的剑冢，藏着天下第一的剑。\n');
+  fixture('p7p/正文/第001章_白银.md', '# 第001章\n');
+  fixture('p7p/正文/第002章_往事.md', '# 第002章\n');
+  const ch3 = fixture('p7p/正文/第003章_真相大白与旧案重启.md', '# 第003章\n\n- 章尾钩子：反转·画像的另一面 — 母亲手上有同样的画像\n');
+
+  let r = run('guyin-check-pitch.js', ['--json', 'name', '开局无敌剑神', '白银案录', '我在洪荒当赘婿']);
+  let report = parseJson(r.stdout);
+  check('P7-2 书名十年测试：热词名过滤与干净名区分', r.status === 0 && report
+    && report.summary.tested === 3 && report.summary.hype === 2
+    && report.names.some((n) => n.name === '白银案录' && n.verdict === '过十年')
+    && report.findings.filter((f) => f.type === 'hype-title').length === 2,
+    `names=${JSON.stringify(report && report.names)}`);
+
+  r = run('guyin-check-pitch.js', ['--json', 'blurb', '--blurb', blurb, path.join(proj, '大纲')]);
+  report = parseJson(r.stdout);
+  check('P7-2 简介钩子覆盖：期待钩命中、漏覆盖两报（危机可隐/悬念应映射）', r.status === 0 && report
+    && report.summary.hooks_checked === 3
+    && report.hooks.some((h) => h.chapter === 2 && h.covered)
+    && report.findings.filter((f) => f.type === 'blurb-missing-promise').length === 2,
+    `hooks=${JSON.stringify(report && report.hooks)}`);
+
+  r = run('guyin-check-pitch.js', ['--json', 'titles', path.join(proj, '正文')]);
+  report = parseJson(r.stdout);
+  check('P7-2 章节标题三报：抽象词/超长/钩子错位', r.status === 0 && report
+    && report.findings.some((f) => f.type === 'title-abstract' && f.excerpt === '往事')
+    && report.findings.some((f) => f.type === 'title-too-long')
+    && report.findings.some((f) => f.type === 'title-hook-mismatch' && f.excerpt.includes('反转')),
+    `findings=${JSON.stringify(report && report.findings.map((f) => f.type + '|' + f.excerpt))}`);
 }
 
 // ============================================================
@@ -881,6 +1313,91 @@ console.log('== guyin-tracking-commit.py (smoke) ==');
     const script = path.join(S, 'guyin-tracking-commit.py');
     const r = spawnSync(py, ['-c', `compile(open(${JSON.stringify(script)}, encoding="utf-8").read(), ${JSON.stringify(script)}, "exec")`], { encoding: 'utf8' });
     check('python 语法编译', r.status === 0, r.stderr.trim().slice(0, 300));
+  }
+}
+
+// ============================================================
+console.log('== guyin-tracking-commit.py P2 章节金字塔（chapter_summaries + 派生视图） ==');
+{
+  const py = ['python3', 'python', 'py'].find((bin) => {
+    try {
+      return spawnSync(bin, ['-c', ''], { encoding: 'utf8' }).status === 0;
+    } catch (e) {
+      return false;
+    }
+  });
+  if (!py) {
+    skip('P2 init 带 chapter_summaries 入库', '未找到可用 python 解释器');
+    skip('P2 金字塔派生视图含摘要', '未找到可用 python 解释器');
+    skip('P2 commit 入库 chapter_summaries', '未找到可用 python 解释器');
+    skip('P2 金字塔视图含两章摘要', '未找到可用 python 解释器');
+    skip('P2 check 金字塔视图一致', '未找到可用 python 解释器');
+  } else {
+    const SCRIPT = path.join(S, 'guyin-tracking-commit.py');
+    const runPy = (args, project) => spawnSync(py, [SCRIPT, ...args, '--project', project], { encoding: 'utf8' });
+
+    // init 带 chapter_summaries：验证持久层入库 + 金字塔派生视图生成。
+    const book = path.join(TMP, 'p2py', '书');
+    fixture('p2py/书/init.json', JSON.stringify({
+      schema_version: 1, book_title: '金字塔测试', last_chapter: 1,
+      context: {
+        position: { volume: '卷一', volume_start_chapter: 1, story_time: '景和三年春', scene: '县衙' },
+        long_term_constraints: [], active_character_names: ['燕衡'], continuity_risks: [],
+        recent_chapters: [{ chapter: 1, summary: '验银' }], next_chapter_commitments: [],
+      },
+      character_snapshots: {
+        燕衡: { identity: '主角', location: '县衙', goal: '查银', state: '冷静',
+          abilities_resources: [], relationships: [], knowledge: [], open_threads: [] },
+      },
+      foreshadow: [], timeline_events: [], verdicts: [], evidence: [], geo: [],
+      chapter_summaries: { '1': '燕衡验银，当众拆穿换银的局' },
+    }));
+    let r = runPy(['init', '--input', path.join(TMP, 'p2py', '书', 'init.json')], book);
+    let state = r.status === 0
+      ? JSON.parse(fs.readFileSync(path.join(book, '追踪', '_tracking-state.json'), 'utf8')) : null;
+    check('P2 init 带 chapter_summaries：持久层入库', r.status === 0 && state
+      && state.chapter_summaries && state.chapter_summaries['1'] === '燕衡验银，当众拆穿换银的局',
+      `status=${r.status} err=${r.stderr.trim().slice(0, 160)}`);
+
+    let pyramid = r.status === 0
+      ? fs.readFileSync(path.join(book, '追踪', '章节金字塔.md'), 'utf8') : '';
+    check('P2 章节金字塔.md 含章摘要表', r.status === 0 && pyramid.includes('章摘要（全量）')
+      && pyramid.includes('燕衡验银'),
+      `status=${r.status}`);
+
+    // commit 第 2 章：delta.result 自动入库 chapter_summaries[2]。
+    fixture('p2py/书/commit.json', JSON.stringify({
+      schema_version: 1, mode: 'append', chapter: 2, chapter_title: '追查',
+      expected_state_revision: 0,
+      delta: {
+        result: '燕衡追查银两去向，发现线索指向济宁。',
+        character_changes: [{ name: '燕衡', change: '从验银转向追查' }],
+      },
+      context: {
+        position: { volume: '卷一', volume_start_chapter: 1, story_time: '景和三年夏', scene: '码头' },
+        long_term_constraints: [], active_character_names: ['燕衡'], continuity_risks: [],
+      },
+      character_snapshots: {
+        燕衡: { identity: '主角', location: '码头', goal: '追查', state: '冷静带狠',
+          abilities_resources: [], relationships: [], knowledge: [], open_threads: [] },
+      },
+    }));
+    r = runPy(['commit', '--input', path.join(TMP, 'p2py', '书', 'commit.json')], book);
+    state = r.status === 0
+      ? JSON.parse(fs.readFileSync(path.join(book, '追踪', '_tracking-state.json'), 'utf8')) : null;
+    check('P2 commit 入库 chapter_summaries[2]', r.status === 0 && state
+      && state.chapter_summaries && state.chapter_summaries['1'] && state.chapter_summaries['2'] === '燕衡追查银两去向，发现线索指向济宁。',
+      `status=${r.status} err=${r.stderr.trim().slice(0, 160)}`);
+
+    pyramid = r.status === 0
+      ? fs.readFileSync(path.join(book, '追踪', '章节金字塔.md'), 'utf8') : '';
+    check('P2 金字塔视图含两章摘要', r.status === 0 && pyramid.includes('燕衡验银')
+      && pyramid.includes('燕衡追查'),
+      `status=${r.status}`);
+
+    // check 一致（金字塔视图与 state 同步）
+    r = runPy(['check'], book);
+    check('P2 check 金字塔视图一致', r.status === 0, `status=${r.status} err=${r.stderr.trim().slice(0, 160)}`);
   }
 }
 
@@ -987,8 +1504,11 @@ console.log('== guyin-setup 模板完整性（Phase 0 清单落成断言） ==')
     'long/.claude/settings.json',
     'long/.claude/hooks/guyin-hook.js',
     'long/.claude/agents/guyin-beat-writer.md',
+    'long/.claude/agents/guyin-checker.md',
     'long/.codex/agents/guyin-beat-writer.toml',
+    'long/.codex/agents/guyin-checker.toml',
     'long/.opencode/agents/guyin-beat-writer.md',
+    'long/.opencode/agents/guyin-checker.md',
     'long/.opencode/commands/guyin.md',
     'long/作者性/气卡.md',
     'long/作者性/指纹.md',
