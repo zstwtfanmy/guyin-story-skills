@@ -24,7 +24,7 @@ markdown heading lines. Directory input scans 第*.md only.
 --fail-on=blocking exits 1 only on blocking findings; default --fail-on=all exits 1 on any.
 Report-only: findings go to the review queue (rewrite card or exemption), never auto-deleted.`;
 
-const options = { json: false, failOn: 'all', min: 2000, max: 6000, inputs: [] };
+const options = { json: false, failOn: 'all', min: 2900, max: 6000, inputs: [] };
 
 function die(message) {
   console.error(message);
