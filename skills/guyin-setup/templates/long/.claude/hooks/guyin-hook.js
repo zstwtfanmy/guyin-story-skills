@@ -25,7 +25,36 @@ const fs = require('fs');
 const path = require('path');
 const { spawnSync } = require('child_process');
 
-const CHAPTER_MIN = 2000; // 章去空白字数下限，与 guyin-check-wordcount.js 默认 --min 同口径同值
+// 章去空白字数下限：细纲目标驱动（O3，docs/06 §二）——探测 大纲/细纲_第N章*.md 的
+// 「字数目标」× 90%，细纲缺失或无字数目标 → 缺省 3000。
+// 同步注释契约（O3/D1）：本检查与技能库 skills/guyin-write/scripts/guyin-check-wordcount.js
+// 的 resolveMin 是同一逻辑的两份实现——hook 为部署件随项目走、脚本在技能库，运行时路径
+// 不保证可达，无法抽公共模块；改一处必改另一处（比值/缺省值/细纲探测口径）。
+const CHAPTER_DEFAULT_MIN = 3000;
+const CHAPTER_TARGET_RATIO = 0.9;
+
+// 大纲/ 下按整数章号匹配 细纲_第N章*.md 并读「字数目标」行（容忍补零差异与标题后缀）。
+function resolveChapterMin(bookDir, num) {
+  try {
+    const name = fs.readdirSync(path.join(bookDir, '大纲'))
+      .find((n) => {
+        const m = /^细纲_第0*(\d+)章.*\.md$/.exec(n);
+        return m !== null && parseInt(m[1], 10) === num;
+      });
+    if (name) {
+      const text = fs.readFileSync(path.join(bookDir, '大纲', name), 'utf8');
+      for (const line of text.split(/\r?\n/)) {
+        if (line.includes('字数目标')) {
+          const m = /(\d+)/.exec(line);
+          if (m) return { min: Math.round(Number(m[1]) * CHAPTER_TARGET_RATIO), origin: `细纲目标 ${m[1]} × 90%` };
+        }
+      }
+    }
+  } catch (e) {
+    /* 大纲/ 缺失或读失败 → 走缺省 */
+  }
+  return { min: CHAPTER_DEFAULT_MIN, origin: `缺省 ${CHAPTER_DEFAULT_MIN}` };
+}
 
 function readStdin() {
   try {
@@ -196,8 +225,9 @@ function postWrite() {
       out.push('   影响事件定性/伏笔/角色状态/时间线的修复 → guyin-write 大修场景 + tracking-commit 重提交（S 级唯一合法通道）；纯文字 S3 → guyin-deslop。');
     }
     const count = visibleChars(buf.toString('utf8'));
-    if (count < CHAPTER_MIN) {
-      out.push(`【字数】第 ${num} 章去空白 ${count} 字，低于默认下限 ${CHAPTER_MIN}（权威口径：guyin-check-wordcount.js，--min 可调）。`);
+    const { min, origin } = resolveChapterMin(bookDir, num);
+    if (count < min) {
+      out.push(`【字数】第 ${num} 章去空白 ${count} 字，低于下限 ${min}（${origin}；权威口径：guyin-check-wordcount.js，--min 可调）。`);
       out.push('   多为 beat 缺斤短两或拼接缺 beat——补写缺口 beat，勿机械注水。');
     }
   }

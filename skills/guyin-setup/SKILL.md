@@ -1,6 +1,6 @@
 ---
 name: guyin-setup
-version: 0.6.0
+version: 0.7.0
 description: "隐笔项目脚手架部署。把长篇/短篇项目模板（三端执行层部署件 + 硬护栏 hook + 双台账 + 作者性）部署到当前目录；模板随本技能分发，无需克隆仓库。触发方式：/guyin-setup、$guyin-setup、「准备写书」「搭环境」「建项目」「初始化写作项目」。"
 ---
 # guyin-setup：隐笔项目部署器

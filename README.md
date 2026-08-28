@@ -12,6 +12,7 @@
 | **guyin-story** | `/guyin`、`/隐笔`、「我想写小说」 | 主入口：路由 + 项目状态诊断 |
 | **guyin-write** | `/guyin-write`、「开书」「写第X章」「日更」「回炉」 | 长篇写作编排层：beat 任务卡循环 + 检查 + 台账 |
 | **guyin-short-write** | `/guyin-short-write`、「写短篇」「盐言故事」 | 短篇写作编排层：骨架三件（情节节点/情绪曲线/反转表） |
+| **guyin-pitch** | `/guyin-pitch`、「起书名」「写简介」「章节标题」 | 开书文案包：书名多采样外选+十年测试，简介从前三章反向提炼，章节标题与钩子类型联动 |
 | **guyin-analyze** | `/guyin-analyze`、「拆这本书」 | 长篇拆文管道（质感拆解/类型魂谱接口已预留） |
 | **guyin-short-analyze** | `/guyin-short-analyze`、「拆短篇」 | 短篇拆文全量管道：故事核/情感线/反转设计/共鸣 |
 | **guyin-review** | `/guyin-review`、「审查」「这章怎么样」 | 对抗式审查：只诊断不动刀，输出 L1/L2/L3 接大修 |
@@ -33,7 +34,7 @@ npx skills add https://github.com/zstwtfanmy/guyin-story-skills -a claude-code -
 npx skills add https://github.com/zstwtfanmy/guyin-story-skills -a codex
 ```
 
-交互式选择时全选 8 个 guyin-* 技能（含 guyin-setup 与其项目模板）。然后每本书：
+交互式选择时全选 9 个 guyin-* 技能（含 guyin-setup 与其项目模板）。然后每本书：
 
 ```powershell
 mkdir D:\books\我的书; cd D:\books\我的书
@@ -72,10 +73,10 @@ Codex 的 custom agent 新开会话后生效。无 subagent 环境自动降级 s
 ## 仓库结构
 
 ```
-skills/          八个 guyin- 技能（cards/ 四卡模板、exemplars/ 范文库 10+1 题材默认弹药、作者性引导协议、consult/ 咨询库、scripts/ 检查脚本）
+skills/          九个 guyin- 技能（cards/ 四卡模板、exemplars/ 范文库 10+1 题材默认弹药、作者性引导协议、consult/ 咨询库、scripts/ 检查脚本）
                  guyin-setup/templates/ 持有项目模板：long/ 长篇脚手架 + short/ 短篇 delta（内涵三件），随技能安装走
 arena/           擂台：3 个固定基准场景 + 对战记录
-docs/            设计文档（01-需求框架 / 02-落地计划 / 03-资产盘点）
+docs/            设计文档（01 需求框架 / 02 落地计划 / 03 资产盘点 / 04 优化路线图 / 05 实战护栏 / 06 复盘整改）
 ```
 
 ## 框架之魂 · 以天合天
@@ -127,6 +128,8 @@ docs/            设计文档（01-需求框架 / 02-落地计划 / 03-资产盘
 | [docs/02-落地计划.md](docs/02-落地计划.md) | 四阶段任务与验收（斋·观·合·显）、Arena 协议、风险清单、下一步 |
 | [docs/03-资产盘点.md](docs/03-资产盘点.md) | 上游资产继承清单与重铸状态 |
 | [docs/04-优化路线图.md](docs/04-优化路线图.md) | 三视角审计路线（架构/研究员/作家）：全 flash 流水线质量补偿算法、token 经济学、作品全生命周期（P1-P7） |
+| [docs/05-实战护栏路线图.md](docs/05-实战护栏路线图.md) | 实战护栏批次：G1-G5 叙事资产护栏、F1 落盘前格式门、L1-L3 三腔 lint、C1 收敛协议、追踪 v6、A1 资产收编 |
+| [docs/06-卷三开局复盘整改计划.md](docs/06-卷三开局复盘整改计划.md) | 卷三开局复盘整改：O/H/I/W 四系列（细纲三道门、作者性隔离、防坍缩供给线、流程接线）+ 决策与执行记录 |
 
 ## 术语速查
 

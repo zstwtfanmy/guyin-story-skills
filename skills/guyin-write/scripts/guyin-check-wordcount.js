@@ -5,11 +5,18 @@
 //
 // 低模型执行层最常崩的是字数：beat 写两百字就收工、拼接缺 beat。本脚本做章级兜底
 // （beat 级由写作卡的字数指令管，两层各守各的）：
-//   - chapter-too-short (blocking)：去空白字数 < min（默认 2000，低模型档 3-4 beat 下限）
+//   - chapter-too-short (blocking)：去空白字数 < min（目标驱动：同项目细纲「字数目标」× 90%，
+//     细纲缺失或无字数目标 → 缺省 3000，与 workflow-chapter 既有兑底统一；--min 显式覆盖）
 //   - chapter-too-long  (advisory)：> max（默认 6000，提示核对 beat 切分是否失守）
 // 度量：剔除 YAML frontmatter 与 markdown 标题行后的去空白字符数（与 doc-budget 同口径）。
 // 目录输入时只检 第*.md（三位章号命名约定），其余文件忽略。
+// 字数标准是每本书的（细纲驱动），框架硬编码宽带必然错配——2014 字对 3000 目标是 67%
+// 却能落在旧宽带 2000-6000 上过检，正是 ch63 事故的机械漏洞（docs/06 §二 O3）。
 // Report-only，永不改写——报警项一律拦为待审（改写卡或豁免），同其他检查脚本。
+//
+// 同步注释契约（O3/D1）：本脚本与 guyin-setup 模板 hook（templates/long/.claude/hooks/
+// guyin-hook.js 的 resolveChapterMin）是同一目标驱动逻辑的两份实现——hook 为部署件随项目走、
+// 脚本在技能库，运行时路径不保证可达，无法抽公共模块；改一处必改另一处（比值/缺省值/细纲探测口径）。
 
 const fs = require('fs');
 const path = require('path');
@@ -17,14 +24,15 @@ const path = require('path');
 const USAGE = `Usage: node guyin-check-wordcount.js [--json] [--fail-on=blocking|all] [--min=N] [--max=N] <file|dir>...
 
 Chapter wordcount guard for low-model prose assembly:
-  - chapter-too-short (blocking): visible chars < --min (default 2000)
+  - chapter-too-short (blocking): visible chars < min (default: outline
+    target x 90% from 大纲/细纲_第XXX章.md, fallback 3000; --min overrides)
   - chapter-too-long  (advisory): visible chars > --max (default 6000)
 Visible chars = non-whitespace characters after stripping YAML frontmatter and
 markdown heading lines. Directory input scans 第*.md only.
 --fail-on=blocking exits 1 only on blocking findings; default --fail-on=all exits 1 on any.
 Report-only: findings go to the review queue (rewrite card or exemption), never auto-deleted.`;
 
-const options = { json: false, failOn: 'all', min: 2900, max: 6000, inputs: [] };
+const options = { json: false, failOn: 'all', min: null, max: 6000, inputs: [] };
 
 function die(message) {
   console.error(message);
@@ -59,7 +67,7 @@ for (let i = 2; i < process.argv.length; i += 1) {
 }
 
 if (options.inputs.length === 0) die('No files provided');
-if (options.min >= options.max) die(`--min (${options.min}) must be smaller than --max (${options.max})`);
+if (options.min !== null && options.min >= options.max) die(`--min (${options.min}) must be smaller than --max (${options.max})`);
 
 function collectFiles(input) {
   const abs = path.resolve(input);
@@ -77,7 +85,7 @@ function collectFiles(input) {
     .map((name) => path.join(abs, name));
 }
 
-// 剔除 frontmatter 与标题行后的去空白字符数。
+// 剔除 frontmatter 与标题行后的去空白字符数（与上方度量说明同口径）。
 function visibleChars(text) {
   const lines = text.split(/\r?\n/);
   const body = [];
@@ -99,14 +107,76 @@ function visibleChars(text) {
   return body.join('\n').replace(/\s/g, '').length;
 }
 
+// ---------- O3 目标驱动：--min 未显式给定时，探测同项目细纲「字数目标」 ----------
+
+const DEFAULT_MIN = 3000;
+const OUTLINE_TARGET_RATIO = 0.9;
+
+function chapterNumberOf(base) {
+  const m = /^第0*(\d+)章.*\.md$/.exec(base);
+  return m ? Number(m[1]) : null;
+}
+
+// 从正文文件向上（≤3 层）找同级 大纲/ 目录里的 细纲_第XXX章*.md（容忍补零差异与标题后缀）。
+function locateOutline(file, num) {
+  let cur = path.dirname(path.resolve(file));
+  for (let depth = 0; depth < 3; depth += 1) {
+    let entries;
+    try {
+      entries = fs.readdirSync(path.join(cur, '大纲'));
+    } catch (e) {
+      const parent = path.dirname(cur);
+      if (parent === cur) break;
+      cur = parent;
+      continue;
+    }
+    const target = entries.find((name) => {
+      const m = /^细纲_第0*(\d+)章.*\.md$/.exec(name);
+      return m !== null && Number(m[1]) === num;
+    });
+    if (target) return path.join(cur, '大纲', target);
+    const parent = path.dirname(cur);
+    if (parent === cur) break;
+    cur = parent;
+  }
+  return null;
+}
+
+// 每文件解析 blocking 下限：--min 显式指定优先；否则细纲目标 × 90%；再否则缺省 3000。
+function resolveMin(file) {
+  if (options.min !== null) return { min: options.min, origin: '--min 显式指定' };
+  const num = chapterNumberOf(path.basename(file));
+  if (num !== null) {
+    const outline = locateOutline(file, num);
+    if (outline) {
+      const text = fs.readFileSync(outline, 'utf8');
+      for (const line of text.split(/\r?\n/)) {
+        if (line.includes('字数目标')) {
+          const m = /(\d+)/.exec(line);
+          if (m) {
+            const target = Number(m[1]);
+            return { min: Math.round(target * OUTLINE_TARGET_RATIO), origin: `细纲目标 ${target} × 90%` };
+          }
+        }
+      }
+    }
+  }
+  return { min: DEFAULT_MIN, origin: `缺省 ${DEFAULT_MIN}（细纲缺失或无字数目标）` };
+}
+
 const files = [];
 for (const input of options.inputs) files.push(...collectFiles(input));
 
 const findings = [];
+let minSeen = Infinity;
+let maxSeen = 0;
 for (const file of files) {
   const text = fs.readFileSync(file, 'utf8');
   const count = visibleChars(text);
-  if (count < options.min) {
+  const { min, origin } = resolveMin(file);
+  // 目标极大的书保 advisory 语义（正常网文章目标 2000-4500 不触发）。
+  const max = Math.max(options.max, min + 100);
+  if (count < min) {
     findings.push({
       file,
       line: 1,
@@ -114,11 +184,11 @@ for (const file of files) {
       type: 'chapter-too-short',
       severity: 'blocking',
       count,
-      limit: options.min,
-      message: `章字数 ${count} 低于下限 ${options.min}（低模型 beat 缺斤短两或拼接缺 beat；补写缺口 beat，勿机械注水）`,
+      limit: min,
+      message: `章字数 ${count} 低于下限 ${min}（${origin}；低模型 beat 缺斤短两或拼接缺 beat；补写缺口 beat，勿机械注水）`,
       excerpt: '',
     });
-  } else if (count > options.max) {
+  } else if (count > max) {
     findings.push({
       file,
       line: 1,
@@ -126,11 +196,13 @@ for (const file of files) {
       type: 'chapter-too-long',
       severity: 'advisory',
       count,
-      limit: options.max,
-      message: `章字数 ${count} 超过上限 ${options.max}（核对 beat 切分与细纲密度，是否该拆章）`,
+      limit: max,
+      message: `章字数 ${count} 超过上限 ${max}（核对 beat 切分与细纲密度，是否该拆章）`,
       excerpt: '',
     });
   }
+  minSeen = Math.min(minSeen, min);
+  maxSeen = Math.max(maxSeen, max);
 }
 
 if (options.json) {
@@ -140,7 +212,7 @@ if (options.json) {
     console.log(`${f.file}: [${f.severity}] ${f.type}: ${f.message}`);
   }
   if (findings.length === 0 && files.length > 0) {
-    console.log(`wordcount: ${files.length} file(s) within [${options.min}, ${options.max}]`);
+    console.log(`wordcount: ${files.length} file(s) within limits [${Number.isFinite(minSeen) ? minSeen : options.min}, ${maxSeen || options.max}]`);
   }
 }
 

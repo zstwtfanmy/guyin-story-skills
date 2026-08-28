@@ -28,10 +28,12 @@ jobs:
           node --check skills/guyin-write/scripts/guyin-check-wordcount.js
           node --check skills/guyin-write/scripts/guyin-check-hook-rotation.js
           node --check skills/guyin-write/scripts/guyin-check-repetition.js
-                    node --check skills/guyin-write/scripts/guyin-check-flesh.js
-                    node --check skills/guyin-write/scripts/guyin-impact-map.js
-                    node --check skills/guyin-write/scripts/guyin-check-reader-signal.js
-                    node --check skills/guyin-write/scripts/guyin-check-pitch.js
+          node --check skills/guyin-write/scripts/guyin-check-flesh.js
+          node --check skills/guyin-write/scripts/guyin-impact-map.js
+          node --check skills/guyin-write/scripts/guyin-check-reader-signal.js
+          node --check skills/guyin-write/scripts/guyin-check-pitch.js
+          node --check skills/guyin-write/scripts/guyin-check-outline-slots.js
+          node --check skills/guyin-write/scripts/guyin-check-authority-leak.js
           node --check skills/guyin-write/scripts/guyin-normalize-punctuation.js
           node --check skills/guyin-setup/scripts/merge-claude-settings.js
           node --check skills/guyin-setup/templates/long/.claude/hooks/guyin-hook.js

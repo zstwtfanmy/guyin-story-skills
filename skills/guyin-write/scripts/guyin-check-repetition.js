@@ -296,6 +296,7 @@ const pending = [];        // --commit 待入库指纹
 const pendingImagery = []; // --commit 待入库比喻句
 const batchImagery = [];   // 本批已处理章的比喻句（同批多章时窗口统计需要）
 const batchChapters = new Set();
+const scannedChapters = []; // I1 欠账检测：本批受检正文章号
 let paragraphsScanned = 0;
 
 for (const file of files) {
@@ -375,6 +376,7 @@ for (const file of files) {
   if (options.commit) pendingImagery.push(...currentImagery);
   batchImagery.push(...currentImagery);
   batchChapters.add(chapter);
+  scannedChapters.push(chapter);
 
   // 意象域密度（P6-2）：本章参与后，滑窗（IMAGERY_WINDOW 章）内同域 ≥IMAGERY_RUN 次
   // 才报——历史旧密度不在本章参与时不报（已在密度形成那章报过）。同批多章时窗口
@@ -467,6 +469,28 @@ if (options.commit && pending.length > 0) {
   }
 }
 
+// ---------- I1 指纹库欠账检测（章检模式，docs/06 §三） ----------
+// 库最大登记章号 < 受检正文最大章号 → blocking。时序依据（E3）：写章循环第 6 步（追踪
+// 提交+指纹固化）先于第 7 步章检——章检时当前章应已入库，落后 1 章即欠账、无容差（勿按
+// 「章检先于提交」的直觉加 off-by-one 容差；库 ≥ 受检——如回炉重检旧章——不报）。
+// --commit 模式不查（commit 本身就是补齐动作）。存量欠账项目首跑必红是设计行为（D10）：
+// 白银案录现状指纹库到 ch61、正文到 ch63，下次章检首跑即报，须先 --commit 补登 62/63。
+if (!options.commit && scannedChapters.length > 0 && libraryPath) {
+  const targetMax = Math.max(...scannedChapters);
+  const libraryMax = library.entries.reduce((acc, e) => Math.max(acc, e.chapter), 0);
+  if (libraryMax < targetMax) {
+    findings.push({
+      file: path.relative('.', files[0]),
+      line: 1,
+      column: 1,
+      type: 'fingerprint-arrears',
+      severity: 'blocking',
+      message: `指纹库欠账：库登记至第 ${libraryMax} 章，受检正文至第 ${targetMax} 章——第 ${libraryMax + 1} 章起未固化，先跑 --commit 补齐再过章检（写章循环第 6 步：追踪提交+指纹固化为原子双命令）`,
+      excerpt: '',
+    });
+  }
+}
+
 const summary = {
   files_scanned: files.length,
   paragraphs_scanned: paragraphsScanned,
@@ -474,6 +498,7 @@ const summary = {
   near_hits: findings.filter((f) => f.type === 'para-repeat-near').length,
   pattern_hits: findings.filter((f) => f.type === 'para-repeat-pattern').length,
   imagery_hits: findings.filter((f) => f.type === 'imagery-domain-run').length,
+  arrears_hits: findings.filter((f) => f.type === 'fingerprint-arrears').length,
   committed,
 };
 

@@ -68,7 +68,7 @@ const longChapter = (n) => `${SCENE.repeat(n)}\n`;
 console.log('== guyin-check-wordcount ==');
 {
   const short = fixture('wc/第001章_短.md', '# 第001章 短\n他走了。\n');
-  const normal = fixture('wc/第002章_正常.md', `# 第002章 正常\n${longChapter(75)}`);
+  const normal = fixture('wc/第002章_正常.md', `# 第002章 正常\n${longChapter(95)}`);
   const overlong = fixture('wc/第003章_超.md', `# 第003章 超\n${longChapter(220)}`);
 
   let r = run('guyin-check-wordcount.js', ['--json', short]);
@@ -1455,7 +1455,7 @@ console.log('== guyin-setup 模板 hook（guyin-hook.js） ==');
   r = runHook(['post-write'], payload(midChap));
   check('post-write 章字数欠账提醒', r.status === 0 && r.stdout.includes('字数'), `status=${r.status} out=${r.stdout.trim().slice(0, 80)}`);
 
-  const okChap = fixture('hook/书A/正文/第006章_全.md', `# 第006章 全${'\n'}${longChapter(75)}`);
+  const okChap = fixture('hook/书A/正文/第006章_全.md', `# 第006章 全${'\n'}${longChapter(95)}`);
   r = runHook(['post-write'], payload(okChap));
   check('post-write 正常章静默', r.status === 0 && r.stdout.trim() === '', `status=${r.status} out=${r.stdout.trim().slice(0, 80)}`);
 
@@ -1492,6 +1492,191 @@ console.log('== guyin-setup 模板 hook（guyin-hook.js） ==');
   fs.mkdirSync(emptyDir, { recursive: true });
   r = runHook(['session'], '', emptyDir);
   check('session 空项目静默', r.status === 0 && r.stdout.trim() === '', `status=${r.status}`);
+}
+
+// ============================================================
+console.log('== 06 整改黄金样本回归（H2/O2/O3/I1/I2） ==');
+{
+  // H2 作者性泄漏（docs/06 §1.4）：整句与 4 字子句必报 blocking，化用放行（防的是抄，
+  // 不防化用），无作者性项目静默（E6 唯一合法静默），占位符气卡报词源为空（检测空转）。
+  fixture('h2leak/作者性/气卡.md', [
+    '# 气卡',
+    '',
+    '| 字段 | 本书取值 |',
+    '| --- | --- |',
+    '| 气句 | 稳住，别慌。天塌不下来。（口述定稿） |',
+    '',
+  ].join('\n'));
+  const leakFull = fixture('h2leak/正文/第001章_整句.md', '他稳住，别慌。天塌不下来。\n');
+  const leakClause = fixture('h2leak/正文/第002章_子句.md', '他稳住，别慌，接着把账对完。\n');
+  const paraphrase = fixture('h2leak/正文/第003章_化用.md', '账没乱，慌什么。天塌下来，当被盖。\n');
+  let r = run('guyin-check-authority-leak.js', ['--json', leakFull, leakClause, paraphrase]);
+  let report = parseJson(r.stdout);
+  check('H2 整句泄漏必报 blocking', r.status === 1 && report
+    && report.findings.some((f) => f.type === 'authority-leak' && f.severity === 'blocking'
+      && f.file === leakFull),
+    `status=${r.status} types=${JSON.stringify(report && report.findings.map((f) => f.type))}`);
+  check('H2 四字子句泄漏必报 blocking（E1：稳住，别慌）', report
+    && report.findings.some((f) => f.type === 'authority-leak' && f.severity === 'blocking'
+      && f.file === leakClause),
+    `types=${JSON.stringify(report && report.findings.map((f) => f.type))}`);
+  check('H2 化用句静默（同一精神、不同措辞合法）', report
+    && !report.findings.some((f) => f.file === paraphrase),
+    `types=${JSON.stringify(report && report.findings.map((f) => f.type))}`);
+
+  const noAuthority = fixture('h2plain/正文/第001章_净.md', '他稳住，别慌。天塌不下来。\n');
+  r = run('guyin-check-authority-leak.js', ['--json', noAuthority]);
+  report = parseJson(r.stdout);
+  check('H2 无作者性项目静默（E6）', r.status === 0 && report && report.findings.length === 0,
+    `status=${r.status} types=${JSON.stringify(report && report.findings.map((f) => f.type))}`);
+
+  fixture('h2ph/作者性/气卡.md', [
+    '# 气卡',
+    '',
+    '| 字段 | 本书取值 |',
+    '| --- | --- |',
+    '| 气句 | {{写你的气句}} |',
+    '',
+  ].join('\n'));
+  const phText = fixture('h2ph/正文/第001章_占位.md', '他把账对完，收了笔。\n');
+  r = run('guyin-check-authority-leak.js', ['--json', phText]);
+  report = parseJson(r.stdout);
+  check('H2 占位符气卡报词源为空 advisory', r.status === 1 && report
+    && report.findings.some((f) => f.type === 'authority-source-empty' && f.severity === 'advisory'),
+    `status=${r.status} types=${JSON.stringify(report && report.findings.map((f) => f.type))}`);
+
+  // O2 细纲槽位完整性（docs/06 §二）：beat 版残缺细纲五类 blocking 全报；全字段细纲静默。
+  const beatOutline = fixture('o2slots/大纲/细纲_第064章_beat版.md', [
+    '# 细纲_第064章 试炼',
+    '',
+    '## beat',
+    '',
+    '- beat1：开场，林彻进账房',
+    '- beat2：对手戏，与周砚对账',
+    '- beat3：收尾',
+    '',
+  ].join('\n'));
+  r = run('guyin-check-outline-slots.js', ['--json', beatOutline]);
+  report = parseJson(r.stdout);
+  for (const slot of ['hook', 'wordcount', 'multiline', 'anchor', 'holdback']) {
+    check(`O2 beat 版残缺细纲必报 outline-missing-${slot}`, r.status === 1 && report
+      && report.findings.some((f) => f.type === `outline-missing-${slot}` && f.severity === 'blocking'),
+      `types=${JSON.stringify(report && report.findings.map((f) => f.type))}`);
+  }
+
+  const fullOutline = fixture('o2slots/大纲/细纲_第065章_全字段.md', [
+    '# 细纲_第065章 齐全',
+    '',
+    '- 字数目标：3000',
+    '- 场景与对手戏下限：≥2 场 / ≥1 对手戏',
+    '- 主线：推进对账线，账本缺口浮出',
+    '- 感情线：无显性，但关系变化为周砚开始交底',
+    '- 复沓锚句：无',
+    '- 禁止提前释放：无',
+    '- 涉及场景：账房、当铺后巷',
+    '- 术语锚点：无',
+    '- 契约风险：低',
+    '',
+    '## 情节安排',
+    '',
+    '1. 开场：林彻核对总账',
+    '2. 对手戏：周砚交出私账',
+    '3. 收尾：发现缺页',
+    '',
+    '章尾钩子：悬念型——挂在账本缺的那一页上；实体：账本缺页；承接：第66章对质。',
+    '',
+  ].join('\n'));
+  r = run('guyin-check-outline-slots.js', [fullOutline]);
+  check('O2 全字段细纲静默', r.status === 0, `status=${r.status} out=${r.stdout.trim()}`);
+
+  // O3 字数验收个性化（docs/06 §二）：细纲「字数目标」驱动（×90%），无细纲缺省 3000。
+  // 2014 字对缺省 3000 必报（ch63 事故形态）；同 2905 字对目标 3000 静默、对目标 3500
+  // 必报——同字数不同判定，锁「目标驱动」而非「宽带硬编码」。
+  const body2014 = `${longChapter(57)}他把账本从头翻到尾页，一页也没跳过去。\n`;
+  const body2905 = longChapter(83);
+  const o3a = fixture('o3wc/a/正文/第001章_短.md', `# 第001章 短\n${body2014}`);
+  fixture('o3wc/b/大纲/细纲_第001章_试.md', '- 字数目标：3000\n');
+  const o3b = fixture('o3wc/b/正文/第001章_达标.md', `# 第001章 达标\n${body2905}`);
+  fixture('o3wc/c/大纲/细纲_第001章_试.md', '- 字数目标：3500\n');
+  const o3c = fixture('o3wc/c/正文/第001章_欠.md', `# 第001章 欠\n${body2905}`);
+  const o3d = fixture('o3wc/d/正文/第001章_近.md', `# 第001章 近\n${body2905}`);
+
+  r = run('guyin-check-wordcount.js', ['--json', o3a]);
+  report = parseJson(r.stdout);
+  check('O3 2014 字对缺省 3000 必报 blocking', r.status === 1 && report
+    && report.findings.some((f) => f.type === 'chapter-too-short' && f.severity === 'blocking'
+      && f.count === 2014 && f.limit === 3000),
+    `status=${r.status} findings=${JSON.stringify(report && report.findings.map((f) => `${f.count}/${f.limit}`))}`);
+
+  r = run('guyin-check-wordcount.js', [o3b]);
+  check('O3 同 2905 字对目标 3000 静默（×90% 达标线 2700）', r.status === 0,
+    `status=${r.status} out=${r.stdout.trim().slice(0, 120)}`);
+
+  r = run('guyin-check-wordcount.js', ['--json', o3c]);
+  report = parseJson(r.stdout);
+  check('O3 同 2905 字对目标 3500 必报（目标驱动）', r.status === 1 && report
+    && report.findings.some((f) => f.type === 'chapter-too-short' && f.limit === 3150),
+    `status=${r.status} findings=${JSON.stringify(report && report.findings.map((f) => `${f.count}/${f.limit}`))}`);
+
+  r = run('guyin-check-wordcount.js', ['--json', o3d]);
+  report = parseJson(r.stdout);
+  check('O3 无细纲 2905 字对缺省 3000 必报', r.status === 1 && report
+    && report.findings.some((f) => f.type === 'chapter-too-short' && f.limit === 3000),
+    `status=${r.status} findings=${JSON.stringify(report && report.findings.map((f) => `${f.count}/${f.limit}`))}`);
+
+  // I1 指纹库欠账（docs/06 §三）：库至第 1 章、受检至第 2 章 → blocking；--commit 补齐后静默。
+  const projI1 = path.join(TMP, 'i1rep');
+  const seg1 = '他把三本账并排摊开在案上，一页一页对过去，烛火在纸面上晃。翻到第三十七页，指尖停住了——那里缺了半页，撕口很新，不像虫蛀。他抬头看了周砚一眼，没有立刻问。\n';
+  const seg2 = '周砚把私账从袖子里推过桌面，纸角底下压着一张当票，墨迹旧了两年。他把声音压得很低，说这是当年被人逼着签的死契，如今拿回来，账就能对上了。\n';
+  const i1ch1 = fixture('i1rep/正文/第001章.md', `第一章\n\n${seg1}\n`);
+  const i1ch2 = fixture('i1rep/正文/第002章.md', `第二章\n\n${seg2}\n`);
+
+  r = run('guyin-check-repetition.js', ['--json', '--project', projI1, '--commit', i1ch1]);
+  check('I1 前置：首章 commit 建库', r.status === 0, `status=${r.status} out=${r.stdout.trim().slice(0, 120)}`);
+
+  r = run('guyin-check-repetition.js', ['--json', '--project', projI1, i1ch2]);
+  report = parseJson(r.stdout);
+  check('I1 指纹库欠账必报 blocking（库至第 1 章、受检至第 2 章）', r.status === 1 && report
+    && report.findings.some((f) => f.type === 'fingerprint-arrears' && f.severity === 'blocking'
+      && f.message.includes('指纹库欠账')),
+    `status=${r.status} types=${JSON.stringify(report && report.findings.map((f) => f.type))}`);
+
+  r = run('guyin-check-repetition.js', ['--json', '--project', projI1, '--commit', i1ch2]);
+  const libI1 = JSON.parse(fs.readFileSync(path.join(projI1, '追踪', '段落指纹库.json'), 'utf8'));
+  check('I1 --commit 补齐（库登记至第 2 章）', r.status === 0
+    && libI1.entries.length === 2 && libI1.entries.every((e) => e.chapter <= 2),
+    `status=${r.status} entries=${JSON.stringify(libI1.entries.map((e) => e.chapter))}`);
+
+  r = run('guyin-check-repetition.js', ['--json', '--project', projI1, i1ch2]);
+  report = parseJson(r.stdout);
+  check('I1 补齐后欠账静默', r.status === 0 && report
+    && !report.findings.some((f) => f.type === 'fingerprint-arrears'),
+    `status=${r.status} types=${JSON.stringify(report && report.findings.map((f) => f.type))}`);
+
+  // I2 短语黑名单（docs/06 §四）：登记短语每章超限报 advisory；无黑名单项目静默。
+  check('I2 模板 短语黑名单.md 随模板分发',
+    fs.existsSync(path.join(REPO, 'skills', 'guyin-setup', 'templates', 'long', '追踪', '短语黑名单.md')));
+  fixture('i2quota/追踪/短语黑名单.md', [
+    '# 短语黑名单',
+    '',
+    '| 短语 | 限额 |',
+    '| --- | --- |',
+    '| 记下 | 每章 ≤2 |',
+    '',
+  ].join('\n'));
+  const quotaChap = fixture('i2quota/正文/第001章.md',
+    '他记下了第一笔，又记下了第二笔，最后记下了第三笔，笔尖在纸上划出三道墨痕。\n');
+  r = run('guyin-check-ai-patterns.js', ['--json', quotaChap]);
+  report = parseJson(r.stdout);
+  check('I2 黑名单每章超限必报 phrase-quota advisory', r.status === 1 && report
+    && report.findings.some((f) => f.type === 'phrase-quota' && f.severity === 'advisory'
+      && f.message.includes('记下')),
+    `status=${r.status} types=${JSON.stringify(report && report.findings.map((f) => f.type))}`);
+
+  const plainChap = fixture('i2plain/正文/第001章.md',
+    '他记下了第一笔，又记下了第二笔，最后记下了第三笔，笔尖在纸上划出三道墨痕。\n');
+  r = run('guyin-check-ai-patterns.js', [plainChap]);
+  check('I2 无黑名单项目静默', r.status === 0, `status=${r.status} out=${r.stdout.trim().slice(0, 120)}`);
 }
 
 // ============================================================

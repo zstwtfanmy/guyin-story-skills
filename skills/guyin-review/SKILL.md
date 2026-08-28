@@ -1,6 +1,6 @@
 ---
 name: guyin-review
-version: 0.6.0
+version: 0.7.0
 description: "隐笔对抗式审查。只诊断不动刀：多视角找问题 + 合问收尾（这章更合还是只是更合格），输出按 L1/L2/L3 分级直接对接 guyin-write 大修。触发方式：/guyin-review、/隐笔审查、「审查」「帮我审一下」「这章怎么样」。"
 ---
 # guyin-review：隐笔审查（只诊断，不动刀）
@@ -12,7 +12,7 @@ description: "隐笔对抗式审查。只诊断不动刀：多视角找问题 + 
 1. 永不修改正文/设定/大纲/追踪；唯一可写：对话报告 + 分批审查时的 `.guyin-review/state.md`。
 2. 每个 finding 必须有句位证据，无证据不报。
 3. 疑似神来之笔**不报问题**，标「豁免候选」交五测试（见 guyin-write 文末）——合规系统不消灭变异。
-4. 确定性预检只读：章检脚本全扫（ai-patterns / integrity / consistency / narrative-asset / degeneration / wordcount / outline-copy），结果只作 finding 证据。文字视角报警段进[分诊卡](../guyin-write/cards/分诊卡.md)三选一+中温3票制，只看报警段 ±2 行不读全文。
+4. 确定性预检只读：章检脚本全扫（ai-patterns / integrity / consistency / narrative-asset / degeneration / wordcount / outline-copy / **authority-leak**——存量章与外部修订稿进 review 的作者性泄漏兑底门），结果只作 finding 证据。文字视角报警段进[分诊卡](../guyin-write/cards/分诊卡.md)三选一+中温3票制，只看报警段 ±2 行不读全文。
 
 ## 模式与降级
 
@@ -30,9 +30,9 @@ description: "隐笔对抗式审查。只诊断不动刀：多视角找问题 + 
 
 | 视角 | 执行形态 | 检查项 |
 |------|---------|--------|
-| 文字 | **漏斗式**：ai-patterns 全扫 → 报警段 ±2 行进[分诊卡](../guyin-write/cards/分诊卡.md)（三选一+中温3票制）→ 只对判为真问题的段做深度检查；**不读全文进模型** | 分诊分歧升级作者 |
+| 文字 | **漏斗式**：ai-patterns 全扫 → 报警段 ±2 行进[分诊卡](../guyin-write/cards/分诊卡.md)（三选一+中温3票制）→ 只对判为真问题的段做深度检查 | 分诊分歧升级作者 |
 | 一致性 | **纯脚本**：consistency + narrative-asset + tracking-state 比对 | 状态断言 vs 正文（实体/数字/时间点冲突），伏笔矛盾按 F 编号精确召回 |
-| 架构 | **本地算法 + 作者抽检**：钩子强度/主线推进间隔/章尾类型分布本地可算 → 信号表生成后作者判读 | flash 不做架构语义判断——一本正经地胡说比没有报告危险 |
+| 架构 | **本地算法 + 作者抽检**：钩子强度/主线推进间隔/章尾类型分布本地可算 → 信号表生成后作者判读 | flash 不做架构语义判断 |
 | 角色对话 | 低模型单章输入 | 声线一致？潜台词？行为合动机？关系尺度匹配当前阶段？ |
 
 **P3 综合**：合并去重 → severity 排序（S1 主线崩/读者信任崩；S2 明显影响效果；S3 局部；S4 建议）→ 分歧如实呈现，不自动妥协。

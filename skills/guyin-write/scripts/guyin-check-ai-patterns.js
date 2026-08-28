@@ -31,9 +31,10 @@ Detect high-risk AI-flavor prose patterns that need human rewrite:
   - 科普腔 (台词内定义/行话讲解标记聚集，密度型 advisory)
   - 段中预告腔 (叙述层未来指向标记出现在段中而非章尾, 实战漏网句式)
   - 金句腔 (双短句对仗断言收拍「A是B的，C是D的。」, 实战漏网句式)
+  - phrase quota (项目 追踪/短语黑名单.md 登记短语超限: 每章 ≤N / 近 5 章 ≤N / 相邻章禁用, advisory; 无该文件静默)
 
 Each finding carries severity: blocking by default for generation/deslop cleanup (not-is-comparison / em-dash / voice-contrast / negation-parade / reverse-not-is / trailer-ending / trailer-summary). This is a local style/readability gate, not an AIGC detector score; functional human text can be marked for review instead of hard-edited for a detector.
-或 advisory (period-stutter / long-paragraph / micro-action-tic / action-list-tic / abstract-summary-tic / cliche-density-tic / metaphor-density-tic / reasoning-chain-tic / system-notice-formality-tic / overcompressed-prose-tic / low-connective-density-tic / quote-emphasis-tic / formulaic-parallelism / explain-tic / mid-trailer / aphorism-tic，是提示，justified 的长推理/氛围段可保留)。
+或 advisory (period-stutter / long-paragraph / micro-action-tic / action-list-tic / abstract-summary-tic / cliche-density-tic / metaphor-density-tic / reasoning-chain-tic / system-notice-formality-tic / overcompressed-prose-tic / low-connective-density-tic / quote-emphasis-tic / formulaic-parallelism / explain-tic / mid-trailer / aphorism-tic / phrase-quota，是提示，justified 的长推理/氛围段可保留)。
 --fail-on=blocking 只在出现 blocking finding 时退出 1；默认 --fail-on=all 有任何 finding 即退出 1。
 
 The script reports findings only. It never rewrites text, because the safe fix is
@@ -305,6 +306,10 @@ if (options.files.length === 0) {
   die('No files provided');
 }
 
+// I2 phrase-quota 缓存：主循环（下方 for）先于文件尾函数区的顶层 const 执行，声明须置于循环前。
+const phraseBlacklistCache = new Map();
+const siblingChaptersCache = new Map();
+
 let failed = false;
 const allFindings = [];
 
@@ -320,6 +325,8 @@ for (const file of options.files) {
   }
 
   const findings = scanDocument(input).map((finding) => ({ file, ...finding }));
+  // I2 phrase-quota：需要文件路径定位项目黑名单与相邻章，故在主循环接线而非 scanProsePatterns。
+  findings.push(...findPhraseQuota(fullPath, input).map((finding) => ({ file, ...finding })));
   allFindings.push(...findings);
 }
 
@@ -1499,4 +1506,178 @@ function trimTrailingNoise(text) {
 function compact(text) {
   const normalized = text.replace(/\s+/g, ' ').trim();
   return normalized.length > 80 ? `${normalized.slice(0, 77)}...` : normalized;
+}
+
+// ---------- I2 短语黑名单（docs/06-卷三开局复盘整改计划.md §三）----------
+
+// 项目可配置 tic 词表：追踪/短语黑名单.md（模板初始空表，词表归项目填——决策 §八-3：
+// 每本书的 tic 不同，框架只给机制不预置词表；报告 A4 词表仅作模板注释示例）。
+// 超限一律 advisory（误报风险高，宁报不拦）；「稳住别慌」类作者性字面归 H2 blocking
+// 管（guyin-check-authority-leak.js），两级不混（docs/06 §1.5）。无黑名单文件静默
+//（短篇同理：文件存在即生效，模板不预置）。兼任 W3 工艺词登记位：本书题材工艺词
+//（「社会脸」类）漏进正文在此报。
+
+// 从受检文件向上（≤4 层）定位 追踪/短语黑名单.md。
+function locatePhraseBlacklist(file) {
+  let cur = path.dirname(path.resolve(file));
+  for (let depth = 0; depth < 4; depth += 1) {
+    const candidate = path.join(cur, '追踪', '短语黑名单.md');
+    if (fs.existsSync(candidate)) return candidate;
+    const parent = path.dirname(cur);
+    if (parent === cur) break;
+    cur = parent;
+  }
+  return null;
+}
+
+
+// 解析表格 | 短语 | 限额 |：跳过表头、占位行（{{...}}）与 HTML 注释块（模板示例区）。
+// 限额三档可同格并存：每章 ≤N / 近 5 章 ≤N / 相邻章禁用；无法识别的写法跳过该行。
+function loadPhraseBlacklist(file) {
+  const blacklistPath = locatePhraseBlacklist(file);
+  if (!blacklistPath) return null;
+  if (phraseBlacklistCache.has(blacklistPath)) return phraseBlacklistCache.get(blacklistPath);
+  const entries = [];
+  let inComment = false;
+  let text = '';
+  try {
+    text = fs.readFileSync(blacklistPath, 'utf8');
+  } catch (error) {
+    return null;
+  }
+  for (const raw of text.split(/\r?\n/)) {
+    const line = raw.trim();
+    if (inComment) {
+      if (line.includes('-->')) inComment = false;
+      continue;
+    }
+    if (line.includes('<!--')) {
+      if (!line.includes('-->')) inComment = true;
+      continue;
+    }
+    if (!line.startsWith('|')) continue;
+    const cells = line.split('|').map((c) => c.trim());
+    if (cells.length < 3) continue;
+    const phrase = cells[1];
+    const quota = cells[2] || '';
+    if (!phrase || phrase === '短语' || phrase.includes('{{')) continue;
+    const entry = { phrase };
+    let matched = false;
+    let m = /每章\s*[≤<=]\s*(\d+)/.exec(quota);
+    if (m) { entry.perChapter = Number(m[1]); matched = true; }
+    m = /近\s*5\s*章\s*[≤<=]\s*(\d+)/.exec(quota);
+    if (m) { entry.window = Number(m[1]); matched = true; }
+    if (/相邻章\s*禁用/.test(quota)) { entry.adjacent = true; matched = true; }
+    if (!matched) continue;
+    entries.push(entry);
+  }
+  const result = { path: blacklistPath, entries };
+  phraseBlacklistCache.set(blacklistPath, result);
+  return result;
+}
+
+// 文件名章号（第061章.md / 第61章-标题.md / ch61.md）；无法解析返回 null。
+function parseChapterNumber(basename) {
+  let m = /第\s*0*(\d+)\s*章/.exec(basename);
+  if (m) return Number(m[1]);
+  m = /ch(?:apter)?[._\-\s]?0*(\d+)/i.exec(basename);
+  if (m) return Number(m[1]);
+  return null;
+}
+
+
+// 同目录章文件映射（章号 → 文件名，首个命中优先）。窗口/相邻档的供给源。
+function listSiblingChapters(file) {
+  const dir = path.dirname(path.resolve(file));
+  if (siblingChaptersCache.has(dir)) return siblingChaptersCache.get(dir);
+  const map = new Map();
+  try {
+    for (const name of fs.readdirSync(dir)) {
+      const num = parseChapterNumber(name);
+      if (num != null && !map.has(num)) map.set(num, name);
+    }
+  } catch (error) { /* 目录不可读则无窗口/相邻供给 */ }
+  siblingChaptersCache.set(dir, map);
+  return map;
+}
+
+// 非重叠字面计数，附首次命中行列（报告定位用）。
+function countPhrase(text, phrase) {
+  let count = 0;
+  let firstLine = null;
+  let firstColumn = null;
+  let idx = text.indexOf(phrase);
+  while (idx !== -1) {
+    count += 1;
+    if (firstLine === null) {
+      const before = text.slice(0, idx);
+      firstLine = (before.match(/\n/g) || []).length + 1;
+      const lastNewline = before.lastIndexOf('\n');
+      firstColumn = idx - lastNewline;
+    }
+    idx = text.indexOf(phrase, idx + phrase.length);
+  }
+  return { count, firstLine, firstColumn };
+}
+
+// phrase-quota 主检测：每章档按受检文件计数；近 5 章档 = 受检文件 + 同目录前 4 章合并；
+// 相邻档 = 本章 ≥1 且前一章 ≥1（B7「相邻章不共用同一身体锚点」的机制化）。
+// 本章零命中时三档均不触发（advisory 指导本章改写，前章窗口已在其落盘章检时覆盖）。
+function findPhraseQuota(fullPath, input) {
+  const blacklist = loadPhraseBlacklist(fullPath);
+  if (!blacklist || blacklist.entries.length === 0) return [];
+  const findings = [];
+  const chapterNum = parseChapterNumber(path.basename(fullPath));
+  const siblings = chapterNum == null ? new Map() : listSiblingChapters(fullPath);
+  const dir = path.dirname(path.resolve(fullPath));
+
+  const readSibling = (num) => {
+    const name = siblings.get(num);
+    if (!name) return null;
+    try {
+      return fs.readFileSync(path.join(dir, name), 'utf8');
+    } catch (error) {
+      return null;
+    }
+  };
+
+  const prevText = chapterNum == null ? null : readSibling(chapterNum - 1);
+  const windowTexts = [];
+  if (chapterNum != null) {
+    for (let back = 1; back <= 4; back += 1) {
+      const sibling = readSibling(chapterNum - back);
+      if (sibling != null) windowTexts.push(sibling);
+    }
+  }
+
+  for (const entry of blacklist.entries) {
+    const here = countPhrase(input, entry.phrase);
+    if (here.count === 0) continue;
+    const push = (message) => {
+      findings.push({
+        line: here.firstLine,
+        column: here.firstColumn,
+        type: 'phrase-quota',
+        severity: 'advisory',
+        message,
+        excerpt: entry.phrase,
+      });
+    };
+    if (entry.perChapter != null && here.count > entry.perChapter) {
+      push(`短语「${entry.phrase}」本章 ${here.count} 次，超每章限额 ${entry.perChapter}（追踪/短语黑名单.md 登记；改写复用点或删并）`);
+    }
+    if (entry.window != null) {
+      const windowCount = windowTexts.reduce((acc, t) => acc + countPhrase(t, entry.phrase).count, 0) + here.count;
+      if (windowCount > entry.window) {
+        push(`短语「${entry.phrase}」近 5 章 ${windowCount} 次（含本章 ${here.count} 次），超窗口限额 ${entry.window}（追踪/短语黑名单.md 登记）`);
+      }
+    }
+    if (entry.adjacent && prevText != null) {
+      const prevCount = countPhrase(prevText, entry.phrase).count;
+      if (prevCount >= 1) {
+        push(`短语「${entry.phrase}」与前一章连用（前章 ${prevCount} 次、本章 ${here.count} 次）——相邻章禁用档（B7 相邻章不共用同一身体锚点的事故形态）`);
+      }
+    }
+  }
+  return findings;
 }
