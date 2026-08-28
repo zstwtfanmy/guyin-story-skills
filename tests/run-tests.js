@@ -3,9 +3,10 @@
 
 // tests/run-tests.js — 运行时脚本回归测试（零依赖，node 直跑，Windows 友好）
 //
-// 适配自上游 test-ai-patterns.sh 的 fixture+断言思路，收窄为隐笔 5+1 个运行时脚本与 guyin-setup 模板 hook 核的最小回归：
-//   wordcount／degeneration／ai-patterns／outline-copy／normalize-punctuation 做行为断言，
-//   tracking-commit.py 做语法 smoke（无 python 环境则 SKIP），guyin-hook.js 做 guard/兑底/注入三面断言，
+// 适配自上游 test-ai-patterns.sh 的 fixture+断言思路，覆盖隐笔全部运行时检查脚本与 guyin-setup 模板 hook 核的回归：
+//   wordcount／degeneration／ai-patterns／outline-copy／normalize-punctuation／repetition（指纹/意象/复读雷达）／
+//   outline-slots（槽位/时序/气卡坐标）／outline-deliver（承诺交付）等做行为断言，
+//   tracking-commit.py 做语法 smoke + P2/S1 行为断言（无 python 环境则 SKIP），guyin-hook.js 做 guard/兑底/注入三面断言，
 //   另覆盖 guyin-setup 模板完整性（防「模板未提交致 CI 挂」复发）与 merge-claude-settings 合并语义。
 // 上游的 bash 壳、mktemp、内联 node 断言全部收进本文件——一个文件跑完，CI 与本地同口径。
 
@@ -1008,6 +1009,120 @@ console.log('== guyin-tracking-commit.py P4 场景台账（scenes，行为断言
 }
 
 // ============================================================
+console.log('== guyin-tracking-commit.py P2 执行偏差回填提醒（stderr） ==');
+{
+  // commit 章号对应的细纲缺「执行偏差」区 → stderr 提醒（不阻断）；含该区 → 静默。
+  // stdout 是提交产物单行 JSON 通道，提醒只走 stderr（v1.1 口径）。
+  const py = ['python3', 'python', 'py'].find((bin) => {
+    try {
+      return spawnSync(bin, ['-c', ''], { encoding: 'utf8' }).status === 0;
+    } catch (e) {
+      return false;
+    }
+  });
+  if (!py) {
+    skip('P2 细纲缺执行偏差区 → stderr 提醒且不阻断', '未找到可用 python 解释器');
+    skip('P2 细纲含执行偏差区 → stderr 静默', '未找到可用 python 解释器');
+  } else {
+    const SCRIPT = path.join(S, 'guyin-tracking-commit.py');
+    const runPy = (args, project) => spawnSync(py, [SCRIPT, ...args, '--project', project], { encoding: 'utf8' });
+    const initPayload = {
+      schema_version: 1, book_title: '白银案录', last_chapter: 1,
+      context: {
+        position: { volume: '卷一', volume_start_chapter: 1, story_time: '景和三年春', scene: '县衙' },
+        long_term_constraints: [], active_character_names: ['燕衡'], continuity_risks: [],
+        recent_chapters: [{ chapter: 1, summary: '验银' }], next_chapter_commitments: [],
+      },
+      character_snapshots: {
+        燕衡: { identity: '主角', location: '县衙', goal: '查银案', state: '冷静',
+          abilities_resources: [], relationships: [], knowledge: [], open_threads: [] },
+      },
+    };
+    const commitPayload = {
+      schema_version: 1, mode: 'append', chapter: 2, chapter_title: '验票',
+      expected_state_revision: 0, // init 起始修订为 0，首次 commit 期待 0
+      delta: {
+        result: '燕衡验出会票是仿票，决意追查票源。',
+        character_changes: [{ name: '燕衡', change: '从收票转向查票源' }],
+      },
+      context: {
+        position: { volume: '卷一', volume_start_chapter: 1, story_time: '景和三年春', scene: '县衙' },
+        long_term_constraints: [], active_character_names: ['燕衡'], continuity_risks: [],
+      },
+      character_snapshots: {
+        燕衡: { identity: '主角', location: '县衙', goal: '查票源', state: '冷静',
+          abilities_resources: [], relationships: [], knowledge: [], open_threads: [] },
+      },
+    };
+
+    // 甲：细纲无执行偏差区 → commit 成功（status 0 不阻断）+ stderr 提醒。
+    const book1 = path.join(TMP, 'p2py', '甲');
+    fixture('p2py/甲/init.json', JSON.stringify(initPayload));
+    fixture('p2py/甲/大纲/细纲_第002章_试.md', '- 字数目标：3000\n- 章尾钩子：期待·预告式——明日开审\n');
+    fixture('p2py/甲/commit.json', JSON.stringify(commitPayload));
+    let r = runPy(['init', '--input', path.join(TMP, 'p2py', '甲', 'init.json')], book1);
+    check('P2 前置：init 成功', r.status === 0, `status=${r.status} err=${r.stderr.trim().slice(0, 160)}`);
+    r = runPy(['commit', '--input', path.join(TMP, 'p2py', '甲', 'commit.json')], book1);
+    check('P2 细纲缺执行偏差区 → stderr 提醒且不阻断', r.status === 0 && r.stderr.includes('执行偏差'),
+      `status=${r.status} err=${r.stderr.trim().slice(0, 200)}`);
+
+    // 乙：细纲含执行偏差区 → stderr 静默。
+    const book2 = path.join(TMP, 'p2py', '乙');
+    fixture('p2py/乙/init.json', JSON.stringify(initPayload));
+    fixture('p2py/乙/大纲/细纲_第002章_试.md', '- 字数目标：3000\n#### 执行偏差（写后回填）\n- 无变体。\n');
+    fixture('p2py/乙/commit.json', JSON.stringify(commitPayload));
+    r = runPy(['init', '--input', path.join(TMP, 'p2py', '乙', 'init.json')], book2);
+    check('P2 前置：乙 init 成功', r.status === 0, `status=${r.status} err=${r.stderr.trim().slice(0, 160)}`);
+    r = runPy(['commit', '--input', path.join(TMP, 'p2py', '乙', 'commit.json')], book2);
+    check('P2 细纲含执行偏差区 → stderr 静默', r.status === 0 && !r.stderr.includes('执行偏差'),
+      `status=${r.status} err=${r.stderr.trim().slice(0, 200)}`);
+  }
+}
+
+// ============================================================
+console.log('== guyin-tracking-commit.py S1 时滞预检（check 子命令） ==');
+{
+  // 正文已落盘最大章号 > last_committed_chapter → check 退 2 报欠账（docs/07 §二 S1：
+  // 61-63 事故直接防线——写 61-63 时状态停在 8/26；既供 J3 批收尾「时滞＝0」判据，
+  // 也供编排层预检。正文目录缺失静默由既有「P4 commit 后 check 一致」断言覆盖）。
+  const py = ['python3', 'python', 'py'].find((bin) => {
+    try {
+      return spawnSync(bin, ['-c', ''], { encoding: 'utf8' }).status === 0;
+    } catch (e) {
+      return false;
+    }
+  });
+  if (!py) {
+    skip('S1 正文已落盘未提交 → check 退 2 报时滞', '未找到可用 python 解释器');
+  } else {
+    const SCRIPT = path.join(S, 'guyin-tracking-commit.py');
+    const runPy = (args, project) => spawnSync(py, [SCRIPT, ...args, '--project', project], { encoding: 'utf8' });
+    const book = path.join(TMP, 's1py');
+    const initPayload = {
+      schema_version: 1, book_title: '验时滞', last_chapter: 1,
+      context: {
+        position: { volume: '卷一', volume_start_chapter: 1, story_time: '景和三年春', scene: '县衙' },
+        long_term_constraints: [], active_character_names: ['燕衡'], continuity_risks: [],
+        recent_chapters: [{ chapter: 1, summary: '验银' }], next_chapter_commitments: [],
+      },
+      character_snapshots: {
+        燕衡: { identity: '主角', location: '县衙', goal: '查银案', state: '冷静',
+          abilities_resources: [], relationships: [], knowledge: [], open_threads: [] },
+      },
+    };
+    fixture('s1py/init.json', JSON.stringify(initPayload));
+    fixture('s1py/大纲/细纲_第003章_试.md', '- 字数目标：3000\n');
+    let r = runPy(['init', '--input', path.join(TMP, 's1py', 'init.json')], book);
+    check('S1 前置：init 成功（last_committed=1）', r.status === 0, `status=${r.status} err=${r.stderr.trim().slice(0, 160)}`);
+    fixture('s1py/正文/第003章_试.md', '第三章正文占位。\n');
+    r = runPy(['check'], book);
+    check('S1 正文第3章落盘未提交 → check 退 2 报时滞', r.status === 2
+      && r.stderr.includes('已落盘未提交') && r.stderr.includes('追踪记至第 1 章'),
+      `status=${r.status} err=${r.stderr.trim().slice(0, 200)}`);
+  }
+}
+
+// ============================================================
 console.log('== guyin-check-hook-rotation (P4 钩子轮换/蓄力成对) ==');
 {
   const mkOutline = (name, hookLine, mark) =>
@@ -1124,6 +1239,109 @@ console.log('== guyin-check-repetition P6-2 意象台账 ==');
   const view = fs.readFileSync(path.join(proj, '追踪', '意象台账.md'), 'utf8');
   check('意象台账视图含域统计与明细', view.includes('自然') && view.includes('周砚') && view.includes('月光如霜'),
     `view=${view.slice(0, 200)}`);
+}
+
+// ============================================================
+console.log('== guyin-check-repetition N1 复读雷达 ==');
+{
+  // 跨章必报：ch1「缺角的讫印」×2 --commit（入库门槛 total≥2）→ ch6 ×1，窗口 [1,5]
+  // winLib=2+count=1=3 ≥ ECHO_CROSS_RUN → phrase-echo-cross。
+  // 实体过滤：「燕衡的算盘」同频分布但含角色名 → 全程静默（过滤失效会以同形态误报 cross）。
+  const proj = path.join(TMP, 'echo1');
+  fixture('echo1/追踪/_tracking-state.json', JSON.stringify({
+    schema_version: 7, characters: { 燕衡: { identity: '主角' }, 周砚: { identity: '账房' } },
+  }));
+  const ch1 = fixture('echo1/正文/第001章.md',
+    `第一章\n\n账房的灯下，他把那枚缺角的讫印按在纸上，印泥未干。周砚说燕衡的算盘打得比账房还精，他不接话——燕衡的算盘从来只算别人。他又拿起缺角的讫印补了一记，对着光看了很久，把票据折好收进袖袋，吹灯出门去了。\n`);
+  let r = run('guyin-check-repetition.js', ['--json', '--project', proj, '--commit', ch1]);
+  let report = parseJson(r.stdout);
+  check('N1 ch1 ×2 未达窗口阈值静默（2<3 且末次不在章尾 20%）', r.status === 0 && report
+    && !report.findings.some((f) => f.type.startsWith('phrase-echo-')),
+    `status=${r.status} findings=${JSON.stringify(report && report.findings.map((f) => f.type))}`);
+
+  const ch6 = fixture('echo1/正文/第006章.md',
+    `第六章\n\n他把缺角的讫印又按了一回，燕衡的算盘还悬在梁上，谁也没去动它。窗外更声三遍，他把票据压回原处，吹了灯。\n`);
+  r = run('guyin-check-repetition.js', ['--json', '--project', proj, '--commit', ch6]);
+  report = parseJson(r.stdout);
+  const cross = report && report.findings.find((f) => f.type === 'phrase-echo-cross');
+  check('N1 跨章窗口必报 phrase-echo-cross（库2+本章1=3）', r.status === 1 && cross
+    && cross.excerpt === '缺角的讫印',
+    `status=${r.status} findings=${JSON.stringify(report && report.findings.map((f) => `${f.type}:${f.excerpt}`))}`);
+  check('N1 角色短语静默（燕衡的算盘 实体过滤）', report
+    && !report.findings.some((f) => f.excerpt === '燕衡的算盘'),
+    `findings=${JSON.stringify(report && report.findings.map((f) => f.excerpt))}`);
+
+  const echoLib = JSON.parse(fs.readFileSync(path.join(proj, '追踪', '段落指纹库.json'), 'utf8'));
+  const stored = (echoLib.phrases || []).find((p) => p.phrase === '缺角的讫印');
+  check('N1 phrases 沉淀（ch1+ch6 合并 total=3、last=6）', stored
+    && stored.total === 3 && stored.last === 6,
+    `phrases=${JSON.stringify(echoLib.phrases)}`);
+  const echoView = fs.readFileSync(path.join(proj, '追踪', '意象台账.md'), 'utf8');
+  check('N2 台账扩域：意象台账视图含复读短语节', echoView.includes('复读短语') && echoView.includes('缺角的讫印'),
+    `view=${echoView.slice(0, 300)}`);
+
+  // E6 章尾同图重复（docs/07 §二 N1）：新短语本章 ×2、末次落章尾 20% → phrase-echo-ending。
+  // 库内无此短语（winLib=0，count=2 < 3）不走 cross 分支；4/5 字子串同条件命中，
+  // 断言 excerpt 为 6 字最长形——顺带锁防噪②子串归并。
+  const endingPhrase = '更声敲过三遍';
+  const ch7 = fixture('echo1/正文/第007章.md',
+    `第七章\n\n他先看的是案角的旧印匣，${endingPhrase}，周砚还没歇，笔尖在纸上沙沙地走。他把窗推开一条缝，风灌进来吹得烛火直晃，影子在墙上叠成一层又一层。他把票据按次序折好压进袖袋，又拨亮灯芯。临出门他回头看了一眼，${endingPhrase}。\n`);
+  r = run('guyin-check-repetition.js', ['--json', '--project', proj, '--commit', ch7]);
+  report = parseJson(r.stdout);
+  check('N1 章尾复读报 phrase-echo-ending（本章×2 且末次落章尾 20%，子串归并报最长形）', r.status === 1 && report
+    && report.findings.some((f) => f.type === 'phrase-echo-ending' && f.excerpt === endingPhrase),
+    `status=${r.status} findings=${JSON.stringify(report && report.findings.map((f) => `${f.type}:${f.excerpt}`))}`);
+  const endingLib = JSON.parse(fs.readFileSync(path.join(proj, '追踪', '段落指纹库.json'), 'utf8'));
+  const endingStored = (endingLib.phrases || []).find((p) => p.phrase === endingPhrase);
+  check('N1 ending 短语同步沉淀 phrases（total=2、last=7）', endingStored
+    && endingStored.total === 2 && endingStored.last === 7,
+    `phrases=${JSON.stringify(endingLib.phrases)}`);
+}
+
+// ============================================================
+console.log('== guyin-check-outline-deliver S3+S4 承诺交付 ==');
+{
+  // 大纲契约：术语锚点双术语 + 章尾钩子实体；四个变体验证全合规静默与三条 advisory。
+  const outline = '# 第061章 细纲\n- 术语锚点：勘合（老周在账房说出）、火耗——师爷写账时提到\n'
+    + '- 章尾钩子：期待·预告式——实体：撕掉的账页；承接：第062章对账；期待度：中\n';
+  const anchored = '「老周把册子推过来，指着那方印：勘合，就是两关互相对批的凭据，少了哪一关都不作数。」\n\n'
+    + '师爷拨了两下算盘。「火耗是熔铸时折掉的分量，一两银子到手只剩九成七，账上要另立一栏。」\n\n'
+    + '他把那半张撕掉的账页压回匣底，吹熄了灯。\n';
+  const mkDolv = (name, prose) => {
+    fixture(`dolv/${name}/大纲/细纲_第061章_试.md`, outline);
+    return fixture(`dolv/${name}/正文/第061章.md`, prose);
+  };
+  const dolvA = mkDolv('a', anchored);
+  const dolvB = mkDolv('b', anchored.replace(
+    '师爷拨了两下算盘。「火耗是熔铸时折掉的分量，一两银子到手只剩九成七，账上要另立一栏。」',
+    '师爷拨了两下算盘，只说账上要另立一栏，别的没提。'));
+  const dolvC = mkDolv('c', `账房梁上还挂着勘合的旧木牌，字迹磨得快没了。\n\n${anchored}`);
+  const dolvD = mkDolv('d', anchored.replace('他把那半张撕掉的账页压回匣底，吹熄了灯。',
+    '他把匣子推回架子最深处，转身吹熄了灯。'));
+
+  let r = run('guyin-check-outline-deliver.js', ['--json', dolvA]);
+  let report = parseJson(r.stdout);
+  check('S3+S4 全履约静默（双术语对白锚定+钩子压尾）', r.status === 0 && report && report.findings.length === 0,
+    `status=${r.status} out=${r.stdout.trim().slice(0, 200)}`);
+
+  r = run('guyin-check-outline-deliver.js', ['--json', dolvB]);
+  report = parseJson(r.stdout);
+  check('S3 锚定戏漏写报 outline-term-missing（火耗）', r.status === 1 && report
+    && report.findings.some((f) => f.type === 'outline-term-missing' && f.excerpt === '火耗')
+    && !report.findings.some((f) => f.excerpt === '勘合'),
+    `status=${r.status} findings=${JSON.stringify(report && report.findings.map((f) => f.type))}`);
+
+  r = run('guyin-check-outline-deliver.js', ['--json', dolvC]);
+  report = parseJson(r.stdout);
+  check('S3 首现叙述层报 outline-term-unanchored（勘合）', r.status === 1 && report
+    && report.findings.some((f) => f.type === 'outline-term-unanchored' && f.excerpt === '勘合'),
+    `status=${r.status} findings=${JSON.stringify(report && report.findings.map((f) => f.type))}`);
+
+  r = run('guyin-check-outline-deliver.js', ['--json', dolvD]);
+  report = parseJson(r.stdout);
+  check('S4 钩子被顶出报 outline-hook-offtail（撕掉的账页）', r.status === 1 && report
+    && report.findings.some((f) => f.type === 'outline-hook-offtail' && f.excerpt === '撕掉的账页'),
+    `status=${r.status} findings=${JSON.stringify(report && report.findings.map((f) => f.type))}`);
 }
 
 // ============================================================
@@ -1282,6 +1500,22 @@ console.log('== guyin-check-outline-copy ==');
 
   r = run('guyin-check-outline-copy.js', ['--outline', outline, cleanProse]);
   check('无重合通过', r.status === 0, `status=${r.status} out=${r.stdout.trim().slice(0, 200)}`);
+
+  // P2 伴生修复（docs/07 §二 P2）：细纲「执行偏差（写后回填）」区比对前整段剥除——
+  // 变体行引用正文原句 ≥16 字不得判誊抄（每个回填偏差区的章都在章检出假警报的封堵）；
+  // 对照组同一句写在细纲正文区仍报——证明静默来自剥除授权而非句子本身不触发。
+  const devSent = '他把那半张撕掉的账页压回匣底，吹熄了灯。';
+  const devOutline = fixture('oc/大纲/细纲_第003章_偏差.md',
+    `1. 开场：弟弟拦门要钱，母亲把灶上的粥端下来。\n2. 冲突：官差上门查验田契，弟弟顶了两句。\n\n#### 执行偏差（写后回填）\n- 变体：${devSent}（正文原句，接受）\n`);
+  const devProse = fixture('oc/正文/第003章_偏差.md', `${longChapter(30)}${devSent}\n`);
+  r = run('guyin-check-outline-copy.js', ['--outline', devOutline, devProse]);
+  check('P2 执行偏差区变体引用不判誊抄（剥除后比对）', r.status === 0,
+    `status=${r.status} out=${r.stdout.trim().slice(0, 200)}`);
+  const noExemptOutline = fixture('oc/大纲/细纲_第004章_无豁免.md', `1. 开场：${devSent}\n`);
+  const noExemptProse = fixture('oc/正文/第004章_无豁免.md', `${longChapter(30)}${devSent}\n`);
+  r = run('guyin-check-outline-copy.js', ['--outline', noExemptOutline, noExemptProse]);
+  check('P2 对照：同句写在细纲正文区仍报誊抄（豁免只认偏差区）', r.status === 1,
+    `status=${r.status} out=${r.stdout.trim().slice(0, 200)}`);
 }
 
 // ============================================================
@@ -1564,7 +1798,7 @@ console.log('== 06 整改黄金样本回归（H2/O2/O3/I1/I2） ==');
       `types=${JSON.stringify(report && report.findings.map((f) => f.type))}`);
   }
 
-  const fullOutline = fixture('o2slots/大纲/细纲_第065章_全字段.md', [
+  const fullOutlineLines = [
     '# 细纲_第065章 齐全',
     '',
     '- 字数目标：3000',
@@ -1582,12 +1816,45 @@ console.log('== 06 整改黄金样本回归（H2/O2/O3/I1/I2） ==');
     '1. 开场：林彻核对总账',
     '2. 对手戏：周砚交出私账',
     '3. 收尾：发现缺页',
+    '- 时序自检：出场顺序＝时间顺序；插叙无；beat 时间轴走查：通过',
     '',
     '章尾钩子：悬念型——挂在账本缺的那一页上；实体：账本缺页；承接：第66章对质。',
     '',
-  ].join('\n'));
+  ];
+  const fullOutline = fixture('o2slots/大纲/细纲_第065章_全字段.md', fullOutlineLines.join('\n'));
   r = run('guyin-check-outline-slots.js', [fullOutline]);
-  check('O2 全字段细纲静默', r.status === 0, `status=${r.status} out=${r.stdout.trim()}`);
+  check('O2 全字段细纲静默（含 P1 时序自检行）', r.status === 0, `status=${r.status} out=${r.stdout.trim()}`);
+
+  // P1 时序自检行（docs/07 §二）：全字段缺该行 → advisory outline-missing-timecheck
+  //（源头治 E1 时序倒错，advisory 起步不拦落盘）。
+  const noTimecheck = fixture('o2slots/大纲/细纲_第066章_缺时序.md',
+    fullOutlineLines.filter((l) => !l.includes('时序自检')).join('\n'));
+  r = run('guyin-check-outline-slots.js', ['--json', noTimecheck]);
+  report = parseJson(r.stdout);
+  check('P1 缺时序自检行报 advisory', r.status === 1 && report
+    && report.findings.some((f) => f.type === 'outline-missing-timecheck' && f.severity === 'advisory'),
+    `status=${r.status} types=${JSON.stringify(report && report.findings.map((f) => f.type))}`);
+
+  // S2 气卡坐标覆盖预检（docs/07 §二 S2）：章号不落气卡任何坐标区间 → advisory 停靠提醒；
+  // 落在区间内/气卡缺失 → 静默（fail-open：框架模板气卡本无坐标节，无区间也报会劝噪不设防）。
+  fixture('s2qy/作者性/气卡.md', '# 气卡\n\n气韵坐标：第61-63章（卷三·山雨欲来）——以天合天。\n');
+  const qyOutside = fixture('s2qy/大纲/细纲_第065章_试.md', fullOutlineLines.join('\n'));
+  r = run('guyin-check-outline-slots.js', ['--json', qyOutside]);
+  report = parseJson(r.stdout);
+  check('S2 章号不在气卡坐标区间报 qiyun-coord-uncovered（65∉61-63）', r.status === 1 && report
+    && report.findings.some((f) => f.type === 'qiyun-coord-uncovered' && f.severity === 'advisory'
+      && f.message.includes('61-63')),
+    `status=${r.status} types=${JSON.stringify(report && report.findings.map((f) => f.type))}`);
+  const qyInside = fixture('s2qy/大纲/细纲_第062章_试.md', fullOutlineLines.join('\n'));
+  r = run('guyin-check-outline-slots.js', ['--json', qyInside]);
+  report = parseJson(r.stdout);
+  check('S2 章号落在区间内静默（62∈61-63）', r.status === 0 && report && report.findings.length === 0,
+    `status=${r.status} types=${JSON.stringify(report && report.findings.map((f) => f.type))}`);
+  const qyNoCard = fixture('s2qy2/大纲/细纲_第065章_试.md', fullOutlineLines.join('\n'));
+  r = run('guyin-check-outline-slots.js', ['--json', qyNoCard]);
+  report = parseJson(r.stdout);
+  check('S2 气卡缺失静默（fail-open 无假警报）', r.status === 0 && report && report.findings.length === 0,
+    `status=${r.status} types=${JSON.stringify(report && report.findings.map((f) => f.type))}`);
 
   // O3 字数验收个性化（docs/06 §二）：细纲「字数目标」驱动（×90%），无细纲缺省 3000。
   // 2014 字对缺省 3000 必报（ch63 事故形态）；同 2905 字对目标 3000 静默、对目标 3500
@@ -1623,6 +1890,40 @@ console.log('== 06 整改黄金样本回归（H2/O2/O3/I1/I2） ==');
   check('O3 无细纲 2905 字对缺省 3000 必报', r.status === 1 && report
     && report.findings.some((f) => f.type === 'chapter-too-short' && f.limit === 3000),
     `status=${r.status} findings=${JSON.stringify(report && report.findings.map((f) => `${f.count}/${f.limit}`))}`);
+
+  // J1 字数区间双口径（docs/07 §二）：区间 X-Y 取下限 X 不打折——「3000-3300」对 2900
+  // 必报、对 3000 静默；旧 bug 把区间截为 3000 再九折＝2700 达标线，2712-2754 假达标。
+  fixture('j1wc/a/大纲/细纲_第001章_试.md', '- 字数目标：3000-3300\n');
+  const j1a = fixture('j1wc/a/正文/第001章_欠.md', `# 第001章 欠\n${longChapter(83)}`);
+  r = run('guyin-check-wordcount.js', ['--json', j1a]);
+  report = parseJson(r.stdout);
+  check('J1 区间 3000-3300 对 2900 必报（下限 3000 不再打折）', r.status === 1 && report
+    && report.findings.some((f) => f.type === 'chapter-too-short' && f.limit === 3000
+      && f.message.includes('区间下限 3000')),
+    `status=${r.status} findings=${JSON.stringify(report && report.findings.map((f) => `${f.count}/${f.limit}`))}`);
+
+  fixture('j1wc/b/大纲/细纲_第001章_试.md', '- 字数目标：3000-3300\n');
+  const j1b = fixture('j1wc/b/正文/第001章_达.md', `# 第001章 达\n${longChapter(87)}`);
+  r = run('guyin-check-wordcount.js', ['--json', j1b]);
+  check('J1 区间 3000-3300 对 3000 静默（旧 bug 九折 2700 线下假达标）', r.status === 0,
+    `status=${r.status} out=${r.stdout.trim().slice(0, 120)}`);
+
+  // J2 批内方差（docs/07 §二）：--batch 取章号最大 3 章实绩，max−min < 400 → advisory
+  // chapter-length-uniform（E8 平整感信号）；--uniform-gap=N 覆盖缺省后静默。
+  fixture('j2batch/大纲/细纲_第001章_试.md', '- 字数目标：3000\n');
+  fixture('j2batch/大纲/细纲_第002章_试.md', '- 字数目标：3000\n');
+  fixture('j2batch/大纲/细纲_第003章_试.md', '- 字数目标：3000\n');
+  fixture('j2batch/正文/第001章.md', `# 第001章\n${longChapter(86)}`);
+  fixture('j2batch/正文/第002章.md', `# 第002章\n${longChapter(85)}`);
+  fixture('j2batch/正文/第003章.md', `# 第003章\n${longChapter(85)}`);
+  r = run('guyin-check-wordcount.js', ['--json', '--batch', path.join(TMP, 'j2batch', '正文')]);
+  report = parseJson(r.stdout);
+  check('J2 均质批报 chapter-length-uniform advisory', r.status === 1 && report
+    && report.findings.some((f) => f.type === 'chapter-length-uniform' && f.severity === 'advisory'),
+    `status=${r.status} types=${JSON.stringify(report && report.findings.map((f) => f.type))}`);
+  r = run('guyin-check-wordcount.js', ['--json', '--batch', '--uniform-gap=10', path.join(TMP, 'j2batch', '正文')]);
+  check('J2 --uniform-gap=10 覆盖后静默（本书刻意均质豁免通道）', r.status === 0,
+    `status=${r.status} out=${r.stdout.trim().slice(0, 120)}`);
 
   // I1 指纹库欠账（docs/06 §三）：库至第 1 章、受检至第 2 章 → blocking；--commit 补齐后静默。
   const projI1 = path.join(TMP, 'i1rep');

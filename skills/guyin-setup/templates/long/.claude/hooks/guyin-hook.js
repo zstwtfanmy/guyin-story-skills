@@ -25,8 +25,10 @@ const fs = require('fs');
 const path = require('path');
 const { spawnSync } = require('child_process');
 
-// 章去空白字数下限：细纲目标驱动（O3，docs/06 §二）——探测 大纲/细纲_第N章*.md 的
-// 「字数目标」× 90%，细纲缺失或无字数目标 → 缺省 3000。
+// 章去空白字数下限：细纲目标驱动（O3，docs/06 §二；双口径 J1，docs/07 §二）——探测
+// 大纲/细纲_第N章*.md 的「字数目标」：区间 X-Y 取下限 X（区间下限本身是作者接受的
+// 最低值不再打折），单值 T 取 T×90%；细纲缺失或无字数目标 → 缺省 3000。区间正则
+// 含全角横线变体，须先于单值正则试配，否则「3000-3300」被截为 3000。
 // 同步注释契约（O3/D1）：本检查与技能库 skills/guyin-write/scripts/guyin-check-wordcount.js
 // 的 resolveMin 是同一逻辑的两份实现——hook 为部署件随项目走、脚本在技能库，运行时路径
 // 不保证可达，无法抽公共模块；改一处必改另一处（比值/缺省值/细纲探测口径）。
@@ -45,6 +47,8 @@ function resolveChapterMin(bookDir, num) {
       const text = fs.readFileSync(path.join(bookDir, '大纲', name), 'utf8');
       for (const line of text.split(/\r?\n/)) {
         if (line.includes('字数目标')) {
+          const range = /(\d+)\s*[-—－~～至]\s*(\d+)/.exec(line);
+          if (range) return { min: Number(range[1]), origin: `细纲区间下限 ${range[1]}（目标 ${range[1]}-${range[2]}，J1）` };
           const m = /(\d+)/.exec(line);
           if (m) return { min: Math.round(Number(m[1]) * CHAPTER_TARGET_RATIO), origin: `细纲目标 ${m[1]} × 90%` };
         }

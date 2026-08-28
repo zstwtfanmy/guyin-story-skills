@@ -56,6 +56,30 @@ function hanOnly(s) {
 }
 
 /**
+ * P2（docs/07 §二）：剥除细纲「执行偏差（写后回填）」区后再比对。
+ * 该区是写后回填件：变体行会引用正文原句（≥MIN_RUN 即判「誊抄」假警报），每个
+ * 回填了偏差区的章都会在章检出假警报。区块起于行首标题含「执行偏差」，止于下一个
+ * 标题行或文末；细纲无该区时原样返回（剥除量 0）。剥除量并入报告末尾统计（与锚句
+ * 豁免同呈报哲学：授权通道可见可审计，滥用偏差区绕过检测时一眼可见）。
+ */
+function stripDeviationBlock(outline) {
+  const kept = []
+  let stripped = 0
+  let inBlock = false
+  for (const line of outline.split(/\r?\n/)) {
+    if (/^#{1,6}\s/.test(line)) {
+      inBlock = /执行偏差/.test(line)
+      if (inBlock) continue
+    } else if (inBlock) {
+      stripped += hanOnly(line).length
+      continue
+    }
+    kept.push(line)
+  }
+  return { text: kept.join('\n'), stripped }
+}
+
+/**
  * 抽出细纲「复沓锚句」字段下的原话，一行一条。
  * 只认这一个字段，不扫情节点序列——锚句集中在固定区块，情节点保持只写「要发生什么」。
  * 区块终止于行首无缩进的下一个字段（`- xxx`）或下一个小节标题，因此条目本身
@@ -162,9 +186,10 @@ function checkOne(proseFile, explicitOutline) {
   const outline = read(outlineFile)
   if (outline === null) return 0
 
-  // 正文去掉标题行后比对
+  // 正文去掉标题行后比对；细纲先剥除「执行偏差」区（P2，写后回填授权通道）
   const P = hanOnly(prose.replace(/^#.*$/gm, ''))
-  const O = hanOnly(outline)
+  const { text: outlineBody, stripped: deviationStripped } = stripDeviationBlock(outline)
+  const O = hanOnly(outlineBody)
   if (P.length < MIN_RUN || O.length < MIN_RUN) return 0
 
   // 复沓锚句列出的原话允许逐字落地，命中后计入豁免、不判誊抄
@@ -212,7 +237,9 @@ function checkOne(proseFile, explicitOutline) {
     if (anchoredCount) {
       process.stdout.write(
         `细纲照搬检测（${path.basename(proseFile)}）：无未授权誊抄；` +
-          `另有 ${anchoredCount} 处 ${anchored} 字为复沓锚句的逐字落地。\n`
+          `另有 ${anchoredCount} 处 ${anchored} 字为复沓锚句的逐字落地。` +
+          (deviationStripped ? `另剥除执行偏差区 ${deviationStripped} 字（写后回填授权，不比对）。` : '') +
+          '\n'
       )
     }
     return 0
@@ -230,6 +257,7 @@ function checkOne(proseFile, explicitOutline) {
     .forEach((h) => out.push(`  · ${h.len} 字「${h.frag}」`))
   if (hits.length > REPORT_TOP) out.push(`  · …另有 ${hits.length - REPORT_TOP} 处`)
   if (anchoredCount) out.push(`（另有 ${anchoredCount} 处 ${anchored} 字为复沓锚句的逐字落地，不计入誊抄）`)
+  if (deviationStripped) out.push(`（比对前已剥除执行偏差区 ${deviationStripped} 字：写后回填授权通道，不计入誊抄）`)
   process.stdout.write(out.join('\n') + '\n')
   return 1
 }

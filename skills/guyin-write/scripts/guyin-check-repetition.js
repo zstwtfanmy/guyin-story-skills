@@ -21,7 +21,10 @@ const USAGE = `Usage: node guyin-check-repetition.js [--json] [--fail-on=blockin
 台词与短句不进指纹库。--commit 在追踪提交时固化终稿指纹（同章旧指纹先清再插，幂等）。
 
 意象台账（P6-2，与指纹库同源）：--commit 同时扫叙述段比喻句按域登记（追踪/意象台账.md），
-「人物之眼」改写协议的消费端——换域，而不是换词。
+「人物之眼」改写协议的消费端——换域，而不是换词。台账扩域（N2，docs/07）：渲染层加
+「复读短语」节与明细类型列（比喻/复读短语），N1 窗口高频短语 --commit 时自动沉淀入台账
+（登记零人工，只收自动来源）；手势类措辞多变无机械消费端，不设列——归复盘点名＋作者
+仲裁，确认后以字符串近似进 短语黑名单.md（I2 通道，项目自有文件不受渲染覆盖）。
 
   imagery-domain-run   同域比喻滑窗内密度过高（3 章窗口内同域 ≥3 次）——同一比喻域
                        反复采撷即该域疲劳，改写时换域不换词（消费台账选未用域）
@@ -30,12 +33,46 @@ const USAGE = `Usage: node guyin-check-repetition.js [--json] [--fail-on=blockin
 换词复读（仅换 4 个名词）海明距离即达 10——SimHash 为文档级设计，短段落 70 个 bigram
 中 12 对扰动足以翻转 10 位，对坍缩真形态（换名词复用整段结构）钝感不足。改用字符
 bigram 集合的 Jaccard 相似度（实测换 4 词复读 ≈0.83，随机不同段 <0.3），倒排索引加速，
-同阈值两档分级不变。`;
+同阈值两档分级不变。
+
+───────────────────────────────────────────────────────────────────────────────
+
+复读雷达（N1，docs/07 §一/§二）：短语级跨章复读检测，治「tic 发现靠人工」——旧 tic 靠
+复盘报告点名（滞后一批）、新 tic 靠下一份复盘报告（永远慢一拍），穷举式黑名单结构性
+追不上复读冲动（E7 实证：旧的清掉、五类新的顶上）。治理对象是「复读度」本身：
+
+  phrase-echo-cross    跨章窗口（本章＋近 5 章）同 4-8 字短语 ≥3 次——疑似新 tic，
+                       仲裁：进黑名单限额（I2 通道）或豁免台账
+  phrase-echo-ending   同章 ≥2 次且末次落章尾 20% 区域——E6 章尾同图重复形态
+
+两条均 advisory 宁报不拦（拦截权归五测试）。黑名单降级为仲裁通道：雷达自动发现 →
+台账自动沉淀（N2）→ 作者仲裁 → 黑名单精确限额 → 写前注入（N3）→ 章检复扫。
+防噪三规格（v1.1）：① 不跨标点边界——按标点切段后段内成词，否则「的时候他」类
+虚词搭配是汉语常态，虚词占比过滤救不了；② 子串归并——同一 tic 多长度命中只报最长形；
+③ 报告截断 top10，其余只进计数。过滤：角色名/地名命中跳过；虚词占比 >50% 不报。
+统计口径与指纹库同源：只扫叙述段（台词口头禅是人物特征不是 tic）。phrases 节只存
+窗口复现 ≥2 的短语（{phrase, total, last, recent}，recent 按章存样本，整条按最近章
+≥当前−10 修剪、样本按检测窗口修剪）——全量 n-gram 每章上万条，不滤必膨胀。
+--commit 时随指纹固化同步统计（与意象台账同一原子双命令）；章检模式只报告。`;
 
 const NEAR_THRESHOLD = 0.9;
 const PATTERN_THRESHOLD = 0.72;
 const IMAGERY_WINDOW = 3; // 滑窗章数
 const IMAGERY_RUN = 3;    // 窗内同域次数阈值
+
+// ---------- N1 复读雷达参数（docs/07 §一） ----------
+const ECHO_N_MIN = 4;        // n-gram 滑窗下限（字）
+const ECHO_N_MAX = 8;        // n-gram 滑窗上限
+const ECHO_CROSS_RUN = 3;    // 跨章窗口内同短语 ≥3 次 → phrase-echo-cross
+const ECHO_ENDING_RUN = 2;   // 同章 ≥2 次且末次落章尾 20% → phrase-echo-ending
+const ECHO_WINDOW = 5;       // 跨章检测窗口（章）
+const ECHO_STORE_SPAN = 10;  // phrases 整条修剪线（最近章 < 当前−10 删，v1.1 存储规格）
+const ECHO_TOP = 10;         // 报告截断 top10（防噪规格③），其余只进计数
+const ECHO_TAIL_RATIO = 0.8; // 章尾 20% 区域起点（章叙述文本的 80% 处之后）
+// 虚词表（docs/07 §一）：占比 >50% 的组合不报——「的时候他」类高频搭配是汉语常态。
+const ECHO_STOPWORDS = ['的', '了', '着', '是', '在', '和', '就', '被'];
+// 标点切段集：n-gram 不跨标点边界（防噪规格①），段内成词。
+const ECHO_SPLIT = /[，。！？；：、「」『』“”‘’…—·（）()《》<>\n]/;
 
 // 比喻标记词：多字优先，单字「如」需排除复合词（如果/如何/如今/如此/例如/不如/犹如/宛如/譬如）。
 const METAPHOR_WORDS = ['仿佛', '宛如', '恍若', '如同', '好似', '犹如', '好像', '恰似', '像', '似', '如'];
@@ -46,7 +83,7 @@ const RU_EXCLUDE_PREV = ['不', '犹', '宛', '譬', '假'];
 const DOMAINS = [
   { name: '自然', keys: ['风', '雨', '雪', '云', '雾', '霜', '露', '山', '河', '江', '海', '溪', '湖', '月', '日', '星', '雷', '潮'] },
   { name: '动物', keys: ['兽', '鸟', '鱼', '虫', '蛇', '狼', '虎', '鹰', '犬', '马', '蝉', '蚁', '鹤', '猫', '鼠'] },
-  { name: '器物', keys: ['刀', '剑', '锁', '镜', '灯', '钟', '琴', '鼓', '秤', '尺', '网', '线', '针', '绳', '匣', '锯', '钉'] },
+  { name: '器物', keys: ['刀', '剑', '锁', '镜', '灯', '钟', '琴', '鼓', '秤', '尺', '网', '线', '针', '绳', '匣', '锯', '钉', '瓷'] }, // 瓷归器物（N2 顺带修报告 F6 分类误差：曾误归自然）
   { name: '身体', keys: ['骨', '血', '心', '手', '眼', '喉', '脊', '背', '皮', '发', '眉', '指', '脉'] },
   { name: '食物', keys: ['茶', '酒', '盐', '糖', '米', '面', '药', '汤', '油', '醋', '饭', '菜'] },
   { name: '商贾', keys: ['账', '票', '银', '钱', '买', '卖', '商', '价', '市', '当'] },
@@ -116,7 +153,52 @@ for (const target of options.targets) {
 
 const CHAPTER_FILE = /第\s*0*(\d+)\s*章/;
 
-// ---------- 指纹库定位：--project 优先，否则从目标目录向上找 追踪/ ----------
+// ---------- 复读雷达（N1）：n-gram 统计 + 防噪三规格 ----------
+
+// 虚词占比 >50% 不报（「的时候他」4 字仅 1 字命中虚词表救不了它的是长搭配；
+// 短搭配靠切段防噪①：不跨标点边界后，「的他了着」类纯虚词串先被这里拦住）。
+function echoNoisy(phrase) {
+  let stop = 0;
+  for (const ch of phrase) {
+    if (ECHO_STOPWORDS.includes(ch)) stop += 1;
+  }
+  return stop * 2 > phrase.length;
+}
+
+// 实体名过滤器：bigram 预筛（名字内部相邻字对）+ 精确 includes。
+// 预筛集合只含名字内部的字对，「衡阳」不含「燕衡」字对不会误伤。
+function buildEntityFilter(names) {
+  const bigrams = new Set();
+  for (const name of names) {
+    for (let i = 0; i + 1 < name.length; i += 1) bigrams.add(name.slice(i, i + 1));
+  }
+  return (phrase) => {
+    let maybe = false;
+    for (let i = 0; i + 1 < phrase.length && !maybe; i += 1) {
+      if (bigrams.has(phrase.slice(i, i + 1))) maybe = true;
+    }
+    if (!maybe) return false;
+    return names.some((n) => n.length >= 2 && phrase.includes(n));
+  };
+}
+
+// 章叙述文本 → Map(短语 → 出现次数)。4-8 字滑窗，按标点切段后段内成词（防噪①）。
+// n > 段长时内层循环条件不成立自然跳过，无需额外界。
+function echoCounts(text) {
+  const counts = new Map();
+  for (const seg of text.split(ECHO_SPLIT)) {
+    if (seg.length < ECHO_N_MIN) continue;
+    for (let n = ECHO_N_MIN; n <= ECHO_N_MAX; n += 1) {
+      for (let i = 0; i + n <= seg.length; i += 1) {
+        const g = seg.slice(i, i + n);
+        counts.set(g, (counts.get(g) || 0) + 1);
+      }
+    }
+  }
+  return counts;
+}
+
+// 指纹库定位：--project 优先，否则从目标目录向上找 追踪/ ----------
 
 function locateLibrary(chapterDirs) {
   if (options.project) return path.join(path.resolve(options.project), '追踪', '段落指纹库.json');
@@ -169,6 +251,20 @@ function loadCharacterNames() {
   try {
     const state = JSON.parse(fs.readFileSync(statePath, 'utf8'));
     return state && typeof state === 'object' && state.characters ? Object.keys(state.characters) : [];
+  } catch (error) {
+    return [];
+  }
+}
+
+// 实体名词典（N1 过滤用）：characters + geo 键——角色名/地名命中的 n-gram 跳过
+// （「燕衡的手」是人名搭配不是 tic）。fail-open：state 缺失则不过滤。
+function loadEntityNames() {
+  if (!libraryPath) return [];
+  const statePath = path.join(path.dirname(libraryPath), '_tracking-state.json');
+  try {
+    const state = JSON.parse(fs.readFileSync(statePath, 'utf8'));
+    if (!state || typeof state !== 'object') return [];
+    return [...Object.keys(state.characters || {}), ...Object.keys(state.geo || {})];
   } catch (error) {
     return [];
   }
@@ -243,17 +339,17 @@ function extractMetaphors(para, chapter, names) {
   return out;
 }
 
-// ---------- 指纹库读写（schema 2：加 imagery 节；v1 无 imagery 视为空）----------
+// ---------- 指纹库读写（schema 3：imagery + phrases/N1；v2 无 phrases 视为空）----------
 
-const LIB_SCHEMA = 2;
+const LIB_SCHEMA = 3;
 
 function loadLibrary() {
-  if (!libraryPath) return { schema_version: LIB_SCHEMA, entries: [], imagery: [] };
+  if (!libraryPath) return { schema_version: LIB_SCHEMA, entries: [], imagery: [], phrases: [] };
   let raw;
   try {
     raw = fs.readFileSync(libraryPath, 'utf8');
   } catch (error) {
-    if (error.code === 'ENOENT') return { schema_version: LIB_SCHEMA, entries: [], imagery: [] };
+    if (error.code === 'ENOENT') return { schema_version: LIB_SCHEMA, entries: [], imagery: [], phrases: [] };
     throw error;
   }
   let doc;
@@ -266,6 +362,7 @@ function loadLibrary() {
     die(`${libraryPath}: library must contain an "entries" array`);
   }
   if (!Array.isArray(doc.imagery)) doc.imagery = [];
+  if (!Array.isArray(doc.phrases)) doc.phrases = []; // schema 2 旧库 → N1 phrases 视为空，下次 --commit 自动补齐
   for (const e of doc.entries) {
     if (!Array.isArray(e.grams)) {
       die(`${libraryPath}: entry ${e.chapter || '?'}-${e.para || '?'} missing "grams" (rebuild with --commit)`);
@@ -291,12 +388,17 @@ function buildInverted(entries) {
 const library = loadLibrary();
 const inverted = buildInverted(library.entries);
 const characterNames = loadCharacterNames();
+const entityNames = loadEntityNames();
+const isEntityPhrase = buildEntityFilter(entityNames);
+const phraseIndex = new Map(library.phrases.map((p) => [p.phrase, p])); // 短语 → 库条目（O(1) 窗口查询）
 const findings = [];
 const pending = [];        // --commit 待入库指纹
 const pendingImagery = []; // --commit 待入库比喻句
 const batchImagery = [];   // 本批已处理章的比喻句（同批多章时窗口统计需要）
 const batchChapters = new Set();
 const scannedChapters = []; // I1 欠账检测：本批受检正文章号
+const batchEchoAgg = new Map(); // N1 批级聚合：短语 → Map(章号 → 次数)，commit 时与库合并
+let echoSuppressed = 0;     // top10 截断外只进计数的候选数（防噪规格③）
 let paragraphsScanned = 0;
 
 for (const file of files) {
@@ -318,11 +420,13 @@ for (const file of files) {
   const lines = input.split(/\r?\n/);
   let chapterPara = 0;
   const currentImagery = [];
+  const narrativeParts = []; // N1：章叙述段聚合，章末复读检测的输入（只收叙述段，与指纹库同口径）
   for (let i = 0; i < lines.length; i += 1) {
     const para = lines[i].trim();
     if (!isNarrative(para)) continue;
     chapterPara += 1;
     paragraphsScanned += 1;
+    narrativeParts.push(para);
     currentImagery.push(...extractMetaphors(para, chapter, characterNames));
     const grams = gramsOf(para);
     // 查历史：倒表计数 = 交集大小 → Jaccard；同章旧指纹不比（重写场景先清后插）。
@@ -377,6 +481,7 @@ for (const file of files) {
   batchImagery.push(...currentImagery);
   batchChapters.add(chapter);
   scannedChapters.push(chapter);
+  scanChapterEcho(chapter, narrativeParts.join('\n'), file);
 
   // 意象域密度（P6-2）：本章参与后，滑窗（IMAGERY_WINDOW 章）内同域 ≥IMAGERY_RUN 次
   // 才报——历史旧密度不在本章参与时不报（已在密度形成那章报过）。同批多章时窗口
@@ -406,44 +511,120 @@ for (const file of files) {
   }
 }
 
-// ---------- --commit：同章旧指纹/旧意象先清再插，写盘 + 台账视图 ----------
+// 章末复读检测（N1）：章叙述文本 vs 库+批内样本（检测窗口 [chapter−5, chapter−1]）。
+// 同短语同时满足 cross 与 ending 时只报 cross（更严重，双报冗余）。库样本排除本批章
+// 号（重跑幂等，同意象窗口统计的 batchChapters 排除哲学）；批内样本取自 batchEchoAgg。
+// 子串归并（防噪②）+ 频次降序 top10 截断（防噪③）。
+function scanChapterEcho(chapter, narrativeText, file) {
+  if (!narrativeText) return;
+  const counts = echoCounts(narrativeText);
+  const floor = chapter - ECHO_WINDOW;
+  const candidates = [];
+  for (const [phrase, count] of counts) {
+    if (echoNoisy(phrase) || isEntityPhrase(phrase)) continue;
+    let winLib = 0;
+    const libEntry = phraseIndex.get(phrase);
+    if (libEntry) {
+      for (const s of libEntry.recent || []) {
+        if (s.c >= floor && s.c < chapter && !batchChapters.has(s.c)) winLib += s.n;
+      }
+    }
+    for (const [c, n] of batchEchoAgg.get(phrase) || []) {
+      if (c >= floor && c < chapter) winLib += n;
+    }
+    if (count + winLib >= ECHO_CROSS_RUN) {
+      candidates.push({ phrase, count, winLib, total: count + winLib, type: 'phrase-echo-cross' });
+    } else if (count >= ECHO_ENDING_RUN
+      && narrativeText.lastIndexOf(phrase) / narrativeText.length >= ECHO_TAIL_RATIO) {
+      candidates.push({ phrase, count, winLib, total: count + winLib, type: 'phrase-echo-ending' });
+    }
+    // 批级聚合（--commit 合并用）：全部过滤后短语入聚合，入库门槛在合并时判（total ≥2）
+    let agg = batchEchoAgg.get(phrase);
+    if (!agg) {
+      agg = new Map();
+      batchEchoAgg.set(phrase, agg);
+    }
+    agg.set(chapter, (agg.get(chapter) || 0) + count);
+  }
+  candidates.sort((a, b) => b.phrase.length - a.phrase.length || b.total - a.total);
+  const merged = [];
+  for (const cand of candidates) {
+    if (merged.some((m) => m.phrase.includes(cand.phrase))) continue; // 子串让位最长形
+    merged.push(cand);
+  }
+  merged.sort((a, b) => b.total - a.total);
+  echoSuppressed += Math.max(0, merged.length - ECHO_TOP);
+  for (const cand of merged.slice(0, ECHO_TOP)) {
+    findings.push({
+      file: path.relative('.', file),
+      line: 1,
+      column: 1,
+      type: cand.type,
+      severity: 'advisory',
+      message: cand.type === 'phrase-echo-cross'
+        ? `复读雷达：「${cand.phrase}」跨章窗口内出现 ${cand.total} 次（本章 ${cand.count} + 近 ${ECHO_WINDOW} 章 ${cand.winLib}）——疑似新 tic（E7 形态），仲裁：确认后进 追踪/短语黑名单.md 限额（I2 通道）或登记豁免台账；宁报不拦，一时口滑可忽略。`
+        : `章尾复读：「${cand.phrase}」本章 ${cand.count} 次且末次落章尾 20% 区域——E6 章尾同图重复形态：末段换图或删一处，别在张力点上原地打转。`,
+      excerpt: cand.phrase,
+    });
+  }
+}
 
-// 台账视图：域聚合表 + 明细，人物之眼改写协议的查询端。
-function renderImageryView(imagery) {
+// 台账视图：域聚合表 + 复读短语节（N2）+ 类型明细，人物之眼改写协议的查询端。
+// 比喻与复读短语均为自动来源（N2：只收自动来源，手势类无机械消费端不设列）。
+function renderImageryView(imagery, phrases) {
   const lines = [
     '# 意象台账',
     '',
-    '> 比喻/闲笔资产登记（P6-2）：哪个域、被谁用过几次。「人物之眼」改写协议的消费端——**换域，而不是换词**。',
+    '> 比喻/闲笔资产登记（P6-2）＋复读短语自动沉淀（N2）：哪个域、被谁用过几次。「人物之眼」改写协议的消费端——**换域，而不是换词**。',
     '> 改写时查此表：某域已被同一角色反复采撷就换未用域，换词不换域仍是坍缩。',
     '',
   ];
-  if (imagery.length === 0) {
-    lines.push('> 暂无比喻句登记（叙述段含「像/如/仿佛」等标记词时自动登记）。');
-    return `${lines.join('\n')}\n`;
-  }
-  const byDomain = new Map();
-  for (const m of imagery) {
-    if (!byDomain.has(m.domain)) byDomain.set(m.domain, []);
-    byDomain.get(m.domain).push(m);
-  }
-  lines.push('| 域 | 次数 | 角色分布 | 最近章 |');
-  lines.push('|---|---|---|---|');
-  for (const [domain, items] of [...byDomain.entries()].sort((a, b) => b[1].length - a[1].length)) {
-    const roles = new Map();
-    for (const m of items) {
-      const r = m.character || '未归属';
-      roles.set(r, (roles.get(r) || 0) + 1);
+  if (imagery.length > 0) {
+    const byDomain = new Map();
+    for (const m of imagery) {
+      if (!byDomain.has(m.domain)) byDomain.set(m.domain, []);
+      byDomain.get(m.domain).push(m);
     }
-    const roleText = [...roles.entries()].map(([r, c]) => `${r}(${c})`).join(' ');
-    const lastChapter = Math.max(...items.map((m) => m.chapter));
-    lines.push(`| ${domain} | ${items.length} | ${roleText} | 第${lastChapter}章 |`);
+    lines.push('| 域 | 次数 | 角色分布 | 最近章 |');
+    lines.push('|---|---|---|---|');
+    for (const [domain, items] of [...byDomain.entries()].sort((a, b) => b[1].length - a[1].length)) {
+      const roles = new Map();
+      for (const m of items) {
+        const r = m.character || '未归属';
+        roles.set(r, (roles.get(r) || 0) + 1);
+      }
+      const roleText = [...roles.entries()].map(([r, c]) => `${r}(${c})`).join(' ');
+      const lastChapter = Math.max(...items.map((m) => m.chapter));
+      lines.push(`| ${domain} | ${items.length} | ${roleText} | 第${lastChapter}章 |`);
+    }
+  } else {
+    lines.push('> 暂无比喻句登记（叙述段含「像/如/仿佛」等标记词时自动登记）。');
   }
+  // 复读短语节（N2 沉淀 / N3 取数源）：写前 {{禁止}} 注入从这里读，零新步骤。
+  lines.push('', '## 复读短语（N1 自动沉淀）');
+  if (!(phrases && phrases.length > 0)) {
+    lines.push('> 暂无（雷达未捕获窗口复现 ≥2 的短语，或尚未 --commit 固化）。');
+  } else {
+    lines.push('> 写前注入取数（cards/README {{禁止}}）：取「最近章 ≥ 当前−5」条目，编排层选 ≤3 条贴卡。');
+    lines.push('', '| 短语 | 窗口累计 | 最近章 |');
+    lines.push('|---|---|---|');
+    for (const p of [...phrases].sort((a, b) => (b.last || 0) - (a.last || 0) || (b.total || 0) - (a.total || 0))) {
+      lines.push(`| ${p.phrase} | ${p.total} | 第${p.last || 0}章 |`);
+    }
+  }
+  // 类型明细（N2）：比喻/复读短语混排，按章号降序取最近 100 条。
   lines.push('', '## 明细（最近 100 条）');
-  for (const m of [...imagery].sort((a, b) => b.chapter - a.chapter).slice(0, 100)) {
-    lines.push(`- 第${m.chapter}章｜${m.domain}｜${m.character || '—'}｜「${m.excerpt}」`);
+  const detailRows = [
+    ...imagery.map((m) => ({ chapter: m.chapter, type: '比喻', domain: m.domain, meta: m.character || '—', text: m.excerpt })),
+    ...(phrases || []).map((p) => ({ chapter: p.last || 0, type: '复读短语', domain: '—', meta: `${p.total || 0} 次`, text: p.phrase })),
+  ].sort((a, b) => b.chapter - a.chapter).slice(0, 100);
+  for (const r of detailRows) {
+    lines.push(`- 第${r.chapter}章｜${r.type}｜${r.domain}｜${r.meta}｜「${r.text}」`);
   }
   return `${lines.join('\n')}\n`;
 }
+
+// ---------- --commit：同章旧指纹/旧意象先清再插，写盘 + 台账视图（N1 含 phrases 合并） ----------
 
 let committed = 0;
 if (options.commit && pending.length > 0) {
@@ -452,12 +633,39 @@ if (options.commit && pending.length > 0) {
   library.entries.push(...pending);
   library.imagery = library.imagery.filter((e) => !touchedChapters.includes(e.chapter));
   library.imagery.push(...pendingImagery);
+  // N1 phrases 三步合并（幂等）：① 清 touched 章旧样本 ② 并入批级聚合（新条目须
+  // 复现 ≥2 才建，防膨胀——全量 n-gram 每章上万条，不滤必膨胀）③ 修剪+派生重算：
+  // total/last 恒为 recent 的派生值，窗口口径自动一致，重跑同章结果不变。
+  const maxTouched = Math.max(...touchedChapters);
+  for (const p of library.phrases) {
+    p.recent = (p.recent || []).filter((s) => !touchedChapters.includes(s.c));
+  }
+  for (const [phrase, byChapter] of batchEchoAgg) {
+    let batchTotal = 0;
+    for (const n of byChapter.values()) batchTotal += n;
+    let entry = phraseIndex.get(phrase);
+    if (!entry) {
+      if (batchTotal < 2) continue; // 入库门槛：窗口复现 ≥2 才建新条目（docs/07 N1）
+      entry = { phrase, total: 0, last: 0, recent: [] };
+      library.phrases.push(entry);
+      phraseIndex.set(phrase, entry);
+    }
+    for (const [c, n] of byChapter) entry.recent.push({ c, n });
+  }
+  library.phrases = library.phrases.filter((p) => {
+    p.recent = p.recent.filter((s) => s.c >= maxTouched - ECHO_STORE_SPAN);
+    p.total = p.recent.reduce((acc, s) => acc + s.n, 0);
+    p.last = p.recent.reduce((acc, s) => Math.max(acc, s.c), 0);
+    return p.total >= 2 && p.last >= maxTouched - ECHO_STORE_SPAN;
+  });
+  phraseIndex.clear();
+  for (const p of library.phrases) phraseIndex.set(p.phrase, p);
   library.schema_version = LIB_SCHEMA;
   if (libraryPath) {
     try {
       fs.mkdirSync(path.dirname(libraryPath), { recursive: true });
       fs.writeFileSync(libraryPath, `${JSON.stringify(library, null, 2)}\n`, 'utf8');
-      fs.writeFileSync(path.join(path.dirname(libraryPath), '意象台账.md'), renderImageryView(library.imagery), 'utf8');
+      fs.writeFileSync(path.join(path.dirname(libraryPath), '意象台账.md'), renderImageryView(library.imagery, library.phrases), 'utf8');
       committed = pending.length;
     } catch (error) {
       failed = true;
@@ -498,6 +706,9 @@ const summary = {
   near_hits: findings.filter((f) => f.type === 'para-repeat-near').length,
   pattern_hits: findings.filter((f) => f.type === 'para-repeat-pattern').length,
   imagery_hits: findings.filter((f) => f.type === 'imagery-domain-run').length,
+  echo_hits: findings.filter((f) => f.type.startsWith('phrase-echo-')).length,
+  echo_suppressed: echoSuppressed,
+  phrases_stored: library.phrases.length,
   arrears_hits: findings.filter((f) => f.type === 'fingerprint-arrears').length,
   committed,
 };
@@ -511,8 +722,11 @@ if (options.json) {
   for (const f of findings) {
     console.log(`${f.file}:${f.line}:${f.column}: [${f.severity}] ${f.type}: ${f.message}`);
   }
+  if (summary.echo_suppressed > 0) {
+    console.log(`# 复读雷达另有 ${summary.echo_suppressed} 个候选超 top10 截断未列出（防噪③，只进计数）`);
+  }
   if (options.commit && committed > 0) {
-    console.log(`# 已固化 ${committed} 段指纹入库（${summary.library_entries} 条在库）`);
+    console.log(`# 已固化 ${committed} 段指纹入库（${summary.library_entries} 条在库；短语台账 ${summary.phrases_stored} 条）`);
   }
 }
 

@@ -1640,6 +1640,29 @@ def apply_transaction(project: Path, document: object) -> dict[str, Any]:
     # 唯一权威文件最后落盘；在此之前失败可用同一事务直接重跑。
     atomic_write_text(state_path(project), next_state_payload)
     warn_sizes(views, delta_payload)
+
+    # P2 执行偏差回填提醒（docs/07 §二 P2）：提交章 N 时同章细纲缺「执行偏差」区 →
+    # stderr 提醒，不阻断。stdout 是提交产物的单行 JSON 通道，提醒只走 stderr（v1.1）。
+    # 细纲读不了不提醒（fail-open：本检查是纪律出声口，不是硬门）。
+    outline_dir = project.resolve() / "大纲"
+    try:
+        outline_path = next(
+            (
+                entry
+                for entry in outline_dir.iterdir()
+                if re.fullmatch(rf"细纲_第0*{transaction['chapter']}章.*\.md", entry.name)
+            ),
+            None,
+        )
+        if outline_path is not None and "执行偏差" not in outline_path.read_text(encoding="utf-8"):
+            emit(
+                f"提醒：{outline_path.name} 缺「执行偏差（写后回填）」区——写章循环第 6 步回填"
+                "变体/未落实项（细纲协议 P2；未落实项顺延须同步登记 追踪/伏笔.md 或卷纲待办）。"
+                "本提醒不阻断提交。",
+                error=True,
+            )
+    except (OSError, UnicodeError):
+        pass
     return next_state
 
 
@@ -1764,6 +1787,27 @@ def check_project(project: Path) -> dict[str, Any]:
     }
     actual_character_files = {path.name for path in (tracking / "角色状态").glob("*.md")}
     require(actual_character_files == expected_character_files, "character snapshot files differ from tracking state")
+
+    # S1 时滞扫描（docs/07 §二 S1）：正文已落盘的最大章号 > 追踪提交章号 → 报欠账退 2。
+    # 既定流程中 check 只在批收尾/预检时点跑（写章循环第 6 步提交先于任何 check），
+    # 无中间态误报窗口；fail-open：正文目录缺失或命名不匹配静默跳过。hook guard 已在
+    # hook 宿主拦「last_committed < num−1」（新建章文件时），此处补无 hook 宿主与编排层
+    # 预检面——同一判据多层布防，不冲突（61-63 事故的直接防线：写 61-63 时状态停 8/26）。
+    prose_dir = project.resolve() / "正文"
+    try:
+        prose_names = [entry.name for entry in prose_dir.iterdir()]
+    except OSError:
+        prose_names = []
+    prose_nums = []
+    for name in prose_names:
+        match = re.match(r"第0*(\d+)章", name)
+        if match and name.endswith(".md"):
+            prose_nums.append(int(match.group(1)))
+    if prose_nums and max(prose_nums) > last_chapter:
+        raise TrackingError(
+            f"第 {last_chapter + 1}…{max(prose_nums)} 章已落盘未提交（追踪记至第 {last_chapter} 章）"
+            ": 先跑 commit 补提交再过检（docs/07 S1 时滞预检；批收尾三查之一：时滞=0）"
+        )
     return state
 
 

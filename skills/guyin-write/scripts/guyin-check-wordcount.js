@@ -5,9 +5,16 @@
 //
 // 低模型执行层最常崩的是字数：beat 写两百字就收工、拼接缺 beat。本脚本做章级兜底
 // （beat 级由写作卡的字数指令管，两层各守各的）：
-//   - chapter-too-short (blocking)：去空白字数 < min（目标驱动：同项目细纲「字数目标」× 90%，
-//     细纲缺失或无字数目标 → 缺省 3000，与 workflow-chapter 既有兑底统一；--min 显式覆盖）
-//   - chapter-too-long  (advisory)：> max（默认 6000，提示核对 beat 切分是否失守）
+//   - chapter-too-short (blocking)：去空白字数 < min（目标驱动：同项目细纲「字数目标」
+//     双口径 J1——区间 X-Y 取下限 X（区间下限本身是作者接受的最低值不再打折），
+//     单值 T 取 T×90%；细纲缺失或无字数目标 → 缺省 3000，与 workflow-chapter 既有
+//     兜底统一；--min 显式覆盖。J1 前的旧实现把「3000-3300」截为 3000 再打九折＝
+//     2700 达标线，2712-2754 全部假达标，正是报告 2.6 规格偏差的机制根源）
+//   - chapter-too-long  (advisory)：> max（默认 6000，提示核对 beat 切分是否失守；
+//     上限维持缺省不动——报告缺陷全在缺口侧，区间上限卡点属另一件事，不做防过度设计）
+//   - chapter-length-uniform (advisory，--batch)：最近 3 章实绩 max−min < 400（J2，
+//     E8 均质＝平整感信号，报告 5.2 验收线指标；--uniform-gap=N 覆盖缺省——400 锚定
+//     ~3000 字章型的本书尺度，不建每书配置件）
 // 度量：剔除 YAML frontmatter 与 markdown 标题行后的去空白字符数（与 doc-budget 同口径）。
 // 目录输入时只检 第*.md（三位章号命名约定），其余文件忽略。
 // 字数标准是每本书的（细纲驱动），框架硬编码宽带必然错配——2014 字对 3000 目标是 67%
@@ -21,18 +28,23 @@
 const fs = require('fs');
 const path = require('path');
 
-const USAGE = `Usage: node guyin-check-wordcount.js [--json] [--fail-on=blocking|all] [--min=N] [--max=N] <file|dir>...
+const USAGE = `Usage: node guyin-check-wordcount.js [--json] [--fail-on=blocking|all] [--min=N] [--max=N] [--batch] [--uniform-gap=N] <file|dir>...
 
 Chapter wordcount guard for low-model prose assembly:
   - chapter-too-short (blocking): visible chars < min (default: outline
-    target x 90% from 大纲/细纲_第XXX章.md, fallback 3000; --min overrides)
+    target from 大纲/细纲_第XXX章.md — range X-Y takes lower bound X,
+    single value T takes T x 90%; fallback 3000; --min overrides)
   - chapter-too-long  (advisory): visible chars > --max (default 6000)
 Visible chars = non-whitespace characters after stripping YAML frontmatter and
 markdown heading lines. Directory input scans 第*.md only.
+--batch: per-chapter checks run as usual, then a batch-variance check on the
+3 highest-numbered chapters: max-min < 400 visible chars → advisory
+chapter-length-uniform (E8; --uniform-gap=N overrides; skipped silently with
+fewer than 3 numbered chapters).
 --fail-on=blocking exits 1 only on blocking findings; default --fail-on=all exits 1 on any.
 Report-only: findings go to the review queue (rewrite card or exemption), never auto-deleted.`;
 
-const options = { json: false, failOn: 'all', min: null, max: 6000, inputs: [] };
+const options = { json: false, failOn: 'all', min: null, max: 6000, batch: false, uniformGap: 400, inputs: [] };
 
 function die(message) {
   console.error(message);
@@ -56,6 +68,12 @@ for (let i = 2; i < process.argv.length; i += 1) {
     const n = Number(arg.slice('--max='.length));
     if (!Number.isFinite(n) || n <= 0) die(`--max must be a positive number`);
     options.max = n;
+  } else if (arg === '--batch') {
+    options.batch = true;
+  } else if (arg.startsWith('--uniform-gap=')) {
+    const n = Number(arg.slice('--uniform-gap='.length));
+    if (!Number.isFinite(n) || n <= 0) die(`--uniform-gap must be a positive number`);
+    options.uniformGap = n; // 仅 --batch 下生效（J2 缺省 400，他书尺度可覆盖）
   } else if (arg === '-h' || arg === '--help') {
     process.stdout.write(`${USAGE}\n`);
     process.exit(0);
@@ -142,7 +160,9 @@ function locateOutline(file, num) {
   return null;
 }
 
-// 每文件解析 blocking 下限：--min 显式指定优先；否则细纲目标 × 90%；再否则缺省 3000。
+// 每文件解析 blocking 下限：--min 显式指定优先；否则细纲「字数目标」双口径（区间 X-Y
+// 取下限 X 不打折；单值 T 取 T×90%——J1，docs/07 §二：区间正则含全角横线变体，须先于
+// 单值正则试配否则「3000-3300」被截为 3000）；再否则缺省 3000。
 function resolveMin(file) {
   if (options.min !== null) return { min: options.min, origin: '--min 显式指定' };
   const num = chapterNumberOf(path.basename(file));
@@ -152,6 +172,11 @@ function resolveMin(file) {
       const text = fs.readFileSync(outline, 'utf8');
       for (const line of text.split(/\r?\n/)) {
         if (line.includes('字数目标')) {
+          const range = /(\d+)\s*[-—－~～至]\s*(\d+)/.exec(line);
+          if (range) {
+            const low = Number(range[1]);
+            return { min: low, origin: `细纲区间下限 ${low}（目标 ${range[1]}-${range[2]}，区间不再打折 J1）` };
+          }
           const m = /(\d+)/.exec(line);
           if (m) {
             const target = Number(m[1]);
@@ -168,12 +193,15 @@ const files = [];
 for (const input of options.inputs) files.push(...collectFiles(input));
 
 const findings = [];
+const chapterCounts = new Map(); // J2：章号 → { count, file }，批方差取最近 3 章用
 let minSeen = Infinity;
 let maxSeen = 0;
 for (const file of files) {
   const text = fs.readFileSync(file, 'utf8');
   const count = visibleChars(text);
   const { min, origin } = resolveMin(file);
+  const chapterNum = chapterNumberOf(path.basename(file));
+  if (chapterNum !== null) chapterCounts.set(chapterNum, { count, file });
   // 目标极大的书保 advisory 语义（正常网文章目标 2000-4500 不触发）。
   const max = Math.max(options.max, min + 100);
   if (count < min) {
@@ -203,6 +231,30 @@ for (const file of files) {
   }
   minSeen = Math.min(minSeen, min);
   maxSeen = Math.max(maxSeen, max);
+}
+
+// ---------- J2 批内方差检查（--batch，docs/07 §二 J2） ----------
+// 逐章检查照常运行——--batch 是增量不是替换，J3 批收尾一步拿到「达标率＋方差」。
+// 样本取传入文件中章号最大的 3 章；不足 3 章静默跳过（样本不足不判）。
+if (options.batch) {
+  const recent = [...chapterCounts.entries()].sort((a, b) => a[0] - b[0]).slice(-3);
+  if (recent.length === 3) {
+    const counts = recent.map(([, v]) => v.count);
+    const spread = Math.max(...counts) - Math.min(...counts);
+    if (spread < options.uniformGap) {
+      findings.push({
+        file: recent[2][1].file,
+        line: 1,
+        column: 1,
+        type: 'chapter-length-uniform',
+        severity: 'advisory',
+        count: counts,
+        limit: options.uniformGap,
+        message: `章长均质：最近 3 章实绩 max−min = ${spread} 字 < ${options.uniformGap}（E8 平整感信号，报告 5.2 验收线指标）——节律应有张弛，核对批内各章是否同一模板填充；本书刻意均质可豁免（登记待审，或 --uniform-gap=N 调本书尺度）`,
+        excerpt: '',
+      });
+    }
+  }
 }
 
 if (options.json) {

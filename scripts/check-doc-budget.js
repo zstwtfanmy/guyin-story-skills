@@ -52,8 +52,13 @@ for (const entry of manifest.files) {
   console.log(`  ${String(used).padStart(6)} / ${String(entry.budget).padStart(6)} ${String(left).padStart(6)}  ${entry.path}  [${mark}]`);
   if (left < 0) {
     fail.push(`${entry.path} 超预算 ${-left} 字（${used} > ${entry.budget}）：${entry.why}`);
-  } else if (left >= Math.ceil(entry.budget * 0.05)) {
-    note.push(`${entry.path} 比预算低 ${left} 字，可把 budget 降到 ${Math.ceil(used / 100) * 100} 锁住这次精简`);
+  } else {
+    // 锁紧提示只在建议值真能降时发（ceil(用量/100)*100 ≥ budget 时提示「降到当前值」是空转噪声，
+    // 会淹没真锁紧信号）；余量 ≥5% 只是触发门槛。
+    const suggested = Math.ceil(used / 100) * 100;
+    if (left >= Math.ceil(entry.budget * 0.05) && suggested < entry.budget) {
+      note.push(`${entry.path} 比预算低 ${left} 字，可把 budget 降到 ${suggested} 锁住这次精简`);
+    }
   }
 }
 

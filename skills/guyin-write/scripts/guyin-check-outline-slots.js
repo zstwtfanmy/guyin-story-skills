@@ -13,10 +13,12 @@
 //     outline-missing-multiline 情节安排节 / 主线行 / 感情线·关系线行缺失
 //     outline-missing-anchor    复沓锚句字段行缺失（值可写「无」）
 //     outline-missing-holdback  禁止提前释放字段行缺失（值可写「无」）
-//   advisory ×3：
+//   advisory ×5：
 //     outline-missing-scenes    涉及场景清单字段行缺失
 //     outline-missing-terms     术语锚点字段行缺失（值可写「无」）
 //     outline-missing-contract  契约风险结论行缺失
+//     outline-missing-timecheck 时序自检行缺失（P1，docs/07：E1 时序倒错源头封堵，advisory 起步）
+//     qiyun-coord-uncovered     气卡坐标区间未覆盖本章（S2，fail-open：无气卡/无区间静默）
 //
 // 存量策略：只拦落盘门场景（新建/修订细纲落盘前），存量章不追溯（与 hook-rotation 一致）。
 // 复沓锚句字段值命中作者性词源归 guyin-check-authority-leak.js 管（锚句洗白在那抓），本脚本只查存在性。
@@ -29,7 +31,8 @@ const USAGE = `Usage: node guyin-check-outline-slots.js [--json] [--fail-on=bloc
 
 Chapter outline slot integrity gate (docs/06 §二 O2):
   blocking: hook / wordcount+scene floor / multi-line / anchor line / holdback line
-  advisory: scene list / term anchors / contract-risk line
+  advisory: scene list / term anchors / contract-risk line / time-check (P1)
+            / qiyun-coord coverage (S2, silent when no card or no ranges)
 Slot definitions live in guyin-write/references/细纲协议.md (single authority).
 Only guards the pre-write gate; existing chapters are not retro-scanned.
 --fail-on=blocking exits 1 only on blocking findings; default --fail-on=all exits 1 on any.`;
@@ -171,7 +174,47 @@ function scanSlots(text) {
     push('outline-missing-contract', 'advisory', 1, '契约风险结论行缺失（判定标准=七检⑥⑦，见 references/细纲协议.md）');
   }
 
+  const timecheck = firstLineWith(lines, (l) => l.includes('时序自检'));
+  if (!timecheck) {
+    push('outline-missing-timecheck', 'advisory', 1, '时序自检行缺失（出场顺序＝时间顺序/插叙显式标注/beat 时间轴走查）——P1 源头治 E1 时序倒错：细纲即代码，排序 bug 在高保真管线 1:1 传导（ch61 实证）；advisory 起步（O2 先例），Arena 验证后议升 blocking');
+  }
+
   return findings;
+}
+
+// ---------- S2 气卡坐标覆盖预检（docs/07 §二 S2） ----------
+// 尊重 06 决策不收编气卡，只加预检：落盘门查该章细纲时顺带扫项目 作者性/气卡.md 的
+// 章号区间，本章不落在任何区间 → advisory 停靠提醒刷新，报时贴原文坐标行供作者目检。
+// fail-open（v1.1 钉死）：气卡缺失或全文无区间 → 静默跳过——框架模板气卡本无坐标节
+// （坐标是项目自定义资产），「无区间也报」会让每个项目每次补纲都假警报。时机：补纲
+// 落盘门（新卷首批细纲建档时），早于写章循环第 1 步的卷首检查；第 1 步停靠纪律不动。
+const QIYUN_RANGE = /第?\s*(\d+)\s*[-—－~～至]\s*(\d+)?/g;
+
+function locateQiyunCard(outlinePath) {
+  let cur = path.dirname(path.resolve(outlinePath));
+  for (let depth = 0; depth < 3; depth += 1) {
+    const candidate = path.join(cur, '作者性', '气卡.md');
+    if (fs.existsSync(candidate)) return candidate;
+    const parent = path.dirname(cur);
+    if (parent === cur) break;
+    cur = parent;
+  }
+  return null;
+}
+
+// 逐行扫区间（含全角横线变体）：「61-63」「第61-63章」「61至65」；尾数缺失视为无效区间跳过。
+function qiyunRanges(text) {
+  const rows = [];
+  for (const line of text.split(/\r?\n/)) {
+    QIYUN_RANGE.lastIndex = 0;
+    let m;
+    while ((m = QIYUN_RANGE.exec(line)) !== null) {
+      const lo = Number(m[1]);
+      const hi = m[2] !== undefined ? Number(m[2]) : null;
+      if (hi !== null && hi >= lo && line.trim()) rows.push({ lo, hi, line: line.trim() });
+    }
+  }
+  return rows;
 }
 
 const allFindings = [];
@@ -189,6 +232,35 @@ for (const input of options.inputs) {
   }
   const findings = scanSlots(text).map((f) => ({ file: input, ...f }));
   allFindings.push(...findings);
+
+  // S2 坐标覆盖预检：仅在章号可解析的细纲文件上跑（气卡缺失/无区间静默，见上）。
+  const chapterMatch = /^细纲_第0*(\d+)章/.exec(path.basename(abs));
+  if (chapterMatch) {
+    const chapter = Number(chapterMatch[1]);
+    const cardPath = locateQiyunCard(abs);
+    let cardText = null;
+    if (cardPath) {
+      try {
+        cardText = fs.readFileSync(cardPath, 'utf8');
+      } catch (error) {
+        cardText = null; // 读不了不报（fail-open）
+      }
+    }
+    if (cardText) {
+      const rows = qiyunRanges(cardText);
+      if (rows.length > 0 && !rows.some((r) => chapter >= r.lo && chapter <= r.hi)) {
+        allFindings.push({
+          file: input,
+          line: 1,
+          column: 1,
+          type: 'qiyun-coord-uncovered',
+          severity: 'advisory',
+          message: `气卡坐标未覆盖第 ${chapter} 章（现有区间 ${rows.map((r) => `${r.lo}-${r.hi}`).join('、')}）——新卷开卷先刷新 作者性/气卡.md 坐标节再续写（F5：坐标停旧卷，气韵对位失真）；停靠刷新，原文目检：「${rows[0].line.slice(0, 50)}」`,
+          excerpt: '',
+        });
+      }
+    }
+  }
 }
 
 if (options.json) {
