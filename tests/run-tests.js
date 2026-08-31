@@ -1069,12 +1069,23 @@ console.log('== guyin-tracking-commit.py P2 执行偏差回填提醒（stderr）
     // 乙：细纲含执行偏差区 → stderr 静默。
     const book2 = path.join(TMP, 'p2py', '乙');
     fixture('p2py/乙/init.json', JSON.stringify(initPayload));
-    fixture('p2py/乙/大纲/细纲_第002章_试.md', '- 字数目标：3000\n#### 执行偏差（写后回填）\n- 无变体。\n');
+    fixture('p2py/乙/大纲/细纲_第002章_试.md', '- 字数目标：3000\n#### 执行偏差（检测驱动回填）\n- 变体：无\n- 未落实：无\n');
     fixture('p2py/乙/commit.json', JSON.stringify(commitPayload));
     r = runPy(['init', '--input', path.join(TMP, 'p2py', '乙', 'init.json')], book2);
     check('P2 前置：乙 init 成功', r.status === 0, `status=${r.status} err=${r.stderr.trim().slice(0, 160)}`);
     r = runPy(['commit', '--input', path.join(TMP, 'p2py', '乙', 'commit.json')], book2);
     check('P2 细纲含执行偏差区 → stderr 静默', r.status === 0 && !r.stderr.includes('执行偏差'),
+      `status=${r.status} err=${r.stderr.trim().slice(0, 200)}`);
+
+    // 丙（R1，docs/08）：未落实值非「无」但不含顺延章号 → stderr 提醒（承诺无声消失防线）。
+    const book3 = path.join(TMP, 'p2py', '丙');
+    fixture('p2py/丙/init.json', JSON.stringify(initPayload));
+    fixture('p2py/丙/大纲/细纲_第002章_试.md', '- 字数目标：3000\n#### 执行偏差（检测驱动回填）\n- 变体：无\n- 未落实：火耗锚定戏没写\n');
+    fixture('p2py/丙/commit.json', JSON.stringify(commitPayload));
+    r = runPy(['init', '--input', path.join(TMP, 'p2py', '丙', 'init.json')], book3);
+    check('R1 前置：丙 init 成功', r.status === 0, `status=${r.status} err=${r.stderr.trim().slice(0, 160)}`);
+    r = runPy(['commit', '--input', path.join(TMP, 'p2py', '丙', 'commit.json')], book3);
+    check('R1 未落实缺顺延章号 → stderr 提醒且不阻断', r.status === 0 && r.stderr.includes('顺延章号'),
       `status=${r.status} err=${r.stderr.trim().slice(0, 200)}`);
   }
 }
@@ -1342,6 +1353,127 @@ console.log('== guyin-check-outline-deliver S3+S4 承诺交付 ==');
   check('S4 钩子被顶出报 outline-hook-offtail（撕掉的账页）', r.status === 1 && report
     && report.findings.some((f) => f.type === 'outline-hook-offtail' && f.excerpt === '撕掉的账页'),
     `status=${r.status} findings=${JSON.stringify(report && report.findings.map((f) => f.type))}`);
+}
+
+// ============================================================
+console.log('== guyin-check-outline-deliver R1+K2（docs/08：锚句落地/钩子引语/跨章签名句） ==');
+{
+  // R1：锚句未落地 / 钩子引语幽灵化；K2：跨章签名句提前释放与已声明复用静默。
+  const mkProj = (name, outlines, proses) => {
+    for (const [num, text] of Object.entries(outlines)) {
+      fixture(`r1k2/${name}/大纲/细纲_第${num}章_试.md`, text);
+    }
+    const files = [];
+    for (const [num, text] of Object.entries(proses)) {
+      files.push(fixture(`r1k2/${name}/正文/第${num}章.md`, text));
+    }
+    return path.join(TMP, `r1k2/${name}/正文`);
+  };
+  const ol = (anchor, hookExtra) => `# 细纲\n- 术语锚点：无\n- 复沓锚句：${anchor}\n- 章尾钩子：期待·预告式——实体：信；${hookExtra}\n`;
+
+  // 全履约：锚句一字不差 + 钩子引语真实存在 → 静默
+  const dirOk = mkProj('ok',
+    { '061': ol('「立此为凭，账没算完」', '承接：第62章对质') },
+    { '061': '他把笔搁下。「立此为凭，账没算完。」\n\n说完把那封信压在匣底，吹熄了灯。\n' });
+  let r = run('guyin-check-outline-deliver.js', ['--json', dirOk]);
+  let report = parseJson(r.stdout);
+  check('R1 锚句落地+引语一致静默', r.status === 0 && report && report.findings.length === 0,
+    `status=${r.status} findings=${JSON.stringify(report && report.findings.map((f) => f.type))}`);
+
+  // R1 双报：锚句未落地 + 钩子引语幽灵化
+  const dirBad = mkProj('bad',
+    { '062': ol('「立此为凭，账没算完」', '承接：第63章；引小窦原话「那引不是我发的」') },
+    { '062': '他推说账目还要再核，把册子合上。\n\n小窦在廊下站了半晌，只说上个月也有人来对过号。\n' });
+  r = run('guyin-check-outline-deliver.js', ['--json', dirBad]);
+  report = parseJson(r.stdout);
+  check('R1 锚句未落地报 outline-anchor-missing', r.status === 1 && report
+    && report.findings.some((f) => f.type === 'outline-anchor-missing'),
+    `status=${r.status} findings=${JSON.stringify(report && report.findings.map((f) => f.type))}`);
+  check('R1 幽灵引语报 outline-hook-quote-mismatch', report
+    && report.findings.some((f) => f.type === 'outline-hook-quote-mismatch' && f.excerpt === '那引不是我发的'),
+    `findings=${JSON.stringify(report && report.findings.map((f) => f.type))}`);
+
+  // K2：ch61 提前说出 ch62 签名句 → 报 preempted；双方声明同一锚句（复沓仪式）→ 静默
+  const dirLeak = mkProj('leak',
+    {
+      '061': ol('「留着一并算」', '承接：第62章'),
+      '062': ol('「三炉烧不出两炉的引子」', '承接：第63章'),
+    },
+    {
+      '061': '老周眯眼道：「三炉烧不出两炉的引子，这话我可没说过。」\n\n他把算盘收进布袋走了。\n',
+      '062': '三炉烧不出两炉的引子——这句话在坊间传了半年。\n\n火头把炉门关了。\n',
+    });
+  r = run('guyin-check-outline-deliver.js', ['--json', dirLeak]);
+  report = parseJson(r.stdout);
+  const pre = report ? report.findings.filter((f) => f.type === 'outline-signature-preempted') : [];
+  check('K2 跨章签名句提前释放报 outline-signature-preempted（61 说 62 的句）', r.status === 1 && pre.length === 1
+    && pre[0].excerpt === '三炉烧不出两炉的引子',
+    `status=${r.status} pre=${JSON.stringify(pre.map((f) => f.excerpt))}`);
+
+  const dirEcho = mkProj('echo',
+    {
+      '061': `# 细纲\n- 术语锚点：无\n- 复沓锚句：「立此为凭，账没算完」\n- 章尾钩子：期待·预告式——实体：灯花；承接：第62章\n`,
+      '062': `# 细纲\n- 术语锚点：无\n- 复沓锚句：「立此为凭，账没算完」\n- 章尾钩子：期待·预告式——实体：灯花；承接：第63章\n`,
+    },
+    {
+      '061': '他落笔：「立此为凭，账没算完。」\n\n搁笔，灯花跳了一下。\n',
+      '062': '周砚看着那行字：「立此为凭，账没算完。」\n\n灯花爆了一下。\n',
+    });
+  r = run('guyin-check-outline-deliver.js', ['--json', dirEcho]);
+  report = parseJson(r.stdout);
+  check('K2 已声明复用（复沓仪式）静默', r.status === 0 && report && report.findings.length === 0,
+    `status=${r.status} findings=${JSON.stringify(report && report.findings.map((f) => f.type))}`);
+}
+
+// ============================================================
+console.log('== guyin-check-strip（K3 成稿剥离门禁） ==');
+{
+  // blocking：多标题脚手架 + 大纲尾巴；advisory：工序词泄漏；白名单：案卷静默。
+  const clean = fixture('strip/第001章_净.md',
+    '# 第001章 试\n\n他把案卷从架上取下，翻开卷宗第三页。\n\n「火耗是折掉的分量。」师爷说。\n');
+  let r = run('guyin-check-strip.js', ['--json', clean]);
+  let report = parseJson(r.stdout);
+  check('K3 干净正文通过（案卷/卷宗白名单）', r.status === 0 && report && report.findings.length === 0,
+    `status=${r.status} findings=${JSON.stringify(report && report.findings.map((f) => f.type))}`);
+
+  const scaffold = fixture('strip/第002章_脚手架.md',
+    '# 第002章 试\n\n他把笔搁下。\n\n## 声线锚\n\n老周说话带算盘声。\n\n## 封档\n\n物证三件。\n\n灯熄了。\n');
+  r = run('guyin-check-strip.js', ['--json', scaffold]);
+  report = parseJson(r.stdout);
+  check('K3 多标题报 strip-extra-heading（blocking）', r.status === 1 && report
+    && report.findings.filter((f) => f.type === 'strip-extra-heading' && f.severity === 'blocking').length === 2,
+    `status=${r.status} findings=${JSON.stringify(report && report.findings.map((f) => f.type))}`);
+  r = run('guyin-check-strip.js', ['--fail-on=blocking', scaffold]);
+  check('K3 blocking 触发 --fail-on=blocking', r.status === 1, `status=${r.status}`);
+
+  const carryover = fixture('strip/第003章_尾巴.md',
+    '# 第003章 试\n\n他把信压回匣底，吹熄了灯。\n\n承接：第004章盐贩到齐，官船明早出发。\n');
+  r = run('guyin-check-strip.js', ['--json', carryover]);
+  report = parseJson(r.stdout);
+  check('K3 大纲尾巴报 strip-carryover（blocking）', r.status === 1 && report
+    && report.findings.some((f) => f.type === 'strip-carryover' && f.severity === 'blocking'),
+    `status=${r.status} findings=${JSON.stringify(report && report.findings.map((f) => f.type))}`);
+
+  const leakWords = fixture('strip/第004章_泄漏.md',
+    '# 第004章 试\n\n「推理≤3步，已经到第三步了。」他低声道，「这细纲里写着，情节点四要落在伏笔上。」\n\n全貌留卷三卷四。\n');
+  r = run('guyin-check-strip.js', ['--json', leakWords]);
+  report = parseJson(r.stdout);
+  check('K3 工序词泄漏报 strip-framework-word（advisory）', r.status === 1 && report
+    && report.findings.some((f) => f.type === 'strip-framework-word' && f.severity === 'advisory'),
+    `status=${r.status} findings=${JSON.stringify(report && report.findings.map((f) => f.type))}`);
+  check('K3 卷N 自引用命中（卷三形态）', report
+    && report.findings.some((f) => f.type === 'strip-framework-word' && (f.excerpt || '').includes('卷三卷四')),
+    JSON.stringify(report && report.findings.filter((f) => f.type === 'strip-framework-word').map((f) => f.excerpt)));
+  r = run('guyin-check-strip.js', ['--fail-on=blocking', leakWords]);
+  check('K3 advisory 不触发 --fail-on=blocking', r.status === 0, `status=${r.status}`);
+
+  const dir = path.join(TMP, 'strip');
+  r = run('guyin-check-strip.js', ['--json', dir]);
+  report = parseJson(r.stdout);
+  check('K3 目录模式扫描全部 第*.md', r.status === 1 && report
+    && report.findings.length >= 4
+    && new Set(report.findings.map((f) => f.file)).size === 3,
+    `status=${r.status} files=${JSON.stringify([...new Set(report.findings.map((f) => f.file))])}`);
 }
 
 // ============================================================
@@ -1803,6 +1935,7 @@ console.log('== 06 整改黄金样本回归（H2/O2/O3/I1/I2） ==');
     '',
     '- 字数目标：3000',
     '- 场景与对手戏下限：≥2 场 / ≥1 对手戏',
+    '- 情绪落点：①平心静气@点1（对总账）②起疑@点2（私账出入）③下决心@点3（缺页）',
     '- 主线：推进对账线，账本缺口浮出',
     '- 感情线：无显性，但关系变化为周砚开始交底',
     '- 复沓锚句：无',
@@ -1833,6 +1966,31 @@ console.log('== 06 整改黄金样本回归（H2/O2/O3/I1/I2） ==');
   report = parseJson(r.stdout);
   check('P1 缺时序自检行报 advisory', r.status === 1 && report
     && report.findings.some((f) => f.type === 'outline-missing-timecheck' && f.severity === 'advisory'),
+    `status=${r.status} types=${JSON.stringify(report && report.findings.map((f) => f.type))}`);
+
+  // Q1 情绪落点（docs/08）：行缺失/计数不足 → advisory；豁免声明 → 静默。
+  const noEmotion = fixture('o2slots/大纲/细纲_第067章_缺落点.md',
+    fullOutlineLines.filter((l) => !l.includes('情绪落点')).join('\n'));
+  r = run('guyin-check-outline-slots.js', ['--json', noEmotion]);
+  report = parseJson(r.stdout);
+  check('Q1 缺情绪落点行报 advisory', r.status === 1 && report
+    && report.findings.some((f) => f.type === 'outline-missing-emotion-beats' && f.severity === 'advisory'),
+    `status=${r.status} types=${JSON.stringify(report && report.findings.map((f) => f.type))}`);
+  const fewEmotion = fixture('o2slots/大纲/细纲_第068章_两落点.md',
+    fullOutlineLines.filter((l) => !l.includes('情绪落点'))
+      .concat(['- 情绪落点：①平心静气@点1（对总账）②起疑@点2（私账出入）']).join('\n'));
+  r = run('guyin-check-outline-slots.js', ['--json', fewEmotion]);
+  report = parseJson(r.stdout);
+  check('Q1 落点计数 2 报 advisory（下限 3）', r.status === 1 && report
+    && report.findings.some((f) => f.type === 'outline-missing-emotion-beats'),
+    `status=${r.status} types=${JSON.stringify(report && report.findings.map((f) => f.type))}`);
+  const exemptEmotion = fixture('o2slots/大纲/细纲_第069章_豁免.md',
+    fullOutlineLines.filter((l) => !l.includes('情绪落点'))
+      .concat(['- 情绪落点：①平心静气@点1（对总账）②起疑@点2（私账出入）；低压章豁免']).join('\n'));
+  r = run('guyin-check-outline-slots.js', ['--json', exemptEmotion]);
+  report = parseJson(r.stdout);
+  check('Q1 低压章豁免声明计数 2 静默', r.status === 0
+    && report && !report.findings.some((f) => f.type === 'outline-missing-emotion-beats'),
     `status=${r.status} types=${JSON.stringify(report && report.findings.map((f) => f.type))}`);
 
   // S2 气卡坐标覆盖预检（docs/07 §二 S2）：章号不落气卡任何坐标区间 → advisory 停靠提醒；

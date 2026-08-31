@@ -1641,9 +1641,11 @@ def apply_transaction(project: Path, document: object) -> dict[str, Any]:
     atomic_write_text(state_path(project), next_state_payload)
     warn_sizes(views, delta_payload)
 
-    # P2 执行偏差回填提醒（docs/07 §二 P2）：提交章 N 时同章细纲缺「执行偏差」区 →
-    # stderr 提醒，不阻断。stdout 是提交产物的单行 JSON 通道，提醒只走 stderr（v1.1）。
-    # 细纲读不了不提醒（fail-open：本检查是纪律出声口，不是硬门）。
+    # P2 执行偏差回填提醒（docs/07 §二 P2）＋ R1 未落实行章号校验（docs/08）：提交章 N 时
+    # 同章细纲缺「执行偏差」区 → stderr 提醒；区存在且「未落实」值非「无」但不含顺延章号 →
+    # stderr 提醒（无去向的未落实＝承诺无声消失）。均不阻断。stdout 是提交产物的单行
+    # JSON 通道，提醒只走 stderr（v1.1）。细纲读不了不提醒（fail-open：本检查是纪律出声口，
+    # 不是硬门）。
     outline_dir = project.resolve() / "大纲"
     try:
         outline_path = next(
@@ -1656,11 +1658,22 @@ def apply_transaction(project: Path, document: object) -> dict[str, Any]:
         )
         if outline_path is not None and "执行偏差" not in outline_path.read_text(encoding="utf-8"):
             emit(
-                f"提醒：{outline_path.name} 缺「执行偏差（写后回填）」区——写章循环第 6 步回填"
-                "变体/未落实项（细纲协议 P2；未落实项顺延须同步登记 追踪/伏笔.md 或卷纲待办）。"
-                "本提醒不阻断提交。",
+                f"提醒：{outline_path.name} 缺「执行偏差（检测驱动回填）」区——写章循环第 7 步章检后"
+                "按 outline-deliver 检测结果回填变体/未落实项（细纲协议 R1；未落实项顺延须同步登记 "
+                "追踪/伏笔.md 或卷纲待办）。本提醒不阻断提交。",
                 error=True,
             )
+        elif outline_path is not None:
+            outline_text = outline_path.read_text(encoding="utf-8")
+            pending = re.search(r"未落实[:：]\s*([^\n]+)", outline_text)
+            if pending is not None:
+                pending_value = pending.group(1).strip()
+                if pending_value and not pending_value.startswith("无") and not re.search(r"第?\d+章|[一二三四五六七八九十百]+章", pending_value):
+                    emit(
+                        f"提醒：{outline_path.name} 「未落实」值「{pending_value[:30]}」不含顺延章号——"
+                        "无去向的未落实＝承诺无声消失（R1：每条偏差终态必居其一：修复/修订/顺延登记/升级）。",
+                        error=True,
+                    )
     except (OSError, UnicodeError):
         pass
     return next_state
