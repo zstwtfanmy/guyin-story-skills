@@ -179,6 +179,24 @@ function scanSlots(text) {
     push('outline-missing-timecheck', 'advisory', 1, '时序自检行缺失（出场顺序＝时间顺序/插叙显式标注/beat 时间轴走查）——P1 源头治 E1 时序倒错：细纲即代码，排序 bug 在高保真管线 1:1 传导（ch61 实证）；advisory 起步（O2 先例），Arena 验证后议升 blocking');
   }
 
+  // Q1 情绪落点：目标情绪行只管章级起终点，落点行管章内分布——情绪欠账写前可见、写后可查。
+  // 行缺失或「@点N/@情节点N」标记 <3（低压/过场章豁免后 <2）报 advisory；值「无」静默
+  // （行必须在值可无，比照锚句哲学）。ch36 起项目侧实践过、06 建制时意外遗漏的资产。
+  const emotion = firstLineWith(lines, (l) => l.includes('情绪落点'));
+  if (!emotion) {
+    push('outline-missing-emotion-beats', 'advisory', 1, '情绪落点行缺失（每章 ≥3 次情绪落点：①情绪@点N 格式）——只有章级目标情绪没有章内分布，情绪欠账写前不可见（ch62 塌方+情绪平的实证形态）；Q1');
+  } else {
+    const val = emotion.text.replace(/^.*情绪落点[^：:]*[：:]/, '');
+    if (val.trim() && !val.trim().startsWith('无')) {
+      const marks = (emotion.text.match(/@\s*(?:情节点|点)\s*\d/g) || []).length;
+      const exempt = /豁免|低压|过场/.test(emotion.text);
+      const floor = exempt ? 2 : 3;
+      if (marks < floor) {
+        push('outline-missing-emotion-beats', 'advisory', 1, `情绪落点计数不足：仅 ${marks} 个（${exempt ? '低压/过场章下限 2' : '下限 3'}）——补落点或声明豁免；Q1`);
+      }
+    }
+  }
+
   return findings;
 }
 

@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 'use strict';
 
-// guyin-check-outline-deliver.js — 细纲承诺交付检查（S3+S4，docs/07-高保真流水线伴生缺陷加固计划.md §二）
+// guyin-check-outline-deliver.js — 细纲承诺交付检查（S3+S4，docs/07；R1/K2，docs/08）
 //
 // 与 outline-slots（落盘门查「契约签了没」）对偶：落盘后查「契约履行没」。高保真管线
 // 1:1 传导，细纲承诺不兑现＝设计意图无声丢失：F7「勘合」锚定连续两章「细纲有、正文无」
-// （v1 报告 B8 复发），纯纪律无卡点。三条全部 advisory（引号判定与实体词形变有边界
+// （v1 报告 B8 复发），纯纪律无卡点。advisory 为主（引号判定与实体词形变有边界
 // 情况，宁报不拦——拦截权归五测试）：
 //
 //   outline-term-missing     S3：细纲「术语锚点」列出的术语正文完全未出现——锚定戏
@@ -14,9 +14,16 @@
 //                            「社会脸」式工艺词泄漏的正文版（读者视角无人教过他这个词）
 //   outline-hook-offtail     S4：章尾钩子声明的实体未落在正文最后约 200 字——E2 章
 //                            尾稀释：钩子写进了细纲，收尾却被别的画面顶出去
+//   outline-anchor-missing   R1：复沓锚句声明的原话未在正文一字不差出现——锚句
+//                            免报通道免的是誊抄指控、不免落地义务（该抄的没抄）
+//   outline-hook-quote-mismatch R1：章尾钩子行引号语未在正文一字不差出现——钩子
+//                            引了一句没人说过的话（S4 幽灵引语的机械封堵）
+//   outline-signature-preempted K2：本章正文包含其他章声明的签名句（锚句/钩子引语）
+//                            且本章细纲未声明复用——提前释放或归属被抢（S3 跨章
+//                            剧透）；已声明复用（复沓仪式）静默
 //
 // 输入正文文件/目录（章检链第 7 步同源），按章号向上（≤3 层）找 大纲/细纲_第N章*.md。
-// 术语表/实体提取是启发式（先剥括注再顿号切分、破折号/冒号截断、长度闸滤残渣），解析
+// 术语表/实体/锚句提取是启发式（先剥括注再切分、破折号/冒号截断、长度闸滤残渣），解析
 // 失败一律静默跳过——提取器失手不得变成噪音源（v1.1 注记）；细纲缺失同样静默（契约
 // 存在性归落盘门 outline-slots 管，本脚本只查「有契约时履行没」）。
 // Report-only，永不改写——报警项一律拦为待审（补写或豁免登记），同其他检查脚本。
@@ -26,8 +33,8 @@ const path = require('path');
 
 const USAGE = `Usage: node guyin-check-outline-deliver.js [--json] [--fail-on=blocking|all] <正文文件|正文目录>...
 
-Outline promise delivery check (docs/07 S3+S4), the write-side twin of
-outline-slots (which guards "contract signed" pre-write; this guards
+Outline promise delivery check (docs/07 S3+S4, docs/08 R1/K2), the write-side
+twin of outline-slots (which guards "contract signed" pre-write; this guards
 "contract honored" post-write):
   outline-term-missing     (advisory) term from the outline's term-anchor line
                            never appears in the prose (the anchor scene is gone)
@@ -35,6 +42,14 @@ outline-slots (which guards "contract signed" pre-write; this guards
                            quotation marks (dialogue-level anchoring missed)
   outline-hook-offtail     (advisory) hook entity absent from the last ~200
                            visible chars (hook pushed out of the ending)
+  outline-anchor-missing   (advisory) declared repetition anchor sentence not
+                           verbatim in the prose (declared but never delivered)
+  outline-hook-quote-mismatch (advisory) hook quotes a line no character ever
+                           says verbatim (ghost quote, S4)
+  outline-signature-preempted (advisory) prose contains another chapter's
+                           declared signature line without declaring reuse
+                           (cross-chapter spoiler, S3; declared ritual echoes
+                           stay silent)
 Heuristic parsing (paren strip, 、-split, dash/colon cut, length gates) fails
 silent on malformed values; missing outlines are skipped silently.
 --fail-on=blocking exits 1 only on blocking findings; default --fail-on=all exits 1 on any.`;
@@ -193,7 +208,53 @@ function extractHookEntity(hookLine) {
   return base;
 }
 
+// ---- R1/K2 签名句供给 ----
+
+const SIG_MIN = 6; // 签名句最短长度（含标点）——短于 6 字的句子通用性太强，跨章匹配全是噪音
+
+// 去空白正文（锚句/引语一字不差判定用：正文排版空白不算差异）。
+const stripWs = (s) => s.replace(/\s/g, '');
+
+// 「复沓锚句」行 → 锚句数组（R1 落地检查 + K2 签名句登记）。支持两种形态：
+// 引号式（「原话」/“原话”嵌在行内）与落点式（点N：原话；点N：原话——按「点N：/情节点N：」
+// 前缀切分后剥前缀）。值「无」起头＝无锚句，静默。长度闸滤残渣，fail-open。
+function extractAnchors(lines) {
+  const line = firstLineWith(lines, (l) => l.includes('复沓锚句'));
+  if (!line) return [];
+  const m = /复沓锚句[:：]\s*(.*)/.exec(line);
+  if (!m) return [];
+  const raw = m[1].trim();
+  if (!raw || raw.startsWith('无')) return [];
+  const anchors = [];
+  const quoted = raw.match(/[「“]([^」”]{6,})[」”]/g) || [];
+  for (const q of quoted) {
+    const t = stripWs(q.slice(1, -1));
+    if (t.length >= SIG_MIN && !anchors.includes(t)) anchors.push(t);
+  }
+  if (anchors.length > 0) return anchors;
+  const parts = raw.split(/(?=(?:点|情节点)\s*\d+\s*[：:])/);
+  for (const part of parts) {
+    const base = stripWs(part.replace(/^\s*(?:点|情节点)\s*\d+\s*[：:]\s*/, '').replace(/^[「“]|[」”]$/g, ''));
+    if (base.length >= SIG_MIN && /[\u4e00-\u9fff]/.test(base) && !anchors.includes(base)) anchors.push(base);
+  }
+  return anchors;
+}
+
+// 「章尾钩子」行内引号语 → 钩子引语数组（R1 引语一致性：钩子引用的原话必须有人真的说过）。
+function extractHookQuotes(hookLine) {
+  if (!hookLine) return [];
+  const quotes = [];
+  const re = /[「“]([^」”]{6,})[」”]/g;
+  let m;
+  while ((m = re.exec(hookLine)) !== null) {
+    const t = stripWs(m[1]);
+    if (t.length >= SIG_MIN && !quotes.includes(t)) quotes.push(t);
+  }
+  return quotes;
+}
+
 const allFindings = [];
+const chapterRecords = []; // K2 跨章签名句核对用：每章 {num, display, bodyWs, own:Set}
 let failed = false;
 let filesChecked = 0;
 
@@ -263,6 +324,50 @@ for (const { abs, display } of inputFiles) {
       const tail = body.replace(/\s/g, '').slice(-TAIL_CHARS);
       if (!tail.includes(entity)) {
         push('outline-hook-offtail', `钩子未压尾：章尾钩子实体「${entity}」未落在正文最后 ${TAIL_CHARS} 字内——E2 章尾稀释形态，张力点被收束动作顶出去；末段切回钩子实体或删稀释段`, entity);
+      }
+    }
+  }
+
+  // R1 锚句落地 + 钩子引语一致（治 S4 幽灵引语 + 该抄没抄）
+  const bodyWs = stripWs(body);
+  const anchors = extractAnchors(lines);
+  for (const a of anchors) {
+    if (!bodyWs.includes(a)) {
+      push('outline-anchor-missing', `复沓锚句未落地：「${a.slice(0, 30)}」未在正文一字不差出现——锚句免报通道免的是誊抄指控、不免落地义务；补写锚句落点或登记执行偏差`, a);
+    }
+  }
+  const hookQuotes = extractHookQuotes(hookLine);
+  for (const q of hookQuotes) {
+    if (!bodyWs.includes(q)) {
+      push('outline-hook-quote-mismatch', `钩子引语幽灵化：章尾钩子引「${q.slice(0, 30)}」正文无人一字不差说过——S4 幽灵引语形态（引的是细纲设计不是角色原话）；改钩子引真实原话或让角色真的说出`, q);
+    }
+  }
+  chapterRecords.push({ num, display, bodyWs, own: new Set([...anchors, ...hookQuotes]) });
+}
+
+// K2 跨章签名句归属（治 S3 跨章剧透）：本章正文包含其他章声明的签名句且本章未声明
+// 复用——复沓仪式（各章细纲均声明同一锚句）静默，未声明的跨章出现报 preempted。
+// 方向：owner > 本章 = 提前释放；owner < 本章 = 归属被抢/未登记复用。
+if (chapterRecords.length > 1) {
+  for (const rec of chapterRecords) {
+    for (const other of chapterRecords) {
+      if (other.num === rec.num) continue;
+      for (const sig of other.own) {
+        if (rec.own.has(sig)) continue; // 已声明复用（复沓仪式）
+        if (rec.bodyWs.includes(sig)) {
+          const dir = other.num > rec.num
+            ? `提前释放第 ${other.num} 章签名句（S3 跨章剧透——招牌句/核心证据被本章角色提前说出）`
+            : `复述第 ${other.num} 章签名句未在本章细纲登记复用（归属被抢或复沓漏登记——复用须在本章「复沓锚句」声明）`;
+          allFindings.push({
+            file: rec.display,
+            line: 1,
+            column: 1,
+            type: 'outline-signature-preempted',
+            severity: 'advisory',
+            message: `${dir}：「${sig.slice(0, 30)}」`,
+            excerpt: sig,
+          });
+        }
       }
     }
   }

@@ -1,6 +1,6 @@
 ---
 name: guyin-write
-version: 0.8.0
+version: 0.9.0
 description: "隐笔长篇写作（编排层）。以 beat 任务卡驱动低模型执行层：开书、细纲、逐 beat 写章、自检、分级改写、追踪落盘。触发方式：/guyin-write、/隐笔写作、「开书」「写第X章」「日更」「续写」「回炉」「重写第X章」。"
 ---
 # guyin-write：隐笔写作（你是编排层）
@@ -24,7 +24,7 @@ description: "隐笔长篇写作（编排层）。以 beat 任务卡驱动低模
 | 补纲 | 「出细纲/补纲/规划剧情」且已有大纲 | 只做 Phase C 扩展（按 [细纲协议](references/细纲协议.md)，落盘前过硬门①），停细纲交付 |
 | 日更续写 | 「日更/续写/继续写」且已有正文+追踪 | 同款预检（细纲/气卡/职责件/时滞）后循环执行写章循环，批量默认 2-3 章，单轮上限 3 章；**批收尾三查（J3）**：① `wordcount --batch`（达标率+方差）② 读复读雷达/黑名单批残留 ③ `tracking-commit check`（时滞=0）——机械子集非复盘，语义复评归作者/review |
 | 完书 | 「完本/收线/进入尾声」 | 读`_tracking-state.json`列未回收伏笔+承诺→过堂（明收/暗收/放弃+说明）→收线清单→尾声细纲消化→[完书复盘](references/consult/lifecycle-protocols.md) |
-| 大修 | 「修改第X章/回炉/重写第X章」 | 读原章+追踪 → 标问题 → 改写卡分级执行（L1 段改/L2 beat 改/L3 章改须确认）→ 落盘后 tracking-commit 重提交（硬门③唯一通道）→ 收尾必问：这章**更合**还是只是**更合格**（过度打磨→停靠,C1）；guyin-review 的输出按其 level 字段直接进入本场景 |
+| 大修 | 「修改第X章/回炉/重写第X章」 | 读原章+追踪 → 标问题 → **动刀前现稿拷 `正文/_archive/`（无存档不动刀，V1——v2 底本靠批量复制意外存活是运气不是机制）** → 改写卡分级执行（L1 段改/L2 beat 改/L3 章改须确认）→ 落盘后 tracking-commit 重提交（硬门③唯一通道）+ 章检链同跑（V2——大修路径不得绕开章检与状态门）→ 收尾必问：这章**更合**还是只是**更合格**（过度打磨→停靠,C1）；guyin-review 的输出按其 level 字段直接进入本场景 |
 | 人物诊断 | 「显影/戏份/工具人」 | 跑 `guyin-check-flesh.js --all` 戏份+工具人概览；主角色单查（特质断裂/对话呼吸，advisory 终判归作者） |
 | 结构手术 | 「砍线/并线/这条线不对」 | 跑 `guyin-impact-map.js <关键词>` 出影响面清单（悬空债必过堂；定性资产砍线即没收须同章补偿）→ 作者定砍 → 残留处置（留闲笔/补丁章）→ 分批出补丁指令（改写卡 L1-L3 通道，S 级须 tracking-commit 重提交） |
 | 读者信号 | 「掉崖/追读/弃书」 | 读 `追踪/读者信号.md`（作者手动录入）→ 跑 `guyin-check-reader-signal.js` 出掉崖归因表+弃书点候选（连续 2 章无主线推进），归因终判归作者 |
@@ -37,13 +37,13 @@ description: "隐笔长篇写作（编排层）。以 beat 任务卡驱动低模
 
 ## 写章循环（每章必走）
 
-1. **读盘**：本章细纲 + 上一章结尾 300 字（声线锚）+ 本章涉角色卡 + 追踪状态 + 作者性四件（选切片定禁令，精神件禁字面 H1）。四件为默认档/未定稿：照常写，附升级提示（同章一次）。卷首章：气卡坐标指向旧卷即停靠刷新（S2 落盘门预检已拦，此处兜底）。
-2. **切 beat**：按细纲把章切成 500-1500 字的 beat（默认；粒度按 `作者性/粒度配置.md`），标注情绪目标。
+1. **读盘**：本章细纲 + 上一章结尾 300 字（声线锚）+ 本章涉角色卡 + 追踪状态 + 作者性四件（选切片定禁令，精神件禁字面 H1）。四件为默认档/未定稿：照常写，附升级提示（同章一次）。
+2. **切 beat**：按细纲把章切成 500-1500 字的 beat（默认；粒度按 `作者性/粒度配置.md`），按细纲情绪落点行标注 beat 情绪目标（Q1）。
 3. **逐 beat**：判模式（Craft/Muse，见下）→ 组装[写作卡](cards/写作卡.md) → 下发执行层 → 收正文 → 跑 `guyin-check-beat.js`（确定性预检 Q1-Q6，零 token）→ blocking 不过直接[改写卡](cards/改写卡.md)、pass 进[自检卡](cards/自检卡.md)（先抄后判 Q7/Q8）→ 不过则改写卡分级改 → 过则进下一 beat。
-4. **拼接**：按序拼章，检查拼接点衔接；过硬门②；落盘 `正文/第XXX章_标题.md`。
+4. **拼接**：按序拼章，检查拼接点衔接；过硬门②＋落盘前过 `guyin-check-strip.js`（成稿剥离门 K3）；落盘 `正文/第XXX章_标题.md`。
 5. **摘要**：组[摘要卡](cards/摘要卡.md)→checker（零温）填空→`delta.result` 章摘要（约300字）。
-6. **追踪提交**：运行 `scripts/guyin-tracking-commit.py`（delta.result 入库 chapter_summaries；全部实体一事务提交；Muse 章必登 verdicts，物证/地名首现当章登 evidence/geo，场景首现/变迁当章登 scenes，锚点存原句禁概括；stderr 提醒缺「执行偏差」区→回填（P2））→ **立即** `guyin-check-repetition.js --commit` 固化段落指纹（原子双命令，缺一不得进下一章——欠账由章检 blocking 拦）。
-7. **章检**：依次跑 `guyin-check-degeneration.js`、`guyin-check-integrity.js`、`guyin-check-ai-patterns.js`、`guyin-check-narrative-asset.js`、`guyin-check-consistency.js`、`guyin-check-outline-copy.js`、`guyin-check-outline-deliver.js`（S3+S4 承诺交付：术语未落地/首现非对白/钩子未压尾）、`guyin-check-authority-leak.js`（作者性字面，兼拦声线锚复读）、`guyin-check-wordcount.js`（字数双口径下限：区间取下限、单值 ×90%，缺省 3000——J1；缺则补 beat 勿注水）；报警标**待审**：blocking 改写或豁免（五测试）二选一，编排层不得自判保留；advisory 保留/分诊卡（[分诊卡](cards/分诊卡.md)三选一+3票制）。
+6. **追踪提交**：运行 `scripts/guyin-tracking-commit.py`（delta.result 入库 chapter_summaries；全部实体一事务提交；Muse 章必登 verdicts，物证/地名首现当章登 evidence/geo，场景首现/变迁当章登 scenes，锚点存原句禁概括）→ **立即** `guyin-check-repetition.js --commit` 固化段落指纹（原子双命令，缺一不得进下一章——欠账由章检 blocking 拦）。
+7. **章检**：首跑 `guyin-tracking-commit.py check`（时滞=0，V2——第 6 步被跳过在此拦）→ 依次跑 `guyin-check-strip.js`（成稿剥离门，K3）、`guyin-check-degeneration.js`、`guyin-check-integrity.js`、`guyin-check-ai-patterns.js`、`guyin-check-narrative-asset.js`、`guyin-check-consistency.js`、`guyin-check-outline-copy.js`、`guyin-check-outline-deliver.js`（S3+S4 承诺交付；R1 扩：锚句落地/钩子引语匹配/跨章签名句归属——偏差裁决二选一：修=改写卡对齐契约，认=登记细纲执行偏差区，无第三态）、`guyin-check-authority-leak.js`（作者性字面，兼拦声线锚复读）、`guyin-check-wordcount.js`（字数双口径下限：区间取下限、单值 ×90%，缺省 3000——J1；缺则补 beat 勿注水）；报警标**待审**：blocking 改写或豁免（五测试）二选一，编排层不得自判保留；advisory 保留/分诊卡（[分诊卡](cards/分诊卡.md)三选一+3票制）。
 8. **灵感登记**：正文里长出的细纲外新元素（道具/习惯/闲笔）登 `追踪/灵感台账.md`，下批细纲时决定转正。
 
 **卷末附加**：卷末章提交后提醒**口述重说气句**（非抄旧，标当前档位；默认档运行升级为主动询问），刷新气卡，旧句入魂档案；核对豁免台账与消化度；仍默认档/未定稿者**主动询问**。
