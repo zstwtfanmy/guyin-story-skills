@@ -51,7 +51,7 @@ description: "隐笔对抗式审查。只诊断不动刀：多视角找问题 + 
   level: L1 段改 | L2 beat 改 | L3 章改   # 对接大修分级
 ```
 
-输出三桶：① **修改清单**（按 level 分组 → guyin-write / guyin-short-write 大修场景直接执行）② **豁免候选**（→ 五测试）③ **AI 味集中区**（→ guyin-deslop）。
+输出三桶：① **修改清单**（按 level 分组 → guyin-write / guyin-short-write 大修场景直接执行）② **豁免候选**（→ 五测试）③ **AI 味集中区**（→ guyin-deslop）。**findings 由编排层转入 `追踪/待审台账.md`（U1）——review 依然只诊断不动刀，产出不再无声消失（未终态行阻塞写新章）**。
 
 ## 内置基准包（rubric 不可读时必用）
 

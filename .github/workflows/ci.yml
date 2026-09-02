@@ -36,6 +36,7 @@ jobs:
           node --check skills/guyin-write/scripts/guyin-check-outline-deliver.js
           node --check skills/guyin-write/scripts/guyin-check-strip.js
           node --check skills/guyin-write/scripts/guyin-check-authority-leak.js
+          node --check skills/guyin-write/scripts/guyin-check-pending.js
           node --check skills/guyin-write/scripts/guyin-normalize-punctuation.js
           node --check skills/guyin-setup/scripts/merge-claude-settings.js
           node --check skills/guyin-setup/templates/long/.claude/hooks/guyin-hook.js

@@ -28,6 +28,9 @@ const USAGE = `Usage: node guyin-check-repetition.js [--json] [--fail-on=blockin
 
   imagery-domain-run   同域比喻滑窗内密度过高（3 章窗口内同域 ≥3 次）——同一比喻域
                        反复采撷即该域疲劳，改写时换域不换词（消费台账选未用域）
+  metaphor-domain-stale 本章主导比喻域连续驻留超阈值（默认 >4 章，--domain-stale=N 可调，
+                       B3）——61-63 做饭域三章同值的全篇固化形态；源头治理在批次公约
+                       （B1 声明＋换域计划），本 advisory 是汇侧兜底
 
 与 04 原案的偏差（实测对撞，实测赢）：原案「64 位 SimHash + 海明距离 ≤3」，实测段落级
 换词复读（仅换 4 个名词）海明距离即达 10——SimHash 为文档级设计，短段落 70 个 bigram
@@ -59,6 +62,7 @@ const NEAR_THRESHOLD = 0.9;
 const PATTERN_THRESHOLD = 0.72;
 const IMAGERY_WINDOW = 3; // 滑窗章数
 const IMAGERY_RUN = 3;    // 窗内同域次数阈值
+const DOMAIN_STALE_DEFAULT = 4; // B3：主导域连续驻留章数阈值（超过才报）
 
 // ---------- N1 复读雷达参数（docs/07 §一） ----------
 const ECHO_N_MIN = 4;        // n-gram 滑窗下限（字）
@@ -91,7 +95,7 @@ const DOMAINS = [
   { name: '建筑', keys: ['墙', '门', '窗', '梁', '檐', '井', '牢', '塔', '桥', '阶'] },
 ];
 
-const options = { json: false, commit: false, project: null, targets: [], failOn: 'all' };
+const options = { json: false, commit: false, project: null, targets: [], failOn: 'all', domainStale: DOMAIN_STALE_DEFAULT };
 
 for (let i = 2; i < process.argv.length; i += 1) {
   const arg = process.argv[i];
@@ -99,6 +103,10 @@ for (let i = 2; i < process.argv.length; i += 1) {
     options.json = true;
   } else if (arg === '--commit') {
     options.commit = true;
+  } else if (arg.startsWith('--domain-stale=')) {
+    const v = Number(arg.slice('--domain-stale='.length));
+    if (!Number.isInteger(v) || v < 1) die('--domain-stale must be a positive integer');
+    options.domainStale = v;
   } else if (arg.startsWith('--project=')) {
     options.project = arg.slice('--project='.length);
   } else if (arg === '--project') {
@@ -401,6 +409,32 @@ const batchEchoAgg = new Map(); // N1 批级聚合：短语 → Map(章号 → �
 let echoSuppressed = 0;     // top10 截断外只进计数的候选数（防噪规格③）
 let paragraphsScanned = 0;
 
+// B3 主导域驻留：章 → Map(域 → 次数)。库内旧登记先入表，批内章扫描时整章替换
+// （重跑幂等：同章以现稿为准，不与库内旧样本叠加）；主导域＝计数最大域（平局取先，
+// 保守少报）。无登记章视同证据缺失，驻留链断开不猜（fail-open）。
+const domainCountsByChapter = new Map();
+for (const m of library.imagery) {
+  let counts = domainCountsByChapter.get(m.chapter);
+  if (!counts) {
+    counts = new Map();
+    domainCountsByChapter.set(m.chapter, counts);
+  }
+  counts.set(m.domain, (counts.get(m.domain) || 0) + 1);
+}
+function dominantDomain(chapter) {
+  const counts = domainCountsByChapter.get(chapter);
+  if (!counts) return null;
+  let best = null;
+  let bestN = 0;
+  for (const [domain, n] of counts) {
+    if (n > bestN) {
+      best = domain;
+      bestN = n;
+    }
+  }
+  return best;
+}
+
 for (const file of files) {
   const nameMatch = CHAPTER_FILE.exec(path.basename(file));
   if (!nameMatch) {
@@ -506,6 +540,33 @@ for (const file of files) {
         severity: 'advisory',
         message: `比喻域疲劳：「${domain}」域在近 ${IMAGERY_WINDOW} 章窗口内出现 ${count} 次——同一域反复采撷即坍缩；改写时查意象台账换域不换词（人物之眼）。`,
         excerpt: `第${chapter}章 × ${domain}域`,
+      });
+    }
+  }
+
+  // B3 主导域固化：本章域计数整章替换（现稿为准）→ 主导域向前数连续驻留章数，
+  // 超阈值报 advisory。源头治理在批次公约（B1 域声明＋换域计划），此处汇侧兜底。
+  const currentDomainCounts = new Map();
+  for (const m of currentImagery) {
+    currentDomainCounts.set(m.domain, (currentDomainCounts.get(m.domain) || 0) + 1);
+  }
+  domainCountsByChapter.set(chapter, currentDomainCounts);
+  const dominant = dominantDomain(chapter);
+  if (dominant) {
+    let run = 1;
+    for (let c = chapter - 1; c > 0; c -= 1) {
+      if (dominantDomain(c) !== dominant) break;
+      run += 1;
+    }
+    if (run > options.domainStale) {
+      findings.push({
+        file: path.relative('.', file),
+        line: 1,
+        column: 1,
+        type: 'metaphor-domain-stale',
+        severity: 'advisory',
+        message: `比喻域固化：「${dominant}」域已连续 ${run} 章主导本章比喻（阈值 ${options.domainStale}，--domain-stale=N 可调）——按 大纲/批次公约.md 的换域计划切新域；源头是批次公约声明（B1），本 advisory 是汇侧兜底（B3）。`,
+        excerpt: `第${chapter}章 × ${dominant}域 × 连续${run}章`,
       });
     }
   }
@@ -640,12 +701,26 @@ if (options.commit && pending.length > 0) {
   for (const p of library.phrases) {
     p.recent = (p.recent || []).filter((s) => !touchedChapters.includes(s.c));
   }
-  for (const [phrase, byChapter] of batchEchoAgg) {
+  // U3 同族去重：批内候选按长度降序排，是已保留条目子串的直接丢弃（只记最长命中）——
+  // 一个 8 字 tic 不再拖 4-7 字子串各记一行（v4 "袖袋里的算盘"一族 14 行的表膨胀形态，
+  // {{禁止}} 注入取数被噪音污染）。「已保留」＝实际入库（并入既有条目或新条目过 ≥2
+  // 门槛）；最长形复现 <2 未入库时不吞子串——子串自身 ≥2 仍是真信号。门槛本身不动
+  // （提 ≥3 会漏"钱压在碗底下×2"类真缺陷，不采）；跨批旧短形态无新样本补给，靠
+  // 修剪线（last < max−10）自然老化出库。
+  const retainedPhrases = [];
+  const mergeAgg = [];
+  for (const [phrase, byChapter] of [...batchEchoAgg.entries()].sort((a, b) => b[0].length - a[0].length)) {
+    if (retainedPhrases.some((kept) => kept.includes(phrase))) continue; // 子串让位最长形
     let batchTotal = 0;
     for (const n of byChapter.values()) batchTotal += n;
-    let entry = phraseIndex.get(phrase);
+    const existing = phraseIndex.get(phrase);
+    if (!existing && batchTotal < 2) continue; // 入库门槛：窗口复现 ≥2 才建新条目（docs/07 N1）
+    retainedPhrases.push(phrase);
+    mergeAgg.push([phrase, byChapter, existing]);
+  }
+  for (const [phrase, byChapter, existing] of mergeAgg) {
+    let entry = existing;
     if (!entry) {
-      if (batchTotal < 2) continue; // 入库门槛：窗口复现 ≥2 才建新条目（docs/07 N1）
       entry = { phrase, total: 0, last: 0, recent: [] };
       library.phrases.push(entry);
       phraseIndex.set(phrase, entry);
@@ -706,6 +781,7 @@ const summary = {
   near_hits: findings.filter((f) => f.type === 'para-repeat-near').length,
   pattern_hits: findings.filter((f) => f.type === 'para-repeat-pattern').length,
   imagery_hits: findings.filter((f) => f.type === 'imagery-domain-run').length,
+  domain_stale_hits: findings.filter((f) => f.type === 'metaphor-domain-stale').length,
   echo_hits: findings.filter((f) => f.type.startsWith('phrase-echo-')).length,
   echo_suppressed: echoSuppressed,
   phrases_stored: library.phrases.length,
