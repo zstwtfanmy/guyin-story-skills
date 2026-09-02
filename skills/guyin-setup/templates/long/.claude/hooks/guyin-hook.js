@@ -139,6 +139,55 @@ function stateProblem(st) {
   return !st || st.schema_version !== 1 || !Number.isInteger(st.last_committed_chapter);
 }
 
+// ---------------------------------------------------------- U1/U4（docs/09 §二）
+// U1 待审门：解析 追踪/待审台账.md，章号 < num 且终态为「待审/空」的行数（0=过）。
+// 台账缺失 → 0（fail-open）；{{...}} 占位行跳过（未实例化模板）。
+// 同步注释契约（U1/D2）：与技能库 skills/guyin-write/scripts/guyin-check-pending.js 的
+// parseLedger 是同一逻辑的两份实现（部署件/技能库路径不互通）；改一处必改另一处
+// （列位 cells[1]=章号、cells[4]=终态；占位跳过；「待审/空」=open）。
+function pendingBlockers(bookDir, num) {
+  try {
+    const text = fs.readFileSync(path.join(bookDir, '追踪', '待审台账.md'), 'utf8');
+    let count = 0;
+    for (const line of text.split(/\r?\n/)) {
+      const t = line.trim();
+      if (!t.startsWith('|')) continue;
+      if (t.includes('{{') || /^[-|:\s]+$/.test(t)) continue;
+      const cells = t.split('|').map((c) => c.trim());
+      if (cells.length < 6) continue;
+      const chMatch = /(\d+)/.exec(cells[1]);
+      if (!chMatch) continue;
+      const state = cells[4] || '';
+      if (parseInt(chMatch[1], 10) < num && (state === '' || state === '待审')) count += 1;
+    }
+    return count;
+  } catch (e) {
+    return 0; // 台账缺失 → fail-open
+  }
+}
+
+// U4 覆盖门：Write/Edit 已存在的章文件时，正文/_archive/ 须有该章快照且其 mtime ≥
+// 目标文件当前 mtime——裸奔覆盖式重写两次（v1、v3 稿永久丢失）的确定性封堵。
+// 规则零语义判断（只比 mtime）：快照命名 第N章_vK_时间戳.md（同章号即认）；
+// 每次连续改稿都要重新快照上一版＝「每一版都不许无存档消失」的语义。
+function hasFreshSnapshot(bookDir, targetAbs, num) {
+  try {
+    const targetMtime = fs.statSync(targetAbs).mtimeMs;
+    const archiveDir = path.join(bookDir, '正文', '_archive');
+    return fs.readdirSync(archiveDir).some((n) => {
+      const m = /^第0*(\d+)章.*\.md$/.exec(n);
+      if (!m || parseInt(m[1], 10) !== num) return false;
+      try {
+        return fs.statSync(path.join(archiveDir, n)).mtimeMs >= targetMtime;
+      } catch (e) {
+        return false;
+      }
+    });
+  } catch (e) {
+    return false; // _archive 缺失 → 无快照
+  }
+}
+
 // ---------------------------------------------------------- guard（阻断守卫）
 function guard() {
   const target = payloadTarget(readStdin());
@@ -171,11 +220,24 @@ function guard() {
         console.error('   先完成上一章的追踪提交与章检，再开新章。');
         process.exit(2);
       }
+      // U1 待审门：更早章的未终态 finding 阻塞开新章——检测必有终态，无声消失零成本是根因五。
+      const pending = pendingBlockers(bookDir, num);
+      if (pending > 0) {
+        console.error(`⛔ 写正文被拦截：待审台账有 ${pending} 行未终态（章号 < ${num}）。`);
+        console.error('   先消费（修复/豁免/契约修订/顺延/升级作者）回填终态，再开新章（guyin-check-pending.js）。');
+        process.exit(2);
+      }
     } else {
       // 续写/改稿：细纲门不适用，只校验 state 自身合规。
       if (stateProblem(readState(bookDir))) {
         console.error('⛔ 写正文被拦截：追踪状态缺失或 schema 不符（追踪/_tracking-state.json）。');
         console.error('   先修复追踪状态（scripts/guyin-tracking-commit.py），再续写。');
+        process.exit(2);
+      }
+      // U4 覆盖门：动刀已存在章须先快照——裸奔覆盖 = 版本永久丢失（v1/v3 稿两代实证）。
+      if (num !== null && !hasFreshSnapshot(bookDir, abs, num)) {
+        console.error(`⛔ 覆盖已存在章被拦截：第 ${num} 章正文将被动刀，但 正文/_archive/ 无不早于现稿的快照。`);
+        console.error('   先拷 `正文/_archive/第N章_vK_时间戳.md` 再动刀（每一版都不许无存档消失，U4）。');
         process.exit(2);
       }
     }

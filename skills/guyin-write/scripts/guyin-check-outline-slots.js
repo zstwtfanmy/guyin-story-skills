@@ -19,6 +19,11 @@
 //     outline-missing-contract  契约风险结论行缺失
 //     outline-missing-timecheck 时序自检行缺失（P1，docs/07：E1 时序倒错源头封堵，advisory 起步）
 //     qiyun-coord-uncovered     气卡坐标区间未覆盖本章（S2，fail-open：无气卡/无区间静默）
+//   advisory ×3（docs/09）：
+//     outline-instruction-echo  写作指令区与前章归一化逐字相同且非「无」（B2：批次不变量
+//                               应上移 大纲/批次公约.md，逐章复读=指令放错层；三章同填「无」合法）
+//     outline-scene-floor-conflict 场景下限声明 > 涉及场景清单条目数（B4：ch63 细纲自相矛盾
+//                               形态；清单值「无」=未登记场景不比较，豁免声明跳过）
 //
 // 存量策略：只拦落盘门场景（新建/修订细纲落盘前），存量章不追溯（与 hook-rotation 一致）。
 // 复沓锚句字段值命中作者性词源归 guyin-check-authority-leak.js 管（锚句洗白在那抓），本脚本只查存在性。
@@ -32,7 +37,13 @@ const USAGE = `Usage: node guyin-check-outline-slots.js [--json] [--fail-on=bloc
 Chapter outline slot integrity gate (docs/06 §二 O2):
   blocking: hook / wordcount+scene floor / multi-line / anchor line / holdback line
   advisory: scene list / term anchors / contract-risk line / time-check (P1)
-            / qiyun-coord coverage (S2, silent when no card or no ranges)
+            / qiyun-coord coverage (S2+Y2: scans 作者性/气卡.md and
+              设定/气韵卡.md, only lines containing 当前; silent when no
+              card or no such line — volume-plan rows don't count)
+            / instruction-echo (B2: instruction block identical to previous
+              chapter's, non-「无」— batch invariants belong in 大纲/批次公约.md)
+            / scene-floor-conflict (B4: declared scene floor exceeds the
+              scene-list entry count — ch63 self-contradiction shape)
 Slot definitions live in guyin-write/references/细纲协议.md (single authority).
 Only guards the pre-write gate; existing chapters are not retro-scanned.
 --fail-on=blocking exits 1 only on blocking findings; default --fail-on=all exits 1 on any.`;
@@ -164,6 +175,27 @@ function scanSlots(text) {
     push('outline-missing-scenes', 'advisory', 1, '涉及场景清单字段行缺失（喂 cards {{场景锚点行}}）');
   }
 
+  // B4 场景下限自洽（docs/09 §一）：下限行声明的场景数 > 涉及场景清单条目数 → 细纲内部
+  // 自相矛盾（ch63：自设 ≥3 场而清单只列 2 处）。豁免声明跳过；清单值「无」＝未登记场景
+  // 不比较（清单喂卡用途与下限剧情约束不同层，机械比较只对已列条目负责）。
+  if (sceneFloor && scenes) {
+    const floorText = sceneFloor.text;
+    if (!/豁免/.test(floorText)) {
+      const floorMatch = /≥\s*(\d+)\s*场/.exec(floorText);
+      if (floorMatch) {
+        const floor = Number(floorMatch[1]);
+        const listVal = scenes.text.replace(/^.*涉及场景[^：:]*[：:]/, '').trim();
+        if (listVal && !/^无/.test(listVal)) {
+          const count = listVal.split(/[、,，;；]/).filter((s) => s.trim()).length;
+          if (count < floor) {
+            push('outline-scene-floor-conflict', 'advisory', scenes.line,
+              `场景下限声明 ≥${floor} 场，涉及场景清单仅 ${count} 条——细纲内部自相矛盾（ch63 形态）；补场景、调下限或声明豁免；B4`);
+          }
+        }
+      }
+    }
+  }
+
   const terms = firstLineWith(lines, (l) => l.includes('术语锚点'));
   if (!terms) {
     push('outline-missing-terms', 'advisory', 1, '术语锚点字段行缺失（值可写「无」）——新术语密集批次的首现台词级锚定位，报告 B8 的机制化');
@@ -200,30 +232,40 @@ function scanSlots(text) {
   return findings;
 }
 
-// ---------- S2 气卡坐标覆盖预检（docs/07 §二 S2） ----------
-// 尊重 06 决策不收编气卡，只加预检：落盘门查该章细纲时顺带扫项目 作者性/气卡.md 的
-// 章号区间，本章不落在任何区间 → advisory 停靠提醒刷新，报时贴原文坐标行供作者目检。
-// fail-open（v1.1 钉死）：气卡缺失或全文无区间 → 静默跳过——框架模板气卡本无坐标节
-// （坐标是项目自定义资产），「无区间也报」会让每个项目每次补纲都假警报。时机：补纲
+// ---------- S2 气卡坐标覆盖预检（docs/07 §二 S2；Y2 路径核验修正，docs/09 §三） ----------
+// 尊重 06 决策不收编气卡，只加预检：落盘门查该章细纲时顺带扫项目气卡坐标行，本章不落
+// 在任何区间 → advisory 停靠提醒刷新，报时贴原文坐标行供作者目检。
+// fail-open（v1.1 钉死）：气卡缺失或全文无「当前」坐标行 → 静默跳过——框架模板气卡
+// 坐标节未实例化时无区间，「无区间也报」会让每个项目每次补纲都假警报。时机：补纲
 // 落盘门（新卷首批细纲建档时），早于写章循环第 1 步的卷首检查；第 1 步停靠纪律不动。
 const QIYUN_RANGE = /第?\s*(\d+)\s*[-—－~～至]\s*(\d+)?/g;
 
-function locateQiyunCard(outlinePath) {
+// Y2 核验结论：白银案录把坐标写在 设定/气韵卡.md（项目自定义名），旧版只找
+// 作者性/气卡.md → 永远 fail-open，坐标停在 ch28-32 五轮无警报。候选扩为两处，
+// 都存在则都扫、区间合并——坐标资产写哪侧是项目决策，机械侧不猜。
+function locateQiyunCards(outlinePath) {
+  const found = [];
   let cur = path.dirname(path.resolve(outlinePath));
   for (let depth = 0; depth < 3; depth += 1) {
-    const candidate = path.join(cur, '作者性', '气卡.md');
-    if (fs.existsSync(candidate)) return candidate;
+    for (const rel of [['作者性', '气卡.md'], ['设定', '气韵卡.md']]) {
+      const candidate = path.join(cur, ...rel);
+      if (fs.existsSync(candidate) && !found.includes(candidate)) found.push(candidate);
+    }
     const parent = path.dirname(cur);
     if (parent === cur) break;
     cur = parent;
   }
-  return null;
+  return found;
 }
 
-// 逐行扫区间（含全角横线变体）：「61-63」「第61-63章」「61至65」；尾数缺失视为无效区间跳过。
+// 逐行扫区间（含全角横线变体）：「61-63」「第61-63章」「ch28-32」「61至65」；尾数缺失视为无效区间跳过。
+// Y2 口径收窄：只认含「当前」的坐标行（当前阶段/当前坐标）——气韵卡的卷级规划表
+// （「卷3（61-130）」）与散点 ch 引用会让全文乱扫永远绿灯（坐标停在旧段却无警报的
+// 假覆盖形态）；规划/回顾行不构成「写作时必对」的覆盖声明。
 function qiyunRanges(text) {
   const rows = [];
   for (const line of text.split(/\r?\n/)) {
+    if (!line.includes('当前')) continue;
     QIYUN_RANGE.lastIndex = 0;
     let m;
     while ((m = QIYUN_RANGE.exec(line)) !== null) {
@@ -233,6 +275,33 @@ function qiyunRanges(text) {
     }
   }
   return rows;
+}
+
+// ---------- B2 指令区复读门（docs/09 §一） ----------
+// 写作指令区提取：#### 写作指令 标题行到下一区块标题之间的正文行。归一化＝剥全部空白。
+// 「全区为无」判定：区块内所有字段值均为「无」或区块为空——三章同填「无」是合法状态
+// （执行偏差区同理），复读门只打真实指令的逐字复读（61-63 比喻域三章同值的形态）。
+function instructionBody(text) {
+  const lines = text.split(/\r?\n/);
+  const start = lines.findIndex((l) => /#{2,4}\s*写作指令/.test(l));
+  if (start === -1) return null;
+  const body = [];
+  for (let i = start + 1; i < lines.length; i += 1) {
+    if (/^#{2,4}\s/.test(lines[i])) break;
+    body.push(lines[i]);
+  }
+  return body;
+}
+
+function normalizeInstruction(body) {
+  return (body || []).join('').replace(/\s/g, '');
+}
+
+function instructionIsNone(body) {
+  const vals = (body || [])
+    .map((l) => l.replace(/^[-*]\s*/, '').replace(/^[^：:]*[：:]/, '').trim())
+    .filter((v) => v !== '');
+  return vals.length === 0 || vals.every((v) => /^无/.test(v));
 }
 
 const allFindings = [];
@@ -255,28 +324,56 @@ for (const input of options.inputs) {
   const chapterMatch = /^细纲_第0*(\d+)章/.exec(path.basename(abs));
   if (chapterMatch) {
     const chapter = Number(chapterMatch[1]);
-    const cardPath = locateQiyunCard(abs);
-    let cardText = null;
-    if (cardPath) {
+
+    // B2 指令区复读门：细纲 N-1 存在且两章写作指令区归一化逐字相同、且非「无」→ advisory。
+    // 前章细纲缺失/读失败/任一章无指令区 → 静默（fail-open，与 S2 同哲学）。
+    try {
+      const dir = path.dirname(abs);
+      const prevName = fs.readdirSync(dir).find((n) => {
+        const m = /^细纲_第0*(\d+)章.*\.md$/.exec(n);
+        return m !== null && Number(m[1]) === chapter - 1;
+      });
+      if (prevName) {
+        const prevText = fs.readFileSync(path.join(dir, prevName), 'utf8');
+        const curBody = instructionBody(text);
+        const prevBody = instructionBody(prevText);
+        if (curBody !== null && prevBody !== null) {
+          const curNorm = normalizeInstruction(curBody);
+          if (curNorm && curNorm === normalizeInstruction(prevBody) && !instructionIsNone(curBody)) {
+            allFindings.push({
+              file: input,
+              line: 1,
+              column: 1,
+              type: 'outline-instruction-echo',
+              severity: 'advisory',
+              message: `写作指令区与前章（第 ${chapter - 1} 章）归一化逐字相同——批次不变量（比喻域/引号规格/收束位轮换）上移 大纲/批次公约.md，本章无特有指令写「无」；B2`,
+              excerpt: '',
+            });
+          }
+        }
+      }
+    } catch (error) {
+      /* 前章读失败 → 静默 */
+    }
+
+    const rows = [];
+    for (const cardPath of locateQiyunCards(abs)) {
       try {
-        cardText = fs.readFileSync(cardPath, 'utf8');
+        rows.push(...qiyunRanges(fs.readFileSync(cardPath, 'utf8')));
       } catch (error) {
-        cardText = null; // 读不了不报（fail-open）
+        /* 读失败静默（fail-open） */
       }
     }
-    if (cardText) {
-      const rows = qiyunRanges(cardText);
-      if (rows.length > 0 && !rows.some((r) => chapter >= r.lo && chapter <= r.hi)) {
-        allFindings.push({
-          file: input,
-          line: 1,
-          column: 1,
-          type: 'qiyun-coord-uncovered',
-          severity: 'advisory',
-          message: `气卡坐标未覆盖第 ${chapter} 章（现有区间 ${rows.map((r) => `${r.lo}-${r.hi}`).join('、')}）——新卷开卷先刷新 作者性/气卡.md 坐标节再续写（F5：坐标停旧卷，气韵对位失真）；停靠刷新，原文目检：「${rows[0].line.slice(0, 50)}」`,
-          excerpt: '',
-        });
-      }
+    if (rows.length > 0 && !rows.some((r) => chapter >= r.lo && chapter <= r.hi)) {
+      allFindings.push({
+        file: input,
+        line: 1,
+        column: 1,
+        type: 'qiyun-coord-uncovered',
+        severity: 'advisory',
+        message: `气卡坐标未覆盖第 ${chapter} 章（现有区间 ${rows.map((r) => `${r.lo}-${r.hi}`).join('、')}）——新卷/建批先刷新气卡「当前阶段」坐标行（作者性/气卡.md 或 设定/气韵卡.md，建批硬前置）再续写（F5：坐标停旧段，气韵对位失真）；停靠刷新，原文目检：「${rows[0].line.slice(0, 50)}」`,
+        excerpt: '',
+      });
     }
   }
 }
