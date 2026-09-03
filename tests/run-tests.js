@@ -104,6 +104,44 @@ console.log('== guyin-check-wordcount ==');
 }
 
 // ============================================================
+console.log('== X3 跨章字数降档（docs/10 §一 X3） ==');
+{
+  // X3-A 跨章兑现章：字数目标 3000 → 正常下限 2700（×90% J1）→ X3 降 10% = 2430
+  // 正文 2500 字：低于正常下限 2700，高于 X3 降档后 2430 → 应通过
+  fixture('x3/大纲/细纲_第001章.md', [
+    '# 细纲（第 1 章）',
+    '',
+    '## 第 1 章：跨章',
+    '- 核心事件：跨章兑现测试',
+    '- 字数目标：3000 字',
+    '- 情绪落点（≥3）：①释然@点4（跨章兑现）②震颤@点5 ③余韵@点6',
+    '',
+  ].join('\n'));
+  const x3Chap = fixture('x3/正文/第001章_x3.md', '字'.repeat(2500) + '\n');
+  let r = run('guyin-check-wordcount.js', ['--json', x3Chap]);
+  let report = parseJson(r.stdout);
+  check('X3 跨章兑现章字数降 10% 后 2500 通过（正常下限 2700，X3 降档 2430）',
+    r.status === 0, `status=${r.status} findings=${JSON.stringify(report && report.findings.map((f) => f.type))}`);
+
+  // X3-B 对照章：同字数目标但无「跨章兑现」标注 → 正常下限 2700 → 2500 应 blocking
+  fixture('x3ctl/大纲/细纲_第001章.md', [
+    '# 细纲（第 1 章）',
+    '',
+    '## 第 1 章：正常',
+    '- 核心事件：对照测试',
+    '- 字数目标：3000 字',
+    '- 情绪落点（≥3）：①释然@点4 ②震颤@点5 ③余韵@点6',
+    '',
+  ].join('\n'));
+  const ctlChap = fixture('x3ctl/正文/第001章_ctl.md', '字'.repeat(2500) + '\n');
+  r = run('guyin-check-wordcount.js', ['--json', ctlChap]);
+  report = parseJson(r.stdout);
+  check('X3 对照章无跨章标注正常下限 2700 → 2500 blocking',
+    r.status === 1 && report && report.findings.some((f) => f.type === 'chapter-too-short' && f.severity === 'blocking'),
+    `status=${r.status} types=${JSON.stringify(report && report.findings.map((f) => f.type))}`);
+}
+
+// ============================================================
 console.log('== guyin-check-degeneration ==');
 {
   const line = '他沿着长廊往里走，走过一道又一道紧闭的木门，终于在最里面停了下来。';
@@ -2284,6 +2322,51 @@ console.log('== 06 整改黄金样本回归（H2/O2/O3/I1/I2） ==');
     '他记下了第一笔，又记下了第二笔，最后记下了第三笔，笔尖在纸上划出三道墨痕。\n');
   r = run('guyin-check-ai-patterns.js', [plainChap]);
   check('I2 无黑名单项目静默', r.status === 0, `status=${r.status} out=${r.stdout.trim().slice(0, 120)}`);
+}
+
+// ============================================================
+console.log('== Z7 跨章体感重复（docs/10 §一 Z7，ai-patterns 合并检查项） ==');
+{
+  // 模板分发断言：复沓锚句.md 随 long 模板分发（Z7 白名单文件位）。
+  check('Z7 模板 复沓锚句.md 随模板分发',
+    fs.existsSync(path.join(REPO, 'skills', 'guyin-setup', 'templates', 'long', '追踪', '复沓锚句.md')));
+
+  // Z7-A 跨章重复必报：两章同含「咽口水」，无白名单 → advisory。
+  fixture('z7/正文/第001章.md', '他咽了口水，没说话，把手里的账册合上。\n');
+  const z7Ch2 = fixture('z7/正文/第002章.md',
+    '她咽了口水，转过身去，没让他看见眼里的水汽。\n');
+  let zr = run('guyin-check-ai-patterns.js', ['--json', z7Ch2]);
+  let zrep = parseJson(zr.stdout);
+  check('Z7 跨章 tic 重复必报 sensory-repeat advisory',
+    zr.status === 1 && zrep
+      && zrep.findings.some((f) => f.type === 'sensory-repeat' && f.severity === 'advisory'
+        && (f.excerpt || '').includes('口水')),
+    `status=${zr.status} types=${JSON.stringify(zrep && zrep.findings.map((f) => f.type))}`);
+
+  // Z7-B 白名单豁免：两章同含「咽口水」但命中句含登记实体「算盘」→ 不报。
+  fixture('z7wl/追踪/复沓锚句.md', [
+    '# 复沓锚句',
+    '',
+    '| 实体 |',
+    '| --- |',
+    '| 算盘 |',
+    '',
+  ].join('\n'));
+  fixture('z7wl/正文/第001章.md', '他咽了口水，指腹搭在算盘边上，没说话。\n');
+  const z7wlCh2 = fixture('z7wl/正文/第002章.md',
+    '她咽了口水，算盘珠子哗啦乱响，像被惊了的麻雀。\n');
+  zr = run('guyin-check-ai-patterns.js', ['--json', z7wlCh2]);
+  zrep = parseJson(zr.stdout);
+  check('Z7 白名单登记实体豁免（算盘句不报 sensory-repeat）',
+    !zrep || !zrep.findings.some((f) => f.type === 'sensory-repeat'),
+    `status=${zr.status} types=${JSON.stringify(zrep && zrep.findings.map((f) => f.type))}`);
+
+  // Z7-C 无兄弟章静默：单章无前置可比 → 跳过（开篇章无前置可撞）。
+  const z7solo = fixture('z7solo/正文/第001章.md',
+    '他咽了口水，没说话，把账册合上。\n');
+  zr = run('guyin-check-ai-patterns.js', [z7solo]);
+  check('Z7 无兄弟章静默（开篇章无可比前置）', zr.status === 0,
+    `status=${zr.status} out=${zr.stdout.trim().slice(0, 120)}`);
 }
 
 // ============================================================

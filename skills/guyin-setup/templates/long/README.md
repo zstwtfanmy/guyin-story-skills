@@ -12,7 +12,7 @@ AGENTS.md          Codex / OpenCode 读根路由表 + 五条项目不变式
 .codex/agents/     guyin-beat-writer 执行层部署件（Codex 用，TOML）
 .opencode/agents/  guyin-beat-writer 执行层部署件（OpenCode 用）
 设定/世界观/      世界规则（一次写成，长期只读）
-设定/角色/        每角色一卡：身份/行当/目标/关系/知识边界/说话习惯
+设定/角色/        每角色一卡：身份/行当/目标/关系/知识边界/自我叙事/行为铁律/说话习惯
 大纲/             卷纲_第X卷.md + 细纲_第XXX章.md（beat 的事件来源）+ 魂谱对表.md（开书 Phase B 选题）
 正文/             第XXX章_标题.md（beat 拼接产物，落盘即提交追踪）
 追踪/             状态权威层：伏笔.md / 上下文.md / 契约对账矩阵.md / 读者信号.md / _tracking-state.json / 时间线/ / 角色状态/

@@ -8,7 +8,7 @@
 // 在 references/细纲协议.md，O1）：
 //
 //   blocking ×5：
-//     outline-missing-hook      章尾钩子行缺失 / 无五型 / 无实体 / 无承接章号
+//     outline-missing-hook      章尾钩子行缺失 / 无六型 / 无实体 / 无承接声明
 //     outline-missing-wordcount 字数目标行缺失或不含数字，或场景与对手戏下限行缺失
 //     outline-missing-multiline 情节安排节 / 主线行 / 感情线·关系线行缺失
 //     outline-missing-anchor    复沓锚句字段行缺失（值可写「无」）
@@ -76,8 +76,8 @@ for (let i = 2; i < process.argv.length; i += 1) {
 
 if (options.inputs.length === 0) die('No outline files provided');
 
-// 五型钩子（与 hook-rotation 的轮换检测共用类型集，职责分离：那边管已标注章的连续同型，这边管有没有标注）。
-const HOOK_TYPES = ['危机', '反转', '期待', '悬念', '情绪'];
+// 六型钩子（与 hook-rotation 的轮换检测共用类型集，职责分离：那边管已标注章的连续同型，这边管有没有标注；切断型为 X1 特殊态）。
+const HOOK_TYPES = ['危机', '反转', '期待', '悬念', '情绪', '切断'];
 
 function firstLineWith(lines, predicate) {
   for (let i = 0; i < lines.length; i += 1) {
@@ -92,6 +92,7 @@ function carryoverOk(hookLine) {
   if (!m) return false;
   const rest = m[1].trim();
   if (/完结\s*收束/.test(rest)) return true; // E4：完结章无下章可指
+  if (/同场景延续/.test(rest)) return true; // X1：切断型豁免事件指向，承接改「同场景延续」（断点实体仍由 entityOk 管）
   return /第\s*0*(\d+)\s*章/.test(rest);
 }
 
@@ -126,13 +127,13 @@ function scanSlots(text) {
     push('outline-missing-hook', 'blocking', 1, '章尾钩子行缺失——细纲契约槽位（beat 版细纲的事故形态，见 references/细纲协议.md）');
   } else {
     if (!typeOk(hook.text)) {
-      push('outline-missing-hook', 'blocking', hook.line, '章尾钩子未声明五型（危机/反转/期待/悬念/情绪）——轮换检测与张力判定的机械标注位');
+      push('outline-missing-hook', 'blocking', hook.line, '章尾钩子未声明六型（危机/反转/期待/悬念/情绪/切断）——轮换检测与张力判定的机械标注位');
     }
     if (!entityOk(hook.text)) {
-      push('outline-missing-hook', 'blocking', hook.line, '章尾钩子缺实体声明（挂在什么具体物/人/话上）——情绪钩子合法（有实体），情绪收束句不合法（无实体）');
+      push('outline-missing-hook', 'blocking', hook.line, '章尾钩子缺实体声明（挂在什么具体物/人/话上）——情绪钩子合法（有实体），情绪收束句不合法（无实体）；切断型断点实体同此管');
     }
     if (!carryoverOk(hook.text)) {
-      push('outline-missing-hook', 'blocking', hook.line, '章尾钩子缺承接章号（承接：第X章{事件}；完结章可写「承接：无（完结收束）」）——不指向下一章任何事件的是状态判词不是钩子');
+      push('outline-missing-hook', 'blocking', hook.line, '章尾钩子缺承接声明（承接：第X章{事件}；完结章可写「承接：无（完结收束）」；切断型可写「承接：同场景延续」）——不指向下一章任何事件的是状态判词不是钩子');
     }
   }
 

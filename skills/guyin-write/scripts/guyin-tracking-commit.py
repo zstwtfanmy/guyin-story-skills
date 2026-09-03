@@ -46,6 +46,9 @@ CONTEXT_HEADINGS = (
 )
 FORESHADOW_STATUSES = ("已埋", "已回收", "已过期", "放弃")
 FORESHADOW_IMPORTANCE = ("高", "中", "低")
+# Z2 揭示方式（可选）：长篇连线距离最远、当量要求最高——比短篇反转表少一列的倒挂修正。
+# 一句带过 / 慢镜头 / 当场短路——管「够不够爽」的怎么响，不是够不够爽本身（红楼梦「你放心」= 压的长度 × 揭示的克制）。
+FORESHADOW_REVEAL_METHODS = ("一句带过", "慢镜头", "当场短路")
 REVEAL_STATUSES = ("未揭示", "部分揭示", "已揭示")
 # G2 事件定性实体：高潮/爽点章兑付给读者的叙事资产。status 供收线审计（P3）与完书复盘消费。
 VERDICT_STATUSES = ("active", "repriced", "nullified")
@@ -332,7 +335,7 @@ def normalize_foreshadow_change(
     row = as_mapping(value, label)
     require_known_keys(
         row,
-        {"action", "id", "summary", "planted_chapter", "planned_resolution_chapter", "status", "importance"},
+        {"action", "id", "summary", "planted_chapter", "planned_resolution_chapter", "status", "importance", "reveal_method"},
         label,
     )
     action = clean_text(row.get("action", "upsert"), f"{label}.action", max_bytes=24)
@@ -355,6 +358,12 @@ def normalize_foreshadow_change(
     importance = clean_text(row.get("importance"), f"{label}.importance", max_bytes=12)
     require(status in FORESHADOW_STATUSES, f"{label}.status must be one of {FORESHADOW_STATUSES}")
     require(importance in FORESHADOW_IMPORTANCE, f"{label}.importance must be one of {FORESHADOW_IMPORTANCE}")
+    # Z2 揭示方式（可选）：缺省 None（不写、存量空值不报错）；存在则必须三选一。
+    reveal_raw = row.get("reveal_method")
+    reveal_method = None
+    if reveal_raw is not None:
+        reveal_method = clean_text(reveal_raw, f"{label}.reveal_method", max_bytes=24)
+        require(reveal_method in FORESHADOW_REVEAL_METHODS, f"{label}.reveal_method must be one of {FORESHADOW_REVEAL_METHODS}")
     return {
         "action": action,
         "id": identifier,
@@ -363,6 +372,7 @@ def normalize_foreshadow_change(
         "planned_resolution_chapter": planned_chapter,
         "status": status,
         "importance": importance,
+        "reveal_method": reveal_method,
     }
 
 
@@ -374,7 +384,7 @@ def normalize_foreshadow_state(value: object, last_chapter: int) -> dict[str, di
         row = as_mapping(raw_row, f"tracking state.foreshadow.{identifier}")
         require_known_keys(
             row,
-            {"id", "summary", "planted_chapter", "planned_resolution_chapter", "status", "importance", "updated_chapter"},
+            {"id", "summary", "planted_chapter", "planned_resolution_chapter", "status", "importance", "reveal_method", "updated_chapter"},
             f"tracking state.foreshadow.{identifier}",
         )
         require(row.get("id") == identifier, f"tracking state.foreshadow.{identifier}.id does not match its key")
@@ -401,15 +411,16 @@ def render_foreshadow(rows: dict[str, dict[str, Any]], revision: int) -> str:
         "",
         f"> 状态修订：{revision}。每个 ID 只保留一行当前状态；历史变化见 `逐章记录/`。",
         "",
-        "| ID | 内容 | 埋设章 | 计划回收章 | 状态 | 重要度 | 最近变更章 |",
-        "|---|---|---:|---:|---|---|---:|",
+        "| ID | 内容 | 埋设章 | 计划回收章 | 状态 | 重要度 | 揭示方式 | 最近变更章 |",
+        "|---|---|---:|---:|---|---|---|---:|",
     ]
     for identifier in sorted(rows):
         row = rows[identifier]
         planned = f"第{row['planned_resolution_chapter']}章" if row["planned_resolution_chapter"] else "—"
+        reveal = row.get("reveal_method") or "—"
         lines.append(
             f"| {identifier} | {row['summary']} | 第{row['planted_chapter']}章 | {planned} | "
-            f"{row['status']} | {row['importance']} | 第{row['updated_chapter']}章 |"
+            f"{row['status']} | {row['importance']} | {reveal} | 第{row['updated_chapter']}章 |"
         )
     return "\n".join(lines) + "\n"
 
