@@ -13,12 +13,17 @@ const USAGE = `Usage: node guyin-check-hook-rotation.js [--json] [--fail-on=bloc
 编排层提示轮换/补蓄力，升级作者定夺）。
 
   hook-run             连续 ≥N 章（默认 3）章尾钩子同型——须轮换类型
-                       （章号相邻且均已标注才计连续；未标注章断开计数）
+                       （章号相邻且均已标注才计连续；未标注章断开计数；切断型不计入）
   burst-without-charge 章标「节奏标记：爆发」但前 1-2 章细纲无「节奏标记：蓄力」
                        （前章细纲不存在或本章 ≤3 则跳过——开篇 Muse 无前置可蓄）
+  hook-cut-entity-missing 切断型章尾钩子缺断点实体（批次末兜底 advisory，
+                       落盘门 outline-slots 已 blocking 拦空实体）
+  hook-cut-quota       切断型钩子本批 >2 个（advisory，可豁免：情绪峰值连续切断的刻意编排）
 
-细纲标注协议（见 references/consult/workflow-setup.md 细纲模板）：
-  - 章尾钩子：{危机|反转|期待|悬念|情绪}·{章尾13式} — {具体内容……}
+细纲标注协议（见 references/细纲协议.md）：
+  - 章尾钩子：{危机|反转|期待|悬念|情绪|切断}·{章尾13式} — {具体内容……}
+    切断型（X1，第六型·特殊态）：承接改「同场景延续」（豁免事件指向），
+    断点实体必填；不计入本脚本类型轮换统计；一批 ≤2 个（advisory，可豁免）
   - 节奏标记：{蓄力|爆发}（Muse 判据章标「爆发」；其前 1-2 章标「蓄力」：
     禁发散、收敛感官、降字数）
 
@@ -51,10 +56,11 @@ for (let i = 2; i < process.argv.length; i += 1) {
 
 if (options.targets.length === 0) die('No outline directory or files provided');
 
-const HOOK_TYPES = ['危机', '反转', '期待', '悬念', '情绪'];
+const HOOK_TYPES = ['危机', '反转', '期待', '悬念', '情绪', '切断'];
 const HOOK_LINE = /[-*]\s*章尾钩子[：:]/;
-const HOOK_TYPE = /章尾钩子[：:]\s*(危机|反转|期待|悬念|情绪)/;
+const HOOK_TYPE = /章尾钩子[：:]\s*(危机|反转|期待|悬念|情绪|切断)/;
 const RHYTHM_MARK = /[-*]\s*节奏标记[：:]\s*(蓄力|爆发)/;
+const CUT_ENTITY = /实体[：:]\s*(.+)/;
 
 // 收集细纲文件：目录 → 细纲_第NNN章.md；文件原样收。
 const files = [];
@@ -98,13 +104,14 @@ for (const file of files) {
     continue;
   }
   const lines = input.split(/\r?\n/);
-  const record = { file, chapter: null, hookType: null, hookLine: 0, mark: null, markLine: 0 };
+  const record = { file, chapter: null, hookType: null, hookLine: 0, hookText: '', mark: null, markLine: 0 };
   const nameMatch = /第\s*0*(\d+)\s*章/.exec(path.basename(file));
   if (nameMatch) record.chapter = Number(nameMatch[1]);
   for (let i = 0; i < lines.length; i += 1) {
     const line = lines[i];
     if (record.hookType === null && HOOK_LINE.test(line)) {
       record.hookLine = i + 1;
+      record.hookText = line;
       const m = HOOK_TYPE.exec(line);
       record.hookType = m ? m[1] : 'unannotated';
     }
@@ -132,6 +139,7 @@ let runType = null;
 let runLength = 0;
 for (const record of chapters) {
   if (record.chapter === null || record.hookType === null || record.hookType === 'unannotated') continue;
+  if (record.hookType === '切断') continue; // X1：切断型特殊态，不计入类型轮换统计（不占常规轮换位）
   const adjacent = runStart !== null && record.chapter === runStart.chapter + runLength;
   if (runType === record.hookType && adjacent) {
     runLength += 1;
@@ -153,7 +161,7 @@ function flushRun() {
       column: 1,
       type: 'hook-run',
       severity: 'advisory',
-      message: `钩子坍缩：第${runStart.chapter}-${end}章连续 ${runLength} 章${runType}钩——连续同型即钝化（04 §2.2 推论 3），须轮换类型（危机/反转/期待/悬念/情绪）。`,
+      message: `钩子坍缩：第${runStart.chapter}-${end}章连续 ${runLength} 章${runType}钩——连续同型即钝化（04 §2.2 推论 3），须轮换类型（危机/反转/期待/悬念/情绪；切断型不计入此统计）。`,
       excerpt: `第${runStart.chapter}-${end}章 × ${runType}`,
     });
   }
@@ -181,12 +189,43 @@ for (const record of chapters) {
   });
 }
 
+// 规则三：切断型 X1 检查——断点实体必填（防「没写完」伪装切断）+ 批内计数 advisory（≤2，可豁免）。
+// 断点实体：outline-slots 已在落盘门 blocking 拦空实体，此处为批次末兜底 advisory。
+const cutChapters = chapters.filter((c) => c.hookType === '切断' && c.chapter !== null);
+for (const record of cutChapters) {
+  const m = CUT_ENTITY.exec(record.hookText);
+  if (!m || m[1].trim().length === 0) {
+    findings.push({
+      file: path.relative('.', record.file),
+      line: record.hookLine,
+      column: 1,
+      type: 'hook-cut-entity-missing',
+      severity: 'advisory',
+      message: `切断型章尾钩子缺断点实体（断在什么半句/动作半途上）——豁免的是事件指向（承接：同场景延续），不是形态契约；无断点实体的「没写完」不得伪装成切断。`,
+      excerpt: `第${record.chapter}章 × 切断`,
+    });
+  }
+}
+if (cutChapters.length > 2) {
+  const list = cutChapters.map((c) => `第${c.chapter}章`).join('、');
+  findings.push({
+    file: path.relative('.', cutChapters[0].file),
+    line: cutChapters[0].hookLine,
+    column: 1,
+    type: 'hook-cut-quota',
+    severity: 'advisory',
+    message: `切断型钩子本批 ${cutChapters.length} 个（${list}）——一批最多 1-2 个，多用则读者脱力（可豁免：情绪峰值章节连续切断的刻意编排）。`,
+    excerpt: `${cutChapters.length} × 切断`,
+  });
+}
+
 const summary = {
   chapters_scanned: chapters.length,
   annotated: chapters.filter((c) => c.hookType && c.hookType !== 'unannotated').length,
   unannotated: chapters.filter((c) => c.hookType === 'unannotated').length,
   burst_marked: chapters.filter((c) => c.mark === '爆发').length,
   charge_marked: chapters.filter((c) => c.mark === '蓄力').length,
+  cut_marked: chapters.filter((c) => c.hookType === '切断').length,
 };
 
 if (options.json) {

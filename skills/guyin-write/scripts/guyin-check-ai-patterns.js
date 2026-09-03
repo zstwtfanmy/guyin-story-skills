@@ -32,9 +32,10 @@ Detect high-risk AI-flavor prose patterns that need human rewrite:
   - 段中预告腔 (叙述层未来指向标记出现在段中而非章尾, 实战漏网句式)
   - 金句腔 (双短句对仗断言收拍「A是B的，C是D的。」, 实战漏网句式)
   - phrase quota (项目 追踪/短语黑名单.md 登记短语超限: 每章 ≤N / 近 5 章 ≤N / 相邻章禁用, advisory; 无该文件静默)
+  - cross-chapter sensory-repeat (同一情绪落点的谓语动作跨章重复: 咽口水/手心出汗/咬唇等身体动作 tic 在 ≥2 章命中, advisory; 白名单 追踪/复沓锚句.md 登记的签名物件豁免; 无该文件静默)
 
 Each finding carries severity: blocking by default for generation/deslop cleanup (not-is-comparison / em-dash / voice-contrast / negation-parade / reverse-not-is / trailer-ending / trailer-summary). This is a local style/readability gate, not an AIGC detector score; functional human text can be marked for review instead of hard-edited for a detector.
-或 advisory (period-stutter / long-paragraph / micro-action-tic / action-list-tic / abstract-summary-tic / cliche-density-tic / metaphor-density-tic / reasoning-chain-tic / system-notice-formality-tic / overcompressed-prose-tic / low-connective-density-tic / quote-emphasis-tic / formulaic-parallelism / explain-tic / mid-trailer / aphorism-tic / phrase-quota，是提示，justified 的长推理/氛围段可保留)。
+或 advisory (period-stutter / long-paragraph / micro-action-tic / action-list-tic / abstract-summary-tic / cliche-density-tic / metaphor-density-tic / reasoning-chain-tic / system-notice-formality-tic / overcompressed-prose-tic / low-connective-density-tic / quote-emphasis-tic / formulaic-parallelism / explain-tic / mid-trailer / aphorism-tic / phrase-quota / sensory-repeat，是提示，justified 的长推理/氛围段可保留)。
 --fail-on=blocking 只在出现 blocking finding 时退出 1；默认 --fail-on=all 有任何 finding 即退出 1。
 
 The script reports findings only. It never rewrites text, because the safe fix is
@@ -309,6 +310,28 @@ if (options.files.length === 0) {
 // I2 phrase-quota 缓存：主循环（下方 for）先于文件尾函数区的顶层 const 执行，声明须置于循环前。
 const phraseBlacklistCache = new Map();
 const siblingChaptersCache = new Map();
+// Z7 跨章体感重复缓存：同上，主循环先于函数区执行，声明须置于循环前。
+const anchorRegistryCache = new Map();
+const siblingTextCache = new Map();
+// Z7 身体动作 tic 模式表（主循环经 findSensoryRepeatTic 引用，须置于循环前）。
+const SENSORY_REPEAT_PATTERNS = [
+  /咽了?口水/g,
+  /手心(发|冒)?汗/g,
+  /掌心(发|冒)?汗/g,
+  /咬了?下?嘴唇?/g,
+  /攥紧(了)?拳头?/g,
+  /指节泛白/g,
+  /喉咙(发紧|一紧)/g,
+  /心跳(加速|骤然|猛地?加快|骤快)/g,
+  /眉(头|心)紧(锁|蹙)/g,
+  /瞳孔(微|一|骤)?缩/g,
+  /脊背(发凉|一僵)/g,
+  /后背(发凉|一僵)/g,
+  /鼻尖(发酸|一酸)/g,
+  /眼眶(发红|一热)/g,
+  /太阳穴(突突|跳动)/g,
+  /喉结(滚动|上下?动)/g,
+];
 
 let failed = false;
 const allFindings = [];
@@ -327,6 +350,8 @@ for (const file of options.files) {
   const findings = scanDocument(input).map((finding) => ({ file, ...finding }));
   // I2 phrase-quota：需要文件路径定位项目黑名单与相邻章，故在主循环接线而非 scanProsePatterns。
   findings.push(...findPhraseQuota(fullPath, input).map((finding) => ({ file, ...finding })));
+  // Z7 跨章体感重复（docs/10 §一 Z7）：扫全卷需兄弟章文本，故在主循环接线。
+  findings.push(...findSensoryRepeatTic(fullPath, input).map((finding) => ({ file, ...finding })));
   allFindings.push(...findings);
 }
 
@@ -1677,6 +1702,141 @@ function findPhraseQuota(fullPath, input) {
       if (prevCount >= 1) {
         push(`短语「${entry.phrase}」与前一章连用（前章 ${prevCount} 次、本章 ${here.count} 次）——相邻章禁用档（B7 相邻章不共用同一身体锚点的事故形态）`);
       }
+    }
+  }
+  return findings;
+}
+
+// ---------- Z7 跨章体感重复（docs/10-认知落差与感知层建设计划.md §一 Z7）----------
+
+// 防空心检查（18 个防缺陷脚本之后第一个）：检测的不是写得错，是写得不像同一个人。
+// 同一情绪落点的谓语动作跨章重复 → advisory（「咽口水」×2、「手心出汗」×2）。
+// 白名单：追踪/复沓锚句.md 登记的世界内实体（算盘/空位/残珠类签名资产显式受保护）。
+// 实证倒逼（§〇.5 ch36/61）：指腹搭算盘边 / 指尖拨空位 = 签名物件复沓仪式，非体感复读。
+// 判据区分：报警对象 = 谓语动作重复（咽口水/手心出汗 ×2）；白名单 = 复沓锚句登记的世界内实体。
+
+// 从受检文件向上（≤4 层）定位 追踪/复沓锚句.md（与 locatePhraseBlacklist 同构）。
+function locateAnchorRegistry(file) {
+  let cur = path.dirname(path.resolve(file));
+  for (let depth = 0; depth < 4; depth += 1) {
+    const candidate = path.join(cur, '追踪', '复沓锚句.md');
+    if (fs.existsSync(candidate)) return candidate;
+    const parent = path.dirname(cur);
+    if (parent === cur) break;
+    cur = parent;
+  }
+  return null;
+}
+
+// 解析表格 | 实体 |：跳过表头、占位行（{{...}}）与 HTML 注释块（模板示例区）。
+function loadAnchorRegistry(file) {
+  const registryPath = locateAnchorRegistry(file);
+  if (!registryPath) return null;
+  if (anchorRegistryCache.has(registryPath)) return anchorRegistryCache.get(registryPath);
+  const entities = [];
+  let inComment = false;
+  let text = '';
+  try {
+    text = fs.readFileSync(registryPath, 'utf8');
+  } catch (error) {
+    return null;
+  }
+  for (const raw of text.split(/\r?\n/)) {
+    const line = raw.trim();
+    if (inComment) {
+      if (line.includes('-->')) inComment = false;
+      continue;
+    }
+    if (line.includes('<!--')) {
+      if (!line.includes('-->')) inComment = true;
+      continue;
+    }
+    if (!line.startsWith('|')) continue;
+    const cells = line.split('|').map((c) => c.trim());
+    if (cells.length < 2) continue;
+    const entity = cells[1];
+    if (!entity || entity === '实体' || entity.includes('{{')) continue;
+    entities.push(entity);
+  }
+  const result = { path: registryPath, entities };
+  anchorRegistryCache.set(registryPath, result);
+  return result;
+}
+
+// 目录级全量兄弟章文本缓存（扫全卷用，避免 O(N²) 重读——首章受检时全读并缓存，
+// 后续兄弟章复用同一目录缓存）。
+function loadSiblingTexts(fullPath, chapterNum) {
+  const dir = path.resolve(path.dirname(fullPath));
+  if (siblingTextCache.has(dir)) return siblingTextCache.get(dir);
+  const siblings = listSiblingChapters(fullPath);
+  const texts = new Map();
+  for (const [num, name] of siblings) {
+    if (num === chapterNum) continue;
+    try {
+      texts.set(num, fs.readFileSync(path.join(dir, name), 'utf8'));
+    } catch (error) { /* 兄弟章不可读则跳过 */ }
+  }
+  siblingTextCache.set(dir, texts);
+  return texts;
+}
+
+// 提取匹配所在句子（前后推到句末标点），用于白名单实体命中判断。
+function sentenceAroundOffset(text, offset) {
+  let start = 0;
+  for (let i = offset - 1; i >= 0; i -= 1) {
+    if (/[。！？!?\n]/.test(text[i])) { start = i + 1; break; }
+  }
+  let end = text.length;
+  for (let i = offset; i < text.length; i += 1) {
+    if (/[。！？!?\n]/.test(text[i])) { end = i; break; }
+  }
+  return text.slice(start, end);
+}
+
+// Z7 主检测：每个身体动作 tic 模式本章命中且任一兄弟章亦命中 → advisory。
+// 白名单：命中句含 追踪/复沓锚句.md 登记的实体 → 跳过（签名资产保护）。
+// 无登记文件静默（无白名单，仅 tic 跨章重复检测仍跑）。
+// 单模式本章只报首个跨章命中（单章密度归 cliche-density 管，不在此复读）。
+function findSensoryRepeatTic(fullPath, input) {
+  const findings = [];
+  const chapterNum = parseChapterNumber(path.basename(fullPath));
+  if (chapterNum == null) return findings; // 无法解析章号 → 无兄弟章可比，跳过
+  const siblingTexts = loadSiblingTexts(fullPath, chapterNum);
+  if (siblingTexts.size === 0) return findings; // 无兄弟章（开篇章）→ 跳过
+  const registry = loadAnchorRegistry(fullPath);
+  const whitelist = registry ? registry.entities : [];
+  const siblingValues = Array.from(siblingTexts.values());
+
+  for (const pattern of SENSORY_REPEAT_PATTERNS) {
+    const localRe = new RegExp(pattern.source, 'g');
+    let m;
+    while ((m = localRe.exec(input)) !== null) {
+      const hitPhrase = m[0];
+      const hitOffset = m.index;
+      // 白名单：命中句含登记实体 → 跳过（签名资产复沓仪式，非体感复读）
+      if (whitelist.length > 0) {
+        const sentence = sentenceAroundOffset(input, hitOffset);
+        if (whitelist.some((e) => sentence.includes(e))) continue;
+      }
+      // 跨章撞：任一兄弟章亦命中该模式
+      const crossChapter = siblingValues.some((t) => {
+        const r = new RegExp(pattern.source, 'g');
+        return r.test(t);
+      });
+      if (!crossChapter) continue;
+      const before = input.slice(0, hitOffset);
+      const firstLine = (before.match(/\n/g) || []).length + 1;
+      const lastNewline = before.lastIndexOf('\n');
+      const firstColumn = hitOffset - lastNewline;
+      findings.push({
+        line: firstLine,
+        column: firstColumn,
+        type: 'sensory-repeat',
+        severity: 'advisory',
+        message: `身体动作 tic「${hitPhrase}」跨章重复（扫全卷 ≥2 章命中）——同一情绪落点的谓语动作复读是空心不是错。改写为差异化体感，或确认有意复沓则登记于 追踪/复沓锚句.md`,
+        excerpt: hitPhrase,
+      });
+      break; // 同一模式本章只报首个跨章命中（单章密度归 cliche-density 管）
     }
   }
   return findings;

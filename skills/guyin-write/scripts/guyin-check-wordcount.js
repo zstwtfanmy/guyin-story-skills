@@ -163,6 +163,8 @@ function locateOutline(file, num) {
 // 每文件解析 blocking 下限：--min 显式指定优先；否则细纲「字数目标」双口径（区间 X-Y
 // 取下限 X 不打折；单值 T 取 T×90%——J1，docs/07 §二：区间正则含全角横线变体，须先于
 // 单值正则试配否则「3000-3300」被截为 3000）；再否则缺省 3000。
+// X3（docs/10 §一）：情绪落点行标「跨章兑现」的章，已解析下限再降 10%——跨章 beat
+// 容器承接上章弧线，字数门槛特殊放宽（本计划唯一动检查逻辑处）。
 function resolveMin(file) {
   if (options.min !== null) return { min: options.min, origin: '--min 显式指定' };
   const num = chapterNumberOf(path.basename(file));
@@ -170,20 +172,31 @@ function resolveMin(file) {
     const outline = locateOutline(file, num);
     if (outline) {
       const text = fs.readFileSync(outline, 'utf8');
+      // X3：跨章兑现检测——情绪落点行含「跨章兑现」时，下限降 10%
+      const crossChapter = text.split(/\r?\n/).some((line) =>
+        line.includes('情绪落点') && line.includes('跨章兑现'));
+      let result = null;
       for (const line of text.split(/\r?\n/)) {
         if (line.includes('字数目标')) {
           const range = /(\d+)\s*[-—－~～至]\s*(\d+)/.exec(line);
           if (range) {
             const low = Number(range[1]);
-            return { min: low, origin: `细纲区间下限 ${low}（目标 ${range[1]}-${range[2]}，区间不再打折 J1）` };
+            result = { min: low, origin: `细纲区间下限 ${low}（目标 ${range[1]}-${range[2]}，区间不再打折 J1）` };
+            break;
           }
           const m = /(\d+)/.exec(line);
           if (m) {
             const target = Number(m[1]);
-            return { min: Math.round(target * OUTLINE_TARGET_RATIO), origin: `细纲目标 ${target} × 90%` };
+            result = { min: Math.round(target * OUTLINE_TARGET_RATIO), origin: `细纲目标 ${target} × 90%` };
+            break;
           }
         }
       }
+      if (result && crossChapter) {
+        const reduced = Math.round(result.min * 0.9);
+        return { min: reduced, origin: `${result.origin} × 90%（跨章兑现 X3）` };
+      }
+      if (result) return result;
     }
   }
   return { min: DEFAULT_MIN, origin: `缺省 ${DEFAULT_MIN}（细纲缺失或无字数目标）` };
