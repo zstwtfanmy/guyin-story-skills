@@ -166,6 +166,8 @@ function proseBody(text) {
 
 // 首现位置是否在引号对白内：双引号与直角引号两组独立布尔（中文正文引号不嵌套，
 // 布尔翻转比深度计数抗错位）。引号不配对只影响局部判定——advisory 宁报不拦。
+// SP2（docs/11 §一）：直引号 " 同形开闭，走 dq 翻转——Y1 拍板新章统一直引号后，
+// 术语首现落在 "..." 内须判对白（迁移前误报 outline-term-unanchored）。
 function inQuoteAt(text, pos) {
   let dq = false;
   let corner = false;
@@ -175,6 +177,7 @@ function inQuoteAt(text, pos) {
     else if (ch === '”') dq = false;
     else if (ch === '「') corner = true;
     else if (ch === '」') corner = false;
+    else if (ch === '"') dq = !dq; // 直引号开闭同形，翻转计数
   }
   return dq || corner;
 }

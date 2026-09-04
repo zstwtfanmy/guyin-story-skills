@@ -1304,8 +1304,8 @@ console.log('== guyin-check-repetition N1 复读雷达 ==');
     `第一章\n\n账房的灯下，他把那枚缺角的讫印按在纸上，印泥未干。周砚说燕衡的算盘打得比账房还精，他不接话——燕衡的算盘从来只算别人。他又拿起缺角的讫印补了一记，对着光看了很久，把票据折好收进袖袋，吹灯出门去了。\n`);
   let r = run('guyin-check-repetition.js', ['--json', '--project', proj, '--commit', ch1]);
   let report = parseJson(r.stdout);
-  check('N1 ch1 ×2 未达窗口阈值静默（2<3 且末次不在章尾 20%）', r.status === 0 && report
-    && !report.findings.some((f) => f.type.startsWith('phrase-echo-')),
+  check('N1 ch1 ×2 同章复读报 phrase-echo-inline（SP1 docs/11 §一：ECHO_INLINE_RUN=2，旧 ×2 静默口径已废止）', r.status === 1 && report
+    && report.findings.some((f) => f.type === 'phrase-echo-inline' && f.excerpt === '缺角的讫印'),
     `status=${r.status} findings=${JSON.stringify(report && report.findings.map((f) => f.type))}`);
 
   const ch6 = fixture('echo1/正文/第006章.md',
@@ -1403,7 +1403,7 @@ console.log('== guyin-check-repetition U3 同族去重 ==');
   let report = parseJson(r.stdout);
   const lib = JSON.parse(fs.readFileSync(path.join(proj, '追踪', '段落指纹库.json'), 'utf8'));
   const family = (lib.phrases || []).filter((p) => p.phrase.includes('算盘') || p.phrase.includes('碗底'));
-  check('U3 同族只存最长形（8字 tic 的 4-7 字子串不另立行）', r.status === 0 && report
+  check('U3 同族只存最长形（8字 tic 的 4-7 字子串不另立行，SP1 同章复读不影响去重逻辑）', report
     && family.length === 1 && family[0].phrase === tic && family[0].total === 2 && family[0].last === 1,
     `status=${r.status} family=${JSON.stringify(family)}`);
   const kept = (lib.phrases || []).find((p) => p.phrase === tic2);
@@ -2475,6 +2475,263 @@ console.log('== merge-claude-settings.js（hooks 节确定性合并） ==');
   r = runMerge(t2);
   check('重复执行幂等', r.status === 0 && fs.readFileSync(t2, 'utf8') === before,
     `status=${r.status}`);
+}
+
+// ============================================================
+console.log('== SP2 直引号字符集迁移（docs/11 §一 SP2，三文件六处） ==');
+{
+  // SP2-deliver（outline-deliver inQuoteAt）：术语锚点「勘合」正文首现落在直引号对白内 →
+  // outline-term-unanchored 零报（迁移前必报——只认「」/""，直引号判非对白）。
+  const proj = path.join(TMP, 'sp2-deliver');
+  fixture('sp2-deliver/大纲/细纲_第001章.md', [
+    '# 细纲 第001章',
+    '',
+    '- 术语锚点：勘合（小窦问、燕衡答）',
+    '- 章尾钩子：实体：票据',
+  ].join('\n'));
+  const ch = fixture('sp2-deliver/正文/第001章.md',
+    '第一章\n\n燕衡把票据摊在案上，指节压住边角，等对面那人开口。\n'
+      + '"跟铺子里骑缝的存根一个理，这就是勘合的法子。"对面那人终于答了。\n');
+  let r = run('guyin-check-outline-deliver.js', ['--json', ch]);
+  let rep = parseJson(r.stdout);
+  check('SP2-deliver 直引号对白内术语首现判对白（outline-term-unanchored 零报）',
+    r.status === 0 && rep
+      && !rep.findings.some((f) => f.type === 'outline-term-unanchored' && (f.excerpt || '').includes('勘合')),
+    `status=${r.status} findings=${JSON.stringify(rep && rep.findings.map((f) => `${f.type}:${f.excerpt}`))}`);
+
+  // SP2-narrative（repetition isNarrative）：直引号对白占段落 60% 字符 → isNarrative 判 false
+  // → 对白段不进叙述扫描，对白内「袖里的账」不产 tic 候选（迁移前对白算叙述，会被当 tic 报）。
+  // 实测口径：构造长段，对白占比 >50%，跑 repetition --commit 不报任何复读（无叙述候选）。
+  fixture('sp2-narrative/追踪/_tracking-state.json', JSON.stringify({
+    schema_version: 7, characters: { 燕衡: { identity: '主角' } },
+  }));
+  const chNarr = fixture('sp2-narrative/正文/第001章.md',
+    '第一章\n\n'
+      + '"他说的全记在袖里的账上，半个字也不差，你只管去查。"对面那人答得干脆，把袖里的账又数了一遍才歇。\n');
+  r = run('guyin-check-repetition.js', ['--json', '--project', path.join(TMP, 'sp2-narrative'),
+    '--commit', chNarr]);
+  rep = parseJson(r.stdout);
+  check('SP2-narrative 直引号对白段不进叙述扫描（isNarrative 判 false）',
+    rep && !rep.findings.some((f) => f.type.startsWith('phrase-echo-') && (f.excerpt || '').includes('袖里的账')),
+    `status=${r.status} findings=${JSON.stringify(rep && rep.findings.map((f) => `${f.type}:${f.excerpt}`))}`);
+
+  // SP2-split（repetition ECHO_SPLIT）：两直引号对白相邻 → n-gram 不产出跨边界短语。
+  // 「"钱给你"。"货给我。"」按 ECHO_SPLIT 切段后「钱给你」「货给我」分属两段，
+  // 不应产出「给你货给」类跨引号串（迁移前会成词，作为 4-gram 候选入库）。
+  fixture('sp2-split/追踪/_tracking-state.json', JSON.stringify({
+    schema_version: 7, characters: { 燕衡: { identity: '主角' } },
+  }));
+  const chSplit = fixture('sp2-split/正文/第001章.md',
+    '第一章\n\n"钱给你"。"货给我。"\n'
+      + '又添了几笔说明才收住，把账页重新码齐推到案沿下头，等对面那人先开口再说，他才肯把底牌亮出来。\n');
+  r = run('guyin-check-repetition.js', ['--json', '--project', path.join(TMP, 'sp2-split'),
+    '--commit', chSplit]);
+  rep = parseJson(r.stdout);
+  const lib = JSON.parse(fs.readFileSync(path.join(TMP, 'sp2-split', '追踪', '段落指纹库.json'), 'utf8'));
+  check('SP2-split 直引号相邻对白不跨边界成词（无「给你货给」类串入库）',
+    rep && !lib.phrases.some((p) => p.phrase.includes('给你货给') || p.phrase.includes('你货')),
+    `status=${r.status} phrases=${JSON.stringify((lib.phrases || []).map((p) => p.phrase))}`);
+
+  // SP2-beat（beat PSYCH_VERBS 负向断言 + stripQuoted）：叙述行「他心想这买卖做得」+ 对白
+  // `"我觉得还行"` → 心理计数只算叙述层 +1（「心想」），对白内「觉得」不计（stripQuoted 剥除后归零）。
+  const chBeat = fixture('sp2-beat/第001章_beat.md',
+    '他心想这买卖做得，端起茶碗抿了一口。\n'
+      + '"我觉得还行，你别老不信。"对面那人摆手，又催了一遍。\n');
+  r = run('guyin-check-beat.js', ['--json', '--mono-limit=0', '--min=10', '--max=2000', chBeat]);
+  rep = parseJson(r.stdout);
+  const mono = rep && rep.findings.find((f) => f.type === 'mono-count');
+  check('SP2-beat 心理计数：叙述行 +1（心想），对白内「觉得」不计（stripQuoted 剥除）',
+    mono && mono.count === 1,
+    `status=${r.status} findings=${JSON.stringify(rep && rep.findings.map((f) => `${f.type}:${f.count}`))}`);
+}
+
+// ============================================================
+console.log('== SP1 同章短语复读门（docs/11 §一 SP1，repetition 第三分支+白名单） ==');
+{
+  // SP1-正例：单章同短语 ×2 中段（隔一拍） → phrase-echo-inline，报最长形。
+  // A1' 实证形态：ch62「踏平的灰地」L79/L83 同拍重复。
+  fixture('sp1/追踪/_tracking-state.json', JSON.stringify({
+    schema_version: 7, characters: { 燕衡: { identity: '主角' } },
+  }));
+  const filler = '院里起了风，吹得檐下的灯晃来晃去。他把账册翻了一遍又一遍，没找出新的字迹来。月光铺在阶上像层霜，他也没觉出冷来。';
+  const tail = '风从棚区那头刮过来，他把衣领拢了拢，在阶上又站了一会儿才回屋去。';
+  const chPos = fixture('sp1/正文/第001章.md',
+    `第一章\n\n他看着他踏平的灰地，没追问。${filler}他看着他踏平的灰地，没追问。${tail}\n`);
+  let r = run('guyin-check-repetition.js', ['--json', '--project', path.join(TMP, 'sp1'),
+    '--commit', chPos]);
+  let rep = parseJson(r.stdout);
+  check('SP1-正例 同章中段同拍重复 ×2 报 phrase-echo-inline',
+    r.status === 1 && rep
+      && rep.findings.some((f) => f.type === 'phrase-echo-inline'
+        && (f.excerpt || '').includes('踏平的灰地')),
+    `status=${r.status} findings=${JSON.stringify(rep && rep.findings.map((f) => `${f.type}:${f.excerpt}`))}`);
+
+  // SP1-章尾归 ending：同短语 ×2 但末次出现在文本 85% 位置之后 → 报 phrase-echo-ending，
+  // 不报 inline（else-if 链互斥验证）。
+  const endingPhrase = '更声敲过三遍';
+  const head = '他把账册摊开又合上，'.repeat(8);
+  const chEnd = fixture('sp1/正文/第002章.md',
+    `第二章\n\n${head}${endingPhrase}，周砚还没歇，笔尖在纸上沙沙地走。${'他又添了几笔说明，'.repeat(2)}${endingPhrase}。\n`);
+  r = run('guyin-check-repetition.js', ['--json', '--project', path.join(TMP, 'sp1'),
+    '--commit', chEnd]);
+  rep = parseJson(r.stdout);
+  check('SP1-章尾归 ending（同短语×2 末次落章尾 → 报 ending 不报 inline，互斥）',
+    rep && rep.findings.some((f) => f.type === 'phrase-echo-ending' && f.excerpt === endingPhrase)
+      && !rep.findings.some((f) => f.type === 'phrase-echo-inline' && f.excerpt === endingPhrase),
+    `status=${r.status} findings=${JSON.stringify(rep && rep.findings.map((f) => `${f.type}:${f.excerpt}`))}`);
+
+  // SP1-cross 优先：同短语本章 2 次 + 库内近 5 章 1 次（合计 3）→ 报 phrase-echo-cross，
+  // 不报 inline（够 cross 不报 inline，零双报）。
+  const crossPhrase = '旧讫印压在案上';
+  const ch3Filler = '院里起了风，吹得檐下的灯晃来晃去。他把账册翻了一遍又一遍，没找出新的字迹来。月光铺在阶上像层霜，他也没觉出冷来。';
+  const ch4Filler = '窗外的更鼓敲了一轮，他把茶碗搁下，没续那盏灯。纸上写的字已干透了，他折好塞进袖袋里。';
+  fixture('sp1/正文/第003章.md',
+    `第三章\n\n${crossPhrase}，他没动。${ch3Filler}${crossPhrase}，他终于开口。\n`);
+  // 先 commit ch3，再 commit ch4 同短语 ×1 → ch4 总数 = 1(本章)+2(库内 ch3)=3 ≥ 3 → 报 cross。
+  r = run('guyin-check-repetition.js', ['--json', '--project', path.join(TMP, 'sp1'),
+    '--commit', path.join(TMP, 'sp1', '正文', '第003章.md')]);
+  // SP2 fix：crossPhrase 必须落在 ≥40 字叙述段内（isNarrative 门槛），单行短句会被过滤致 count=0。
+  const ch4 = fixture('sp1/正文/第004章.md',
+    `第四章\n\n${crossPhrase}，他抬眼看了对面那人一眼。${ch4Filler}\n`);
+  r = run('guyin-check-repetition.js', ['--json', '--project', path.join(TMP, 'sp1'),
+    '--commit', ch4]);
+  rep = parseJson(r.stdout);
+  check('SP1-cross 优先（够 cross 不报 inline，零双报）',
+    rep && rep.findings.some((f) => f.type === 'phrase-echo-cross' && f.excerpt === crossPhrase)
+      && !rep.findings.some((f) => f.type === 'phrase-echo-inline' && f.excerpt === crossPhrase),
+    `status=${r.status} findings=${JSON.stringify(rep && rep.findings.map((f) => `${f.type}:${f.excerpt}`))}`);
+
+  // SP1-白名单：复沓锚句.md 登记「算盘」，正文「袖里那把算盘」×2 → 零报（白名单跳过）。
+  fixture('sp1-wl/追踪/_tracking-state.json', JSON.stringify({
+    schema_version: 7, characters: { 燕衡: { identity: '主角' } },
+  }));
+  fixture('sp1-wl/追踪/复沓锚句.md', [
+    '# 复沓锚句',
+    '',
+    '| 实体 |',
+    '| --- |',
+    '| 算盘 |',
+    '',
+  ].join('\n'));
+  const chWl = fixture('sp1-wl/正文/第001章.md',
+    `第一章\n\n袖里那把算盘被他攥得发烫，没拿出来。${filler}袖里那把算盘还是没拿出来，他终于开了口。\n`);
+  r = run('guyin-check-repetition.js', ['--json', '--project', path.join(TMP, 'sp1-wl'),
+    '--commit', chWl]);
+  rep = parseJson(r.stdout);
+  check('SP1-白名单 复沓锚句.md 登记「算盘」豁免（同短语×2 零报）',
+    rep && !rep.findings.some((f) => (f.excerpt || '').includes('算盘')),
+    `status=${r.status} findings=${JSON.stringify(rep && rep.findings.map((f) => `${f.type}:${f.excerpt}`))}`);
+}
+
+// ============================================================
+console.log('== SP3 口吃标点模式（docs/11 §一 SP3，ai-patterns 新函数） ==');
+{
+  // SP3-正例：直引号对白内「这：这」 → 报 stutter-punct，excerpt=「这：这」。
+  const chPos = fixture('sp3/正文/第001章.md',
+    '第一章\n\n"客官，这：这是正经路数来的。"对面那人赔着笑，又把茶碗推过去。\n');
+  let r = run('guyin-check-ai-patterns.js', ['--json', chPos]);
+  let rep = parseJson(r.stdout);
+  check('SP3-正例 同字夹冒号报 stutter-punct',
+    r.status === 1 && rep
+      && rep.findings.some((f) => f.type === 'stutter-punct' && f.severity === 'advisory'
+        && (f.excerpt || '') === '这：这'),
+    `status=${r.status} findings=${JSON.stringify(rep && rep.findings.map((f) => `${f.type}:${f.excerpt}`))}`);
+
+  // SP3-反例：冒号后接「这」但前字非同字（「念头：这事没完」前字是「头」） → 零报。
+  const chNeg = fixture('sp3/正文/第002章.md',
+    '第二章\n\n他心里只有一个念头：这事没完，得接着查下去。\n');
+  r = run('guyin-check-ai-patterns.js', ['--json', chNeg]);
+  rep = parseJson(r.stdout);
+  check('SP3-反例 冒号后接「这」但前字非同字（零报）',
+    rep && !rep.findings.some((f) => f.type === 'stutter-punct'),
+    `status=${r.status} findings=${JSON.stringify(rep && rep.findings.map((f) => `${f.type}:${f.excerpt}`))}`);
+}
+
+// ============================================================
+console.log('== PV2 视角纪律（docs/11 §二 PV2，ai-patterns 状态机扫描） ==');
+{
+  // PV2-显式：公约 POV=燕衡；叙述「书办心里叫苦」「书办暗自盘算」两处显式人名 →
+  // 报 pov-drift N=2，句位两处（subject=书办）。
+  fixture('pv2-exp/大纲/批次公约.md', [
+    '# 批次公约（第 1-3 章）',
+    '',
+    '- 批次区间：第 1-3 章',
+    '- 引号规格：对白 " "，嵌套 \' \'',
+    '- 视角规格：POV=燕衡（第三有限）；对手/配角内心禁直写',
+    '',
+  ].join('\n'));
+  fixture('pv2-exp/追踪/_tracking-state.json', JSON.stringify({
+    schema_version: 7, characters: { 燕衡: { identity: '主角' }, 书办: { identity: '对手' } },
+  }));
+  const chExp = fixture('pv2-exp/正文/第001章.md',
+    '第一章\n\n燕衡把票据摊在案上，没说话。书办心里叫苦，脸上却堆着笑，把茶碗又推过去。'
+      + '燕衡抬眼看了他一眼，还是没接话。书办暗自盘算，今天怕是过不去这关了。\n');
+  let r = run('guyin-check-ai-patterns.js', ['--json', chExp]);
+  let rep = parseJson(r.stdout);
+  const pv = rep && rep.findings.find((f) => f.type === 'pov-drift');
+  check('PV2-显式 公约 POV=燕衡；书办内心×2 报 pov-drift N=2',
+    r.status === 1 && pv && pv.severity === 'advisory' && (pv.message || '').includes('2 处')
+      && (pv.message || '').includes('POV=燕衡') && (pv.message || '').includes('书办'),
+    `status=${r.status} findings=${JSON.stringify(rep && rep.findings.map((f) => `${f.type}:${f.message.slice(0, 50)}`))}`);
+
+  // PV2-回指：「书办搓了搓手。他忽然拿不准眼前这位，到底是哪路人。……他备好了一肚子的话」
+  // → 一跳回指书办 + 心理动词两处（拿不准、备好了）→ N=2 命中。
+  fixture('pv2-pro/大纲/批次公约.md', [
+    '# 批次公约',
+    '',
+    '- 视角规格：POV=燕衡（第三有限）',
+    '',
+  ].join('\n'));
+  fixture('pv2-pro/追踪/_tracking-state.json', JSON.stringify({
+    schema_version: 7, characters: { 燕衡: { identity: '主角' }, 书办: { identity: '对手' } },
+  }));
+  const chPro = fixture('pv2-pro/正文/第001章.md',
+    '第一章\n\n书办搓了搓手，把茶碗往那头推了推。'
+      + '他忽然拿不准眼前这位，到底是哪路人，话到嘴边又咽了回去。'
+      + '他备好了一肚子的话，这下连一个字都说不出来。\n');
+  r = run('guyin-check-ai-patterns.js', ['--json', chPro]);
+  rep = parseJson(r.stdout);
+  const pvPro = rep && rep.findings.find((f) => f.type === 'pov-drift');
+  check('PV2-回指 一跳代词回指 + 心理动词×2 报 pov-drift（subject=书办）',
+    pvPro && (pvPro.message || '').includes('2 处') && (pvPro.message || '').includes('书办'),
+    `status=${r.status} findings=${JSON.stringify(rep && rep.findings.map((f) => `${f.type}:${(f.message || '').slice(0, 50)}`))}`);
+
+  // PV2-单处静默：仅「书办心里叫苦」一处 → 零报（1 处静默）。
+  fixture('pv2-solo/大纲/批次公约.md', [
+    '# 批次公约',
+    '',
+    '- 视角规格：POV=燕衡（第三有限）',
+    '',
+  ].join('\n'));
+  fixture('pv2-solo/追踪/_tracking-state.json', JSON.stringify({
+    schema_version: 7, characters: { 燕衡: { identity: '主角' }, 书办: { identity: '对手' } },
+  }));
+  const chSolo = fixture('pv2-solo/正文/第001章.md',
+    '第一章\n\n燕衡把票据摊在案上。书办心里叫苦，脸上却堆着笑，把茶碗推过去。\n');
+  r = run('guyin-check-ai-patterns.js', ['--json', chSolo]);
+  rep = parseJson(r.stdout);
+  check('PV2-单处静默（书办心理×1 不报，给喜剧拍留空间）',
+    rep && !rep.findings.some((f) => f.type === 'pov-drift'),
+    `status=${r.status} findings=${JSON.stringify(rep && rep.findings.map((f) => `${f.type}:${f.excerpt}`))}`);
+
+  // PV2-静默态：公约无视角规格行（POV=全知）→ fail-open 零报。
+  fixture('pv2-open/大纲/批次公约.md', [
+    '# 批次公约',
+    '',
+    '- 批次区间：第 1-3 章',
+    '- 引号规格：对白 " "',
+    '',
+  ].join('\n'));
+  fixture('pv2-open/追踪/_tracking-state.json', JSON.stringify({
+    schema_version: 7, characters: { 燕衡: { identity: '主角' }, 书办: { identity: '对手' } },
+  }));
+  const chOpen = fixture('pv2-open/正文/第001章.md',
+    '第一章\n\n燕衡把票据摊在案上。书办心里叫苦，脸上却堆着笑。书办暗自盘算怎么应付。\n');
+  r = run('guyin-check-ai-patterns.js', ['--json', chOpen]);
+  rep = parseJson(r.stdout);
+  check('PV2-静默态 无视角规格行 fail-open（不扫，零报）',
+    rep && !rep.findings.some((f) => f.type === 'pov-drift'),
+    `status=${r.status} findings=${JSON.stringify(rep && rep.findings.map((f) => `${f.type}`))}`);
 }
 
 // ============================================================
