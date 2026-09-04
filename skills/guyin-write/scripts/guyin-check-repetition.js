@@ -47,8 +47,12 @@ bigram 集合的 Jaccard 相似度（实测换 4 词复读 ≈0.83，随机不�
   phrase-echo-cross    跨章窗口（本章＋近 5 章）同 4-8 字短语 ≥3 次——疑似新 tic，
                        仲裁：进黑名单限额（I2 通道）或豁免台账
   phrase-echo-ending   同章 ≥2 次且末次落章尾 20% 区域——E6 章尾同图重复形态
+  phrase-echo-inline   同章中段同 4-8 字短语 ≥2 次（SP1，docs/11 §一）——A1' 同拍重复
+                       形态：够不到 cross（需 ≥3）/ending（末次落章尾）的剩余出口。
+                       疑似 beat 拼接伤或新 tic，处置同 cross（黑名单或豁免台账），
+                       或登记 追踪/复沓锚句.md（签名资产）豁免
 
-两条均 advisory 宁报不拦（拦截权归五测试）。黑名单降级为仲裁通道：雷达自动发现 →
+三条均 advisory 宁报不拦（拦截权归五测试）。黑名单降级为仲裁通道：雷达自动发现 →
 台账自动沉淀（N2）→ 作者仲裁 → 黑名单精确限额 → 写前注入（N3）→ 章检复扫。
 防噪三规格（v1.1）：① 不跨标点边界——按标点切段后段内成词，否则「的时候他」类
 虚词搭配是汉语常态，虚词占比过滤救不了；② 子串归并——同一 tic 多长度命中只报最长形；
@@ -69,6 +73,7 @@ const ECHO_N_MIN = 4;        // n-gram 滑窗下限（字）
 const ECHO_N_MAX = 8;        // n-gram 滑窗上限
 const ECHO_CROSS_RUN = 3;    // 跨章窗口内同短语 ≥3 次 → phrase-echo-cross
 const ECHO_ENDING_RUN = 2;   // 同章 ≥2 次且末次落章尾 20% → phrase-echo-ending
+const ECHO_INLINE_RUN = 2;   // SP1（docs/11 §一）：同章复读门（A1' 同拍重复形态——够不到 cross/ending 的剩余形态出口）
 const ECHO_WINDOW = 5;       // 跨章检测窗口（章）
 const ECHO_STORE_SPAN = 10;  // phrases 整条修剪线（最近章 < 当前−10 删，v1.1 存储规格）
 const ECHO_TOP = 10;         // 报告截断 top10（防噪规格③），其余只进计数
@@ -76,7 +81,9 @@ const ECHO_TAIL_RATIO = 0.8; // 章尾 20% 区域起点（章叙述文本的 80%
 // 虚词表（docs/07 §一）：占比 >50% 的组合不报——「的时候他」类高频搭配是汉语常态。
 const ECHO_STOPWORDS = ['的', '了', '着', '是', '在', '和', '就', '被'];
 // 标点切段集：n-gram 不跨标点边界（防噪规格①），段内成词。
-const ECHO_SPLIT = /[，。！？；：、「」『』“”‘’…—·（）()《》<>\n]/;
+// SP2（docs/11 §一）：字符类加 "——直引号对白也不跨边界成词（n-gram 不产出
+// 「的钱你」类跨引号拼接串）。Y1 拍板新章统一直引号后的检测器适配。
+const ECHO_SPLIT = /[，。！？；：、「」『』“”‘’…—·（）()《》<>"\n]/;
 
 // 比喻标记词：多字优先，单字「如」需排除复合词（如果/如何/如今/如此/例如/不如/犹如/宛如/譬如）。
 const METAPHOR_WORDS = ['仿佛', '宛如', '恍若', '如同', '好似', '犹如', '好像', '恰似', '像', '似', '如'];
@@ -243,6 +250,7 @@ function isNarrative(para) {
   let inQuote = false;
   let quoted = 0;
   for (const ch of para) {
+    if (ch === '"') { inQuote = !inQuote; continue; } // SP2：直引号对白开闭同形翻转，对白内字符不计入 quoted——台词口头禅不再被当 tic
     if (ch === '“' || ch === '「') inQuote = true;
     else if (ch === '”' || ch === '」') inQuote = false;
     else if (inQuote) quoted += 1;
@@ -276,6 +284,43 @@ function loadEntityNames() {
   } catch (error) {
     return [];
   }
+}
+
+// SP1 白名单（docs/11 §一）：追踪/复沓锚句.md 登记的签名实体——有意复沓的仪式资产
+// （算盘/空位/残珠类）非复读。候选短语含任一登记实体 → 跳过（与 ai-patterns Z7
+// loadAnchorRegistry 同源同语义，无文件/空表 → 返回 []，fail-open）。
+// 解析同型：剥表格语法、滤 <br/> 残渣与 {{}} 占位符、跳过表头与 HTML 注释块。
+function loadAnchorWhitelist() {
+  if (!libraryPath) return [];
+  const anchorPath = path.join(path.dirname(libraryPath), '复沓锚句.md');
+  let text;
+  try {
+    text = fs.readFileSync(anchorPath, 'utf8');
+  } catch (error) {
+    return [];
+  }
+  const entities = [];
+  let inComment = false;
+  for (const raw of text.split(/\r?\n/)) {
+    const line = raw.trim();
+    if (inComment) {
+      if (line.includes('-->')) inComment = false;
+      continue;
+    }
+    if (line.includes('<!--')) {
+      if (!line.includes('-->')) inComment = true;
+      continue;
+    }
+    if (!line.startsWith('|')) continue;
+    const cells = line.split('|').map((c) => c.trim());
+    if (cells.length < 2) continue;
+    let entity = cells[1];
+    if (!entity || entity === '实体' || entity.includes('{{')) continue;
+    entity = entity.replace(/<br\s*\/?\/?>/gi, '').trim();
+    if (!entity) continue;
+    entities.push(entity);
+  }
+  return entities;
 }
 
 // 标记词位置（-1 = 非比喻句）；域分类优先取喻体侧（标记词后），喻体无命中再退回全句。
@@ -398,6 +443,7 @@ const inverted = buildInverted(library.entries);
 const characterNames = loadCharacterNames();
 const entityNames = loadEntityNames();
 const isEntityPhrase = buildEntityFilter(entityNames);
+const anchorWhitelist = loadAnchorWhitelist(); // SP1：复沓锚句白名单（与 ai-patterns Z7 同源）
 const phraseIndex = new Map(library.phrases.map((p) => [p.phrase, p])); // 短语 → 库条目（O(1) 窗口查询）
 const findings = [];
 const pending = [];        // --commit 待入库指纹
@@ -583,6 +629,8 @@ function scanChapterEcho(chapter, narrativeText, file) {
   const candidates = [];
   for (const [phrase, count] of counts) {
     if (echoNoisy(phrase) || isEntityPhrase(phrase)) continue;
+    // SP1 白名单（docs/11 §一）：复沓锚句.md 登记的签名实体豁免——有意复沓的仪式资产非复读。
+    if (anchorWhitelist.some((w) => phrase.includes(w))) continue;
     let winLib = 0;
     const libEntry = phraseIndex.get(phrase);
     if (libEntry) {
@@ -598,6 +646,10 @@ function scanChapterEcho(chapter, narrativeText, file) {
     } else if (count >= ECHO_ENDING_RUN
       && narrativeText.lastIndexOf(phrase) / narrativeText.length >= ECHO_TAIL_RATIO) {
       candidates.push({ phrase, count, winLib, total: count + winLib, type: 'phrase-echo-ending' });
+    } else if (count >= ECHO_INLINE_RUN) {
+      // SP1 第三分支（docs/11 §一）：同章中段同拍重复——够不到 cross（需 ≥3）与 ending
+      // （末次须落章尾 20%）的剩余同章 ≥2 形态出口。else-if 链天然互斥，零双报。
+      candidates.push({ phrase, count, winLib, total: count + winLib, type: 'phrase-echo-inline' });
     }
     // 批级聚合（--commit 合并用）：全部过滤后短语入聚合，入库门槛在合并时判（total ≥2）
     let agg = batchEchoAgg.get(phrase);
@@ -624,7 +676,9 @@ function scanChapterEcho(chapter, narrativeText, file) {
       severity: 'advisory',
       message: cand.type === 'phrase-echo-cross'
         ? `复读雷达：「${cand.phrase}」跨章窗口内出现 ${cand.total} 次（本章 ${cand.count} + 近 ${ECHO_WINDOW} 章 ${cand.winLib}）——疑似新 tic（E7 形态），仲裁：确认后进 追踪/短语黑名单.md 限额（I2 通道）或登记豁免台账；宁报不拦，一时口滑可忽略。`
-        : `章尾复读：「${cand.phrase}」本章 ${cand.count} 次且末次落章尾 20% 区域——E6 章尾同图重复形态：末段换图或删一处，别在张力点上原地打转。`,
+        : cand.type === 'phrase-echo-ending'
+        ? `章尾复读：「${cand.phrase}」本章 ${cand.count} 次且末次落章尾 20% 区域——E6 章尾同图重复形态：末段换图或删一处，别在张力点上原地打转。`
+        : `同章复读：「${cand.phrase}」本章出现 ${cand.count} 次（非章尾形态）——同拍重复疑似 beat 拼接伤或新 tic；处置：确认有意复沓→登记 追踪/复沓锚句.md（签名资产）或豁免台账；否则改写卡删一处/换形。`,
       excerpt: cand.phrase,
     });
   }

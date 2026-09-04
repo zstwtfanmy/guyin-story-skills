@@ -33,9 +33,11 @@ Detect high-risk AI-flavor prose patterns that need human rewrite:
   - 金句腔 (双短句对仗断言收拍「A是B的，C是D的。」, 实战漏网句式)
   - phrase quota (项目 追踪/短语黑名单.md 登记短语超限: 每章 ≤N / 近 5 章 ≤N / 相邻章禁用, advisory; 无该文件静默)
   - cross-chapter sensory-repeat (同一情绪落点的谓语动作跨章重复: 咽口水/手心出汗/咬唇等身体动作 tic 在 ≥2 章命中, advisory; 白名单 追踪/复沓锚句.md 登记的签名物件豁免; 无该文件静默)
+  - stutter-punct (SP3, docs/11 §一): 同字夹冒号「这:这」确定性错字——应为「这……这」; advisory, 扫全文(对白内外都扫), 出现即报非密度型
+  - pov-drift (PV2, docs/11 §二): 第三有限视角越界——对手/配角内心直写 ≥2 处(1 处静默), advisory; 显式人名 + 一跳代词回指 + 「他/她哪是/哪要的是」弱信号; 无批次公约 POV 行/POV=全知/多视角 → fail-open 静默
 
 Each finding carries severity: blocking by default for generation/deslop cleanup (not-is-comparison / em-dash / voice-contrast / negation-parade / reverse-not-is / trailer-ending / trailer-summary). This is a local style/readability gate, not an AIGC detector score; functional human text can be marked for review instead of hard-edited for a detector.
-或 advisory (period-stutter / long-paragraph / micro-action-tic / action-list-tic / abstract-summary-tic / cliche-density-tic / metaphor-density-tic / reasoning-chain-tic / system-notice-formality-tic / overcompressed-prose-tic / low-connective-density-tic / quote-emphasis-tic / formulaic-parallelism / explain-tic / mid-trailer / aphorism-tic / phrase-quota / sensory-repeat，是提示，justified 的长推理/氛围段可保留)。
+或 advisory (period-stutter / long-paragraph / micro-action-tic / action-list-tic / abstract-summary-tic / cliche-density-tic / metaphor-density-tic / reasoning-chain-tic / system-notice-formality-tic / overcompressed-prose-tic / low-connective-density-tic / quote-emphasis-tic / formulaic-parallelism / explain-tic / mid-trailer / aphorism-tic / phrase-quota / sensory-repeat / stutter-punct / pov-drift，是提示，justified 的长推理/氛围段可保留)。
 --fail-on=blocking 只在出现 blocking finding 时退出 1；默认 --fail-on=all 有任何 finding 即退出 1。
 
 The script reports findings only. It never rewrites text, because the safe fix is
@@ -313,6 +315,9 @@ const siblingChaptersCache = new Map();
 // Z7 跨章体感重复缓存：同上，主循环先于函数区执行，声明须置于循环前。
 const anchorRegistryCache = new Map();
 const siblingTextCache = new Map();
+// PV2 视角纪律缓存：批次公约 POV 规格行 + _tracking-state 角色名表，同上须置于循环前。
+const povPactCache = new Map();
+const povStateCache = new Map();
 // Z7 身体动作 tic 模式表（主循环经 findSensoryRepeatTic 引用，须置于循环前）。
 const SENSORY_REPEAT_PATTERNS = [
   /咽了?口水/g,
@@ -332,6 +337,11 @@ const SENSORY_REPEAT_PATTERNS = [
   /太阳穴(突突|跳动)/g,
   /喉结(滚动|上下?动)/g,
 ];
+// SP3 口吃标点正则（主循环经 findStutterPunct 引用，须置于循环前）。
+const STUTTER_RE = /([\u4e00-\u9fa5])[：:]\1/g;
+// PV2 心理动词词表 + 自由间接引语弱信号（主循环经 findPovDrift 引用，须置于循环前）。
+const POV_PSYCH_RE = /拿不准|纳闷|琢磨|寻思|暗想|思忖|盘算|心里(?:叫苦|发慌|打鼓|没底)|暗自|犯嘀咕|打定了?主意|备好了?|心道|暗忖|心想|觉得/g;
+const POV_FREE_INDIRECT_RE = /[他她][^。！？]{0,6}哪(?:是|要的是)/;
 
 let failed = false;
 const allFindings = [];
@@ -352,6 +362,10 @@ for (const file of options.files) {
   findings.push(...findPhraseQuota(fullPath, input).map((finding) => ({ file, ...finding })));
   // Z7 跨章体感重复（docs/10 §一 Z7）：扫全卷需兄弟章文本，故在主循环接线。
   findings.push(...findSensoryRepeatTic(fullPath, input).map((finding) => ({ file, ...finding })));
+  // SP3 口吃标点（docs/11 §一）：确定性错字，出现即报，故在主循环接线（与 Z7 同型一行）。
+  findings.push(...findStutterPunct(fullPath, input).map((finding) => ({ file, ...finding })));
+  // PV2 视角纪律（docs/11 §二）：读批次公约 POV 规格 + 扫叙述层心理动词命中，故在主循环接线。
+  findings.push(...findPovDrift(fullPath, input).map((finding) => ({ file, ...finding })));
   allFindings.push(...findings);
 }
 
@@ -1839,5 +1853,217 @@ function findSensoryRepeatTic(fullPath, input) {
       break; // 同一模式本章只报首个跨章命中（单章密度归 cliche-density 管）
     }
   }
+  return findings;
+}
+
+// ---------- SP3 口吃标点（docs/11 §一 SP3）----------
+
+// 确定性错字检测：同一汉字 + 冒号（全角/半角）+ 同字——「这：这」应为「这……这」。
+// 正常中文「X：X」近零出现（冒号后接同字的口吃是唯一高频形态）。扫描全文（对白内外
+// 都扫——B2' 实证在对白内：「客官，这：这是正经路数来的」）。出现即报，非密度型
+// （确定性错字不做阈值）。
+// STUTTER_RE 已置于主循环前（与 SENSORY_REPEAT_PATTERNS 同区，避免 TDZ）。
+
+function findStutterPunct(fullPath, input) { // eslint-disable-line no-unused-vars
+  const findings = [];
+  let m;
+  STUTTER_RE.lastIndex = 0;
+  while ((m = STUTTER_RE.exec(input)) !== null) {
+    const hitPhrase = m[0];
+    const hitOffset = m.index;
+    const before = input.slice(0, hitOffset);
+    const firstLine = (before.match(/\n/g) || []).length + 1;
+    const lastNewline = before.lastIndexOf('\n');
+    const firstColumn = hitOffset - lastNewline;
+    findings.push({
+      line: firstLine,
+      column: firstColumn,
+      type: 'stutter-punct',
+      severity: 'advisory',
+      message: `「${hitPhrase}」同字夹冒号——口吃/重复应作「${m[1]}……${m[1]}」；确定性错字，改写卡直接修。`,
+      excerpt: hitPhrase,
+    });
+  }
+  return findings;
+}
+
+// ---------- PV2 视角纪律（docs/11 §二 PV2）----------
+
+// 第三有限视角越界检测：B1' 实证形态是「代词回指的对手内心」（「他忽然拿不准眼前这位」
+// ——「他」指书办非 POV 燕衡）。两档判据：显式人名形态（机械稳）＋一跳代词回指
+// （启发式，advisory 容错）＋「他/她哪是/哪要的是」自由间接引语弱信号（B1' L37 形态）。
+// 心理动词词表与 beat.js PSYCH_VERBS 同源＋B1' 实证补收「拿不准/备好/打定主意」。
+// beat.js 词表的「知道/明白/清楚/疑惑」太泛不搬——叙述层正常使用率高，PV2 词表收窄到
+// 「内心活动标记」高置信形态。
+// POV_PSYCH_RE / POV_FREE_INDIRECT_RE 已置于主循环前（与 SENSORY_REPEAT_PATTERNS 同区，避免 TDZ）。
+
+// 从受检文件向上（≤4 层）定位 大纲/批次公约.md（与 locateAnchorRegistry 同构，路径不同）。
+function locateBatchPact(file) {
+  let cur = path.dirname(path.resolve(file));
+  for (let depth = 0; depth < 4; depth += 1) {
+    const candidate = path.join(cur, '大纲', '批次公约.md');
+    if (fs.existsSync(candidate)) return candidate;
+    const parent = path.dirname(cur);
+    if (parent === cur) break;
+    cur = parent;
+  }
+  return null;
+}
+
+// 从受检文件向上（≤4 层）定位 追踪/_tracking-state.json（同上）。
+function locateTrackingState(file) {
+  let cur = path.dirname(path.resolve(file));
+  for (let depth = 0; depth < 4; depth += 1) {
+    const candidate = path.join(cur, '追踪', '_tracking-state.json');
+    if (fs.existsSync(candidate)) return candidate;
+    const parent = path.dirname(cur);
+    if (parent === cur) break;
+    cur = parent;
+  }
+  return null;
+}
+
+// 读批次公约的 POV 规格：视角规格行 → POV={人名}。无该行／值「全知」／「多视角」
+// → 静默（多视角书不受此检，同 consistency 对 _tracking-state 的 fail-open 约定）。
+function loadPovFromPact(file) {
+  const pactPath = locateBatchPact(file);
+  if (!pactPath) return null;
+  if (povPactCache.has(pactPath)) return povPactCache.get(pactPath);
+  let text = '';
+  try {
+    text = fs.readFileSync(pactPath, 'utf8');
+  } catch (error) {
+    povPactCache.set(pactPath, null);
+    return null;
+  }
+  const m = /视角规格[：:]\s*POV=([^\s（(，；;]+)/.exec(text);
+  const result = (m && m[1] && m[1] !== '全知' && m[1] !== '多视角') ? m[1] : null;
+  povPactCache.set(pactPath, result);
+  return result;
+}
+
+// 读 _tracking-state.json 的 characters 全员名表（含 alias 别名）。fail-open：无
+// 该文件／characters 键缺失 → 返回空数组（PV2 静默——人名表是显式人名判据的供给源）。
+function loadCharacterNamesForPov(file) {
+  const statePath = locateTrackingState(file);
+  if (!statePath) return [];
+  if (povStateCache.has(statePath)) return povStateCache.get(statePath);
+  let names = [];
+  try {
+    const state = JSON.parse(fs.readFileSync(statePath, 'utf8'));
+    if (state && typeof state === 'object' && state.characters) {
+      for (const [key, val] of Object.entries(state.characters)) {
+        names.push(key);
+        if (val && typeof val === 'object' && Array.isArray(val.aliases)) {
+          names.push(...val.aliases);
+        } else if (val && typeof val === 'object' && Array.isArray(val.alias)) {
+          names.push(...val.alias);
+        }
+      }
+    }
+  } catch (error) { /* JSON 解析失败 → 空表，fail-open */ }
+  // 按长度降序排（避免「燕」误匹配「燕衡」前缀），保留稳定性
+  names = [...new Set(names)].filter((n) => n && n.length >= 2).sort((a, b) => b.length - a.length);
+  povStateCache.set(statePath, names);
+  return names;
+}
+
+// 句子切分（按 。！？\n 切，保留每句在原文的 offset）。切分用与 maskQuoted 不同的
+// 原文切分路径：PV2 扫的是 stripQuoted 后的叙述层，但每句 offset 须映射回原文
+// 用于 line/column 报告。stripQuoted 长度会缩短，故先在原文按句切分得到 offset，
+// 再对每句单独 stripQuoted 扫描——句内对白剥除后心理动词只数叙述层。
+function splitSentencesWithOffset(text) {
+  const out = [];
+  let start = 0;
+  for (let i = 0; i < text.length; i += 1) {
+    const ch = text[i];
+    if (ch === '。' || ch === '！' || ch === '？' || ch === '!' || ch === '?' || ch === '\n') {
+      out.push({ text: text.slice(start, i + 1), offset: start });
+      start = i + 1;
+    }
+  }
+  if (start < text.length) out.push({ text: text.slice(start), offset: start });
+  return out;
+}
+
+function findPovDrift(fullPath, input) {
+  const findings = [];
+  const pov = loadPovFromPact(fullPath);
+  if (!pov) return findings; // 三静默态：无 POV 行／值「全知」／「多视角」
+  const names = loadCharacterNamesForPov(fullPath);
+  if (names.length === 0) return findings; // 人名表缺失 → 显式人名判据无供给源，fail-open
+  // 兄弟章在 ai-patterns 里已有加载机制，但 PV2 只扫本章叙述层（无跨章比对需求）。
+  const sentences = splitSentencesWithOffset(input);
+  let prevSubject = null; // 上一叙述句的显式主语人名（一跳回指锚）
+  const drifts = []; // { line, column, head10 }
+  for (const { text: sentence, offset } of sentences) {
+    const stripped = stripQuoted(sentence); // 剥对白，只扫叙述层（依赖 SP2 直引号迁移已天然生效）
+    if (!stripped.trim()) continue;
+    // 句内显式人名（取最后一个为 prevSubject 锚——中文常省略主语，最近显式主语承担回指）
+    const sentenceNames = names.filter((n) => sentence.includes(n));
+    if (sentenceNames.length > 0) prevSubject = sentenceNames[sentenceNames.length - 1];
+    // 心理动词命中（带 g 标志需重置 lastIndex）
+    let m;
+    POV_PSYCH_RE.lastIndex = 0;
+    while ((m = POV_PSYCH_RE.exec(stripped)) !== null) {
+      const hitOffset = m.index;
+      // 判主语：句内含非 POV 显式人名 → 该人名；否则句首「他/她」+ prevSubject 非 null 且 ≠ POV → 一跳回指
+      const nonPovNames = sentenceNames.filter((n) => n !== pov);
+      let subject;
+      if (nonPovNames.length > 0) {
+        subject = nonPovNames[nonPovNames.length - 1];
+      } else if (stripped.length > 0 && /[他她]/.test(stripped[0]) && prevSubject !== null && prevSubject !== pov) {
+        subject = prevSubject; // 一跳回指：句首「他/她」指上一叙述句的显式主语
+      } else {
+        continue; // POV 人物合法心理活动 / 无法判定主语 → 宁漏不拦错
+      }
+      if (subject !== pov) {
+        const before = input.slice(0, offset + hitOffset);
+        const firstLine = (before.match(/\n/g) || []).length + 1;
+        const lastNewline = before.lastIndexOf('\n');
+        const firstColumn = hitOffset + (offset - lastNewline);
+        drifts.push({
+          line: firstLine,
+          column: firstColumn,
+          head10: stripped.slice(0, 10).replace(/\s/g, ''),
+          subject,
+        });
+        break; // 一句一报（防一句多动词重复报）
+      }
+    }
+    // 弱信号：自由间接引语「他/她...哪是/哪要的是」（B1' L37 形态）
+    const fiMatch = POV_FREE_INDIRECT_RE.exec(stripped);
+    if (fiMatch) {
+      const fiOffset = fiMatch.index;
+      const nonPovNames = sentenceNames.filter((n) => n !== pov);
+      let fiSubject = null;
+      if (nonPovNames.length > 0) fiSubject = nonPovNames[nonPovNames.length - 1];
+      else if (prevSubject !== null && prevSubject !== pov) fiSubject = prevSubject;
+      if (fiSubject !== null && fiSubject !== pov) {
+        const before = input.slice(0, offset + fiOffset);
+        const firstLine = (before.match(/\n/g) || []).length + 1;
+        const lastNewline = before.lastIndexOf('\n');
+        const firstColumn = fiOffset + (offset - lastNewline);
+        drifts.push({
+          line: firstLine,
+          column: firstColumn,
+          head10: stripped.slice(0, 10).replace(/\s/g, ''),
+          subject: fiSubject,
+          isFreeIndirect: true,
+        });
+      }
+    }
+  }
+  // 阈值：driftCount >= 2 → advisory（1 处静默——v7 判「书办心理是喜剧拍部分成立」，给合理技巧留空间）
+  if (drifts.length < 2) return findings;
+  const detail = drifts.slice(0, 4).map((d) => `[${d.subject}${d.isFreeIndirect ? '·FI' : ''} 行${d.line} 「${d.head10}」]`).join(' ');
+  findings.push({
+    line: drifts[0].line,
+    column: drifts[0].column,
+    type: 'pov-drift',
+    severity: 'advisory',
+    message: `对手/配角内心直写 ${drifts.length} 处（POV=${pov}）：${detail}——第三有限视角越界。处置：喜剧拍/合谋拍有意为之→豁免台账（五测试）；否则改外部可见动作（表情/小动作/语气）。机械判据覆盖显式人名与一跳回指形态；自由间接引语的深层形态归走查/review。`,
+    excerpt: drifts[0].head10,
+  });
   return findings;
 }
