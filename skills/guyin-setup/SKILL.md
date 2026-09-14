@@ -13,7 +13,7 @@ description: "隐笔项目脚手架部署。把长篇/短篇项目模板（三�
 
 以正在执行的本 `SKILL.md` 所在目录为锚，核对同级 `templates/`：
 
-1. `templates/long/`：`AGENTS.md`、`README.md`、`.claude/settings.json`、`.claude/hooks/guyin-hook.js`、`.claude/agents/guyin-beat-writer.md`、`.claude/agents/guyin-checker.md`、`.codex/agents/guyin-beat-writer.toml`、`.codex/agents/guyin-checker.toml`、`.opencode/agents/guyin-beat-writer.md`、`.opencode/agents/guyin-checker.md`、`.opencode/commands/guyin.md`、`作者性/` 七件、`大纲/README.md`、`大纲/魂谱对表.md`、`追踪/_tracking-state.json`
+1. `templates/long/`：`AGENTS.md`、`README.md`、`.claude/settings.json`、`.claude/hooks/guyin-hook.js`、`.claude/agents/guyin-beat-writer.md`、`.claude/agents/guyin-checker.md`、`.codex/agents/guyin-beat-writer.toml`、`.codex/agents/guyin-checker.toml`、`.opencode/agents/guyin-beat-writer.md`、`.opencode/agents/guyin-checker.md`、`.opencode/commands/guyin.md`、`作者性/` 九件（含可选骨架 语言纪律.md 与 纪律冲突台账.md，Fw-04）、`大纲/README.md`、`大纲/魂谱对表.md`、`大纲/执行层一页纸.md`（可选骨架，Fw-04）、`追踪/_tracking-state.json`
 2. `templates/short/大纲/`：情节节点 / 情绪曲线 / 反转表 三件
 
 任一缺失 → **立即停止，不写任何部署文件**，报告缺哪些（区分「缺文件」与「目录为空」），给修复指令：「guyin-setup 模板包不完整，缺 {文件}。按你的安装方式重装 guyin-story-skills（skills CLI 装的重跑 `npx skills add https://github.com/zstwtfanmy/guyin-story-skills -g`；手动复制的重新复制 skills/ 目录），再执行 /guyin-setup。」
@@ -43,15 +43,18 @@ description: "隐笔项目脚手架部署。把长篇/短篇项目模板（三�
 ## Phase 3：验证与报告
 
 1. 核对落位：Phase 0 清单在目标目录全部存在（create-if-absent 跳过项除外）；
-2. 报告输出：
+2. **执行层就绪自检（Fw-03）**：机械扫描三端 agent 文件的 model 配置——`.claude/agents/guyin-*.md` 与 `.opencode/agents/guyin-*.md` 看非注释行的 `model:`、`.codex/agents/guyin-*.toml` 看非注释 `model =`：
+   - 全部未配置（模板默认即如此：model 行已注释/不预置）→ 报告中必须明确写出：**「执行层当前等同 solo——guyin-write 写作时按『执行层调用协议』solo 三硬动作走（先组卡后填卡/笔法嚼碎进卡/逐章留痕）」**，不得让用户误以为编排/执行已分层；
+   - 已配置 → 逐端列出实际 model 值，提示新开会话生效；
+3. 报告输出：
    - 已部署 / 已跳过（用户内容）文件清单；
-   - **执行层低模型配置**（编排/执行分离的关键，部署件已就位，按所用端改 model 字段）：
+   - **执行层低模型配置**（编排/执行分离的关键；model 写法见下表，改完重跑本自检确认非注释行生效）：
 
    | 端 | 部署件 | model 写法 |
    |----|--------|-----------|
-   | OpenCode | `.opencode/agents/guyin-{beat-writer,checker}.md` | `model: deepseek/deepseek-chat`（provider/model-id） |
-   | Claude Code | `.claude/agents/guyin-{beat-writer,checker}.md` | `model: <低模型>` |
-   | Codex | `.codex/agents/guyin-{beat-writer,checker}.toml` | 视版本支持 `model =`；不支持则 solo 降级（AGENTS.md 已约定） |
+   | OpenCode | `.opencode/agents/guyin-{beat-writer,checker}.md` | `model: provider/model-id`（模板内注释样例，取消注释改值） |
+   | Claude Code | `.claude/agents/guyin-{beat-writer,checker}.md` | 加一行 `model: <低模型 ID>`（模板默认不预置） |
+   | Codex | `.codex/agents/guyin-{beat-writer,checker}.toml` | 视版本支持取消注释 `model =`；不支持/未配即 solo（toml 注释列了三种确认征候） |
 
    - Claude Code 端 hook 已随 settings.json 注册，**新开会话生效**；Codex custom agent 亦须新开会话；
    - 下一步：说「开书」进 guyin-write（停在细纲交付），或「写短篇」进 guyin-short-write（停在骨架交付）。

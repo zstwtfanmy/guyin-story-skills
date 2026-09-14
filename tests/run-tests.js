@@ -1452,6 +1452,28 @@ console.log('== guyin-check-pending U1 待审台账终态门 ==');
   check('U1 全终态 exit 0', r.status === 0 && report && report.open.length === 0 && report.total === 2,
     `status=${r.status} out=${r.stdout.trim().slice(0, 200)}`);
 
+  // Fw-07：升级作者非自终态——备注无「已裁决：」仍 open；有作者回填才闭（半/全角冒号均认）。
+  const fw07 = fixture('pend/追踪/待审台账_fw07.md', [
+    '| 章号 | 来源 | 报警/发现 | 终态 | 去向/备注 |',
+    '|---|---|---|---|---|',
+    '| 3 | ai-patterns | 碎化率 62% | 升级作者 | 请作者裁决后转豁免/关闭 |',
+    '| 3 | consistency | 台词归属误判 | 升级作者 | 已裁决:转豁免（误报），登豁免台账#2 |',
+    '| 4 | repetition | 钱×2 | 升级作者 | 已裁决：关闭，非问题 |',
+    '',
+  ].join('\n'));
+  r = run('guyin-check-pending.js', ['--json', fw07]);
+  report = parseJson(r.stdout);
+  check('Fw-07 升级作者无裁决回填=open，有「已裁决:」=闭（1 行 open / 共 3 行）',
+    r.status === 1 && report && report.open.length === 1 && report.total === 3
+      && report.open[0].chapter === 3 && /碎化率/.test(report.open[0].finding),
+    `status=${r.status} out=${r.stdout.trim().slice(0, 200)}`);
+
+  r = run('guyin-check-pending.js', ['--json', '--through', '2', fw07]);
+  report = parseJson(r.stdout);
+  check('Fw-07 --through 2 升级行均 >2 出界，exit 0',
+    r.status === 0 && report && report.open.length === 0 && report.total === 0,
+    `status=${r.status} out=${r.stdout.trim().slice(0, 200)}`);
+
   r = run('guyin-check-pending.js', ['--json', path.join(TMP, 'pend-none', '追踪', '待审台账.md')]);
   report = parseJson(r.stdout);
   check('U1 台账缺失 fail-open exit 0', r.status === 0 && report && report.missing === true,
@@ -1955,6 +1977,32 @@ console.log('== guyin-setup 模板 hook（guyin-hook.js） ==');
   r = runHook(['guard'], payload(path.join(bookA, '正文', '第001章_试.md')));
   check('guard 覆盖已存在章有快照放行（U4）', r.status === 0, `status=${r.status} err=${r.stderr.trim().slice(0, 80)}`);
 
+  // Fw-07 hook 侧（U1/D2 两份实现同步验证）：书D state 到第2章、ch3 细纲齐，
+  // 待审台账 ch1 行「升级作者」无裁决回填 → guard 写 ch3 拦截；回填「已裁决：」后放行。
+  const bookD = path.join(TMP, 'hook', '书D');
+  fixture('hook/书D/大纲/细纲_第003章_试.md', '1. 第三开场。');
+  fixture('hook/书D/追踪/_tracking-state.json', JSON.stringify({ schema_version: 1, last_committed_chapter: 2, state_revision: 2 }));
+  const dLedger = path.join(bookD, '追踪', '待审台账.md');
+  fixture('hook/书D/追踪/待审台账.md', [
+    '| 章号 | 来源 | 报警/发现 | 终态 | 去向/备注 |',
+    '|---|---|---|---|---|',
+    '| 1 | ai-patterns | 碎化率 62% | 升级作者 | 请作者裁决后转豁免/关闭 |',
+    '',
+  ].join('\n'));
+  r = runHook(['guard'], payload(path.join(bookD, '正文', '第003章_试.md')));
+  check('Fw-07 guard 升级作者无裁决回填拦截（hook 侧）',
+    r.status === 2 && r.stderr.includes('待审台账') && r.stderr.includes('已裁决'),
+    `status=${r.status} err=${r.stderr.trim().slice(0, 120)}`);
+  fs.writeFileSync(dLedger, [
+    '| 章号 | 来源 | 报警/发现 | 终态 | 去向/备注 |',
+    '|---|---|---|---|---|',
+    '| 1 | ai-patterns | 碎化率 62% | 升级作者 | 已裁决：转豁免（ch1-3 密档），登豁免台账#1 |',
+    '',
+  ].join('\n'));
+  r = runHook(['guard'], payload(path.join(bookD, '正文', '第003章_试.md')));
+  check('Fw-07 guard 作者裁决回填后放行（hook 侧）',
+    r.status === 0, `status=${r.status} err=${r.stderr.trim().slice(0, 120)}`);
+
   r = runHook(['guard'], payload(path.join(bookA, '大纲', '细纲_第004章_新.md')));
   check('guard 非正文目标放行', r.status === 0, `status=${r.status}`);
 
@@ -2392,8 +2440,11 @@ console.log('== guyin-setup 模板完整性（Phase 0 清单落成断言） ==')
     'long/作者性/粒度配置.md',
     'long/作者性/参考-气质谱系.md',
     'long/作者性/口述定稿单.md',
+    'long/作者性/语言纪律.md',
+    'long/作者性/纪律冲突台账.md',
     'long/大纲/README.md',
     'long/大纲/魂谱对表.md',
+    'long/大纲/执行层一页纸.md',
     'long/追踪/_tracking-state.json',
     'short/大纲/情节节点.md',
     'short/大纲/情绪曲线.md',
@@ -2401,6 +2452,25 @@ console.log('== guyin-setup 模板完整性（Phase 0 清单落成断言） ==')
   ];
   for (const rel of required) {
     check(`模板存在 ${rel}`, fs.existsSync(path.join(T, rel)));
+  }
+
+  // Fw-03：部署件默认不得预置假 model（非注释行无 model 配置），且必须明示等同 solo 的去向——
+  // 占位 model 会让用户误以为编排/执行已分层，是 solo 路径失效的源头。
+  const agentEndpoints = [
+    ['long/.claude/agents/guyin-beat-writer.md', /^model\s*:/m],
+    ['long/.claude/agents/guyin-checker.md', /^model\s*:/m],
+    ['long/.opencode/agents/guyin-beat-writer.md', /^model\s*:/m],
+    ['long/.opencode/agents/guyin-checker.md', /^model\s*:/m],
+    ['long/.codex/agents/guyin-beat-writer.toml', /^model\s*=/m],
+    ['long/.codex/agents/guyin-checker.toml', /^model\s*=/m],
+  ];
+  for (const [rel, activeModelRe] of agentEndpoints) {
+    const content = fs.readFileSync(path.join(T, rel), 'utf8');
+    const active = content.split(/\r?\n/)
+      .filter((l) => !/^\s*#/.test(l))
+      .some((l) => activeModelRe.test(l));
+    check(`Fw-03 ${rel} 默认无生效 model 行（占位即假分层）`, !active, `命中生效 model 行`);
+    check(`Fw-03 ${rel} 明示 solo 去向`, /solo/.test(content), `文件缺 solo 说明`);
   }
 }
 
@@ -2732,6 +2802,513 @@ console.log('== PV2 视角纪律（docs/11 §二 PV2，ai-patterns 状态机扫�
   check('PV2-静默态 无视角规格行 fail-open（不扫，零报）',
     rep && !rep.findings.some((f) => f.type === 'pov-drift'),
     `status=${r.status} findings=${JSON.stringify(rep && rep.findings.map((f) => `${f.type}`))}`);
+}
+
+// ============================================================
+console.log('== Fw-05 beat 心理动词拆分（合法认知半句不计数/情绪告知计数） ==');
+{
+  // 知道/明白/清楚/疑惑/纳闷：合法认知半句，不再计 mono-count（追影事故纠偏）。
+  const cognition = fixture('fw05beat/cog.md',
+    '他知道这病几年后会要父亲的命。他明白瞒不住了。他清楚时日无多。他疑惑地看向门口，心里纳闷来人是谁。\n');
+  let r = run('guyin-check-beat.js', ['--json', '--min=10', '--mono-limit=0', cognition]);
+  let report = parseJson(r.stdout);
+  check('Fw-05 知道/明白/清楚/疑惑/纳闷不计数（mono-limit=0 仍零报）',
+    report && !report.findings.some((f) => f.type === 'mono-count'),
+    `findings=${JSON.stringify(report && report.findings.map((f) => f.type))}`);
+
+  // 内心独白标记（心想）+ 情绪告知词（愤怒/恐惧）引号外计数；对白内「觉得」不计。
+  const emotion = fixture('fw05beat/emo.md',
+    '他心想不妙。她愤怒地拍桌，心头一阵恐惧。她抬眼说：“我觉得不成。”\n');
+  r = run('guyin-check-beat.js', ['--json', '--min=10', '--mono-limit=2', emotion]);
+  report = parseJson(r.stdout);
+  const mono = report && report.findings.find((f) => f.type === 'mono-count');
+  check('Fw-05 心想/愤怒/恐惧计 3（对白内觉得不计），超 limit=2 报 mono-count',
+    !!mono && mono.count === 3, `mono=${JSON.stringify(mono)}`);
+}
+
+// ============================================================
+console.log('== Fw-01 开篇留存门 guyin-check-opening-retention ==');
+{
+  const goodOutline = [
+    '# 细纲_第001章',
+    '- 当下目标：收摊前挣到面钱，给父亲抓药',
+    '- 能力实证：一眼报准客人病灶，满座失声',
+    '- 情绪温度：①情绪@点2 热——围观排队',
+    '- 即兑钩子：实体：订金信封；兑现：第4章 验真',
+  ].join('\n');
+  const good = fixture('fw01/大纲/细纲_第001章.md', `${goodOutline}\n`);
+  let r = run('guyin-check-opening-retention.js', ['--json', good]);
+  check('Fw-01 ch001 四字段齐＋兑付第4章≤5 通过', r.status === 0, `status=${r.status} out=${r.stdout.trim()}`);
+
+  // 目标值「无」判缺失＋其余三行缺失 = 4 条 blocking。
+  const bad = fixture('fw01bad/大纲/细纲_第002章.md', '# 细纲\n- 当下目标：无\n');
+  r = run('guyin-check-opening-retention.js', ['--json', bad]);
+  let report = parseJson(r.stdout);
+  const miss = report ? report.findings.filter((f) => f.type === 'opening-retention-missing' && f.severity === 'blocking') : [];
+  check('Fw-01 值「无」＋字段缺失共 4 条 blocking', r.status === 1 && miss.length === 4,
+    `status=${r.status} n=${miss.length}`);
+
+  // 兑付章号 >5 → blocking。
+  const far = fixture('fw01far/大纲/细纲_第003章.md',
+    goodOutline.replace('细纲_第001章', '细纲_第003章').replace('兑现：第4章 验真', '兑现：第8章 验真') + '\n');
+  r = run('guyin-check-opening-retention.js', ['--json', far]);
+  report = parseJson(r.stdout);
+  check('Fw-01 兑付第8章 >5 blocking',
+    r.status === 1 && report && report.findings.some((f) => f.message.includes('第 8 章')),
+    `status=${r.status}`);
+
+  // {{占位}} 值判缺失。
+  const ph = fixture('fw01ph/大纲/细纲_第001章.md',
+    goodOutline.replace('收摊前挣到面钱，给父亲抓药', '{{主角目标待填}}') + '\n');
+  r = run('guyin-check-opening-retention.js', ['--json', '--fail-on=blocking', ph]);
+  check('Fw-01 {{占位}} 值 fail-on=blocking exit 1', r.status === 1, `status=${r.status}`);
+
+  // 非黄金三章静默。
+  const ch4 = fixture('fw01ch4/大纲/细纲_第004章.md', '# 细纲\n完全没有留存字段的普通细纲\n');
+  r = run('guyin-check-opening-retention.js', ['--json', ch4]);
+  report = parseJson(r.stdout);
+  check('Fw-01 ch004+ 静默 exit 0 零 findings',
+    r.status === 0 && report && report.findings.length === 0, `status=${r.status}`);
+
+  // 无兑付章号 → blocking。
+  const nopay = fixture('fw01nopay/大纲/细纲_第002章.md',
+    goodOutline.replace('；兑现：第4章 验真', '；长周期回收') + '\n');
+  r = run('guyin-check-opening-retention.js', ['--json', nopay]);
+  report = parseJson(r.stdout);
+  check('Fw-01 即兑钩子无兑付章号 blocking',
+    r.status === 1 && report && report.findings.some((f) => f.message.includes('缺近期兑现章号')),
+    `status=${r.status}`);
+}
+
+// ============================================================
+console.log('== Fw-02 prose-fragment-ratio（碎化率，密/疏双轨配套） ==');
+{
+  const SHORT = '他放下碗走了。'; // 7 字短叙述段
+  const LONG = SCENE; // 34 字长叙述段
+
+  // 40 短 + 20 长 = 66.7% → blocking。
+  const heavy = fixture('fw02heavy/正文/第001章_碎.md',
+    `${[...Array(40)].map(() => SHORT).join('\n')}\n${[...Array(20)].map(() => LONG).join('\n')}\n`);
+  let r = run('guyin-check-ai-patterns.js', ['--json', '--fail-on=blocking', heavy]);
+  let report = parseJson(r.stdout);
+  let f = report && report.findings.find((x) => x.type === 'prose-fragment-ratio');
+  check('Fw-02 碎化 67% blocking（--fail-on=blocking exit 1）',
+    r.status === 1 && f && f.severity === 'blocking' && f.ratio > 0.4,
+    `status=${r.status} f=${JSON.stringify(f && f.severity)}`);
+
+  // 10 短 + 28 长 = 26.3% → advisory。
+  const mild = fixture('fw02mild/正文/第001章_轻.md',
+    `${[...Array(10)].map(() => SHORT).join('\n')}\n${[...Array(28)].map(() => LONG).join('\n')}\n`);
+  r = run('guyin-check-ai-patterns.js', ['--json', mild]);
+  report = parseJson(r.stdout);
+  f = report && report.findings.find((x) => x.type === 'prose-fragment-ratio');
+  check('Fw-02 碎化 26% advisory（>25% 且 ≤40%）',
+    f && f.severity === 'advisory' && f.ratio > 0.25 && f.ratio <= 0.4,
+    `f=${JSON.stringify(f && [f.severity, f.ratio])}`);
+  r = run('guyin-check-ai-patterns.js', ['--fail-on=blocking', mild]);
+  check('Fw-02 advisory 不触发 --fail-on=blocking', r.status === 0, `status=${r.status}`);
+
+  // 样本不足（10 段）静默。
+  const tiny = fixture('fw02tiny/正文/第001章_少.md',
+    `${[...Array(10)].map(() => SHORT).join('\n')}\n`);
+  r = run('guyin-check-ai-patterns.js', ['--json', tiny]);
+  report = parseJson(r.stdout);
+  check('Fw-02 样本不足（<30 段/<800 字）静默',
+    report && !report.findings.some((x) => x.type === 'prose-fragment-ratio'),
+    `types=${JSON.stringify(report && report.findings.map((x) => x.type))}`);
+
+  // 细纲「碎化豁免」→ blocking 降 advisory。
+  fixture('fw02heavy/大纲/细纲_第001章.md', '# 细纲\n碎化豁免：本章过场，一句一段刻意为之。\n');
+  r = run('guyin-check-ai-patterns.js', ['--json', '--fail-on=blocking', heavy]);
+  report = parseJson(r.stdout);
+  f = report && report.findings.find((x) => x.type === 'prose-fragment-ratio');
+  check('Fw-02 细纲碎化豁免后降 advisory（--fail-on=blocking exit 0）',
+    r.status === 0 && f && f.severity === 'advisory', `status=${r.status} f=${JSON.stringify(f && f.severity)}`);
+}
+
+// ============================================================
+console.log('== Fw-06 真人试读门 guyin-check-trial-gate ==');
+{
+  const HEADER = [
+    '## 试读记录',
+    '',
+    '| 日期 | 试读人 | 章范围 | 想不想看下一章 | 记住了谁 | 想划下来的句子 | 能力实证 | 当下目标 | 情绪热度 | 我猜对了 |',
+    '|---|---|---|---|---|---|---|---|---|---|',
+  ];
+  const trialProject = (name, tableLines) => {
+    const dir = path.join(TMP, 'fw06', name);
+    fixture('fw06/' + name + '/追踪/读者信号.md',
+      `# 读者信号\n\n| 章 | 追读 | 评论关键词 |\n|----|------|-----------|\n\n${[...HEADER, ...tableLines].join('\n')}\n`);
+    return dir;
+  };
+  const tg = (dir, n, failOn) => run('guyin-check-trial-gate.js',
+    ['--project', dir, '--chapter', String(n), '--json', ...(failOn ? [`--fail-on=${failOn}`] : [])]);
+
+  // ch1-3 写作期静默（含无文件场景）。
+  let r = tg(path.join(TMP, 'fw06', 'none'), 3);
+  let report = parseJson(r.stdout);
+  check('Fw-06 ch3 静默（写作期不需要试读）',
+    r.status === 0 && report && report.findings.length === 0, `status=${r.status}`);
+
+  // 读者信号.md 缺失 → fail-open（老项目）。
+  r = tg(path.join(TMP, 'fw06', 'none'), 4);
+  report = parseJson(r.stdout);
+  check('Fw-06 读者信号缺失 fail-open exit 0',
+    r.status === 0 && report && report.missing === true, `status=${r.status} out=${r.stdout.slice(0, 120)}`);
+
+  // 文件在但无试读节 → blocking（模板已部署不填）。
+  const noSec = path.join(TMP, 'fw06', 'nosec');
+  fixture('fw06/nosec/追踪/读者信号.md', '# 读者信号\n\n| 章 | 追读 |\n|----|------|\n');
+  r = tg(noSec, 4);
+  report = parseJson(r.stdout);
+  check('Fw-06 无试读记录节 → blocking trial-gate-missing',
+    r.status === 1 && report.findings.length === 1
+      && report.findings[0].type === 'trial-gate-missing' && report.findings[0].severity === 'blocking',
+    `status=${r.status} f=${JSON.stringify(report.findings)}`);
+
+  // 节内只有表头+占位行 → blocking。
+  const empty = trialProject('empty', ['| {{日期}} | {{谁}} | {{1-3}} | | | | | | | |']);
+  r = tg(empty, 4);
+  report = parseJson(r.stdout);
+  check('Fw-06 试读节仅占位行 → blocking',
+    r.status === 1 && report.findings.some((f) => f.type === 'trial-gate-missing'),
+    `status=${r.status} f=${JSON.stringify(report.findings)}`);
+
+  // 一条真人试读 1-3 → ch4 放行。
+  const good = trialProject('good', [
+    '| 9-14 | 表妹（没看过设定） | 1-3 | 想，问订金是谁放的 | 沈亦舟，闻碗就辨出地沟油 | 「面要热，账要清」 | 是 | 是 | 是 | 是：猜主角会拿订金做局 |',
+  ]);
+  r = tg(good, 4);
+  report = parseJson(r.stdout);
+  check('Fw-06 覆盖 ch1-3 的真人试读 → ch4 放行 exit 0',
+    r.status === 0 && report.findings.length === 0, `status=${r.status} f=${JSON.stringify(report.findings)}`);
+
+  // 只覆盖 1-2 → blocking 且文案点出缺 ch3。
+  const partial = trialProject('partial', [
+    '| 9-14 | 表妹 | 1-2 | 想 | 沈亦舟 | 无 | 是 | 是 | 否 | 否 |',
+  ]);
+  r = tg(partial, 4);
+  report = parseJson(r.stdout);
+  check('Fw-06 只覆盖 ch1-2 → blocking 且指出缺 ch3',
+    r.status === 1 && report.findings[0].type === 'trial-gate-missing'
+      && /ch\s*3/.test(report.findings[0].message),
+    `status=${r.status} msg=${report.findings[0] && report.findings[0].message}`);
+
+  // 两行拼合并集覆盖 1-3 → 放行。
+  const merged = trialProject('merged', [
+    '| 9-13 | 同事A | 1,2 | 想 | 母亲 | 无 | 否 | 是 | 否 | 否 |',
+    '| 9-14 | 表妹 | 3 | 想 | 沈亦舟 | 面要热账要清 | 是 | 是 | 是 | 是 |',
+  ]);
+  r = tg(merged, 4);
+  report = parseJson(r.stdout);
+  check('Fw-06 多行并集覆盖 ch1-3 → 放行',
+    r.status === 0 && report.findings.length === 0, `status=${r.status} f=${JSON.stringify(report.findings)}`);
+
+  // 试读人列空的行不计入覆盖 → blocking。
+  const noReader = trialProject('noreader', [
+    '| 9-14 |  | 1-3 | 想 | 沈亦舟 | 无 | 是 | 是 | 是 | 是 |',
+  ]);
+  r = tg(noReader, 4);
+  report = parseJson(r.stdout);
+  check('Fw-06 试读人空＝无法证明真人 → blocking',
+    r.status === 1 && report.findings.some((f) => f.type === 'trial-gate-missing'),
+    `status=${r.status} f=${JSON.stringify(report.findings)}`);
+
+  // 周期 advisory：覆盖止于 ch3，开写 ch7 → advisory，--fail-on=blocking 不拦截，--fail-on=all exit 1。
+  r = tg(good, 7);
+  report = parseJson(r.stdout);
+  check('Fw-06 ch7 试读止于 ch3 → advisory trial-gate-stale（blocking 门放行）',
+    r.status === 0 && report.findings.length === 1 && report.findings[0].type === 'trial-gate-stale',
+    `status=${r.status} f=${JSON.stringify(report.findings)}`);
+  r = tg(good, 7, 'all');
+  check('Fw-06 advisory 在 --fail-on=all 下 exit 1', r.status === 1, `status=${r.status}`);
+
+  // 覆盖到 ch4，ch7 阈值 N-3=4 → 不提醒。
+  const fresh = trialProject('fresh', [
+    '| 9-20 | 表妹 | 1至4 | 想 | 沈亦舟 | 面要热账要清 | 是 | 是 | 是 | 是 |',
+  ]);
+  r = tg(fresh, 7);
+  report = parseJson(r.stdout);
+  check('Fw-06 覆盖至 ch4 → ch7 无 stale 提醒',
+    r.status === 0 && report.findings.length === 0, `status=${r.status} f=${JSON.stringify(report.findings)}`);
+}
+
+// ============================================================
+console.log('== Fw-04 笔法文件治理 guyin-check-rule-conflict ==');
+{
+  const rc = (dir, failOn) => run('guyin-check-rule-conflict.js',
+    ['--project', dir, '--json', ...(failOn ? [`--fail-on=${failOn}`] : [])]);
+  const RULE_STUB = '# 语言纪律\n\n## 与卷纲调性一致性声明\n项目自创笔法存在。\n';
+  const header = [
+    '| 编号 | 冲突双方（文件:节） | 冲突实质 | 仲裁结论 | 优先级 | 仲裁日期 |',
+    '|---|---|---|---|---|---|',
+  ];
+
+  // 无自创笔法文件 → 治理不激活，静默。
+  const plain = path.join(TMP, 'fw04plain');
+  fixture('fw04plain/追踪/_tracking-state.json', '{}');
+  let r = rc(plain, 'all');
+  let report = parseJson(r.stdout);
+  check('Fw-04 无笔法文件静默（fail-open）',
+    r.status === 0 && report && report.governanceActive === false && report.findings.length === 0,
+    `status=${r.status} out=${r.stdout.slice(0, 120)}`);
+
+  // 有笔法文件无台账 → ledger-missing advisory；默认 blocking 门 exit 0，all exit 1。
+  fixture('fw04miss/作者性/语言纪律.md', RULE_STUB);
+  const miss = path.join(TMP, 'fw04miss');
+  r = rc(miss);
+  report = parseJson(r.stdout);
+  check('Fw-04 笔法在/台账缺 → advisory ledger-missing（默认门放行）',
+    r.status === 0 && report.governanceActive === true
+      && report.findings.length === 1 && report.findings[0].type === 'rule-conflict-ledger-missing',
+    `status=${r.status} f=${JSON.stringify(report.findings)}`);
+  r = rc(miss, 'all');
+  check('Fw-04 ledger-missing 在 --fail-on=all 下 exit 1', r.status === 1, `status=${r.status}`);
+
+  // 模板原样（仅占位行）→ 零 finding。
+  fixture('fw04tpl/作者性/语言纪律.md', RULE_STUB);
+  const tplLedger = fs.readFileSync(
+    path.join(REPO, 'skills', 'guyin-setup', 'templates', 'long', '作者性', '纪律冲突台账.md'), 'utf8');
+  fixture('fw04tpl/作者性/纪律冲突台账.md', tplLedger);
+  r = rc(path.join(TMP, 'fw04tpl'), 'all');
+  report = parseJson(r.stdout);
+  check('Fw-04 模板占位台账零未仲裁行',
+    r.status === 0 && report.findings.length === 0, `status=${r.status} f=${JSON.stringify(report.findings)}`);
+
+  // 追影《框架问题清单》C-01…C-08 整表落入演练（只读对照，不在追影落盘）。
+  const zyList = path.join('d:', 'readbook-workspace', '追影', '框架问题清单_交外部处理.md');
+  const zyText = fs.readFileSync(zyList, 'utf8');
+  const cRows = [
+    ['C-01', '卷纲_第1卷「老灵魂＋嬉皮笑脸」 ↔ 执行层一页纸 禁令#5「主角不搞笑」', '卷级调性与执行级禁令直接对立'],
+    ['C-02', '语言纪律 §4 对话签名（≤15字/不问/不解释） ↔ §4.5 对话鼓励无信息量俗套', '两条都指向删信息，叠加清空对话'],
+    ['C-03', '开篇钩子设计：读完必有四个问题 ↔ 细纲001：唯一解密位=无＋三章禁释六项', '只给问题不给料'],
+    ['C-04', '隐杀式爽点 H4 望诊慢镜（脑内列三证候） ↔ 语言纪律 §一 三不写（不写心理/判断）', '望诊核心爽点必须写内心，与硬禁令冲突'],
+    ['C-05', '开篇钩子设计：破折号本段特批 ↔ 去AI味轮：清除全部分隔符', '作者特批被自动化流程推翻，定稿被重写'],
+    ['C-06', '语言纪律 §八 主语+动词不修饰 ↔ H4 分镜慢写（一动作拆4-6层）', '一个要压缩一个要展开'],
+    ['C-07', '爽点体系 §三 每卷四类爽点配额 ↔ 卷纲26章四线并装', '配额挤压，一章要装多类'],
+    ['C-08', '执行层一页纸「忘了评分/伏笔表」 ↔ 章检链/状态门/tracking 全强制', '写作期减负与落盘期强制压在同一环节'],
+  ];
+  check('Fw-04 追影清单含 C-01…C-08 八条（只读红测样本）',
+    cRows.every(([id]) => zyText.includes(id)), '追影清单缺条');
+
+  const buildLedger = (withVerdict) => [
+    '# 纪律冲突台账', '', ...header,
+    ...cRows.map(([id, parties, essence], i) => `| ${id} | ${parties} | ${essence} | ${withVerdict ? ['以卷纲为准，改写一页纸', '按场拆分：日常保留/信息场解禁', '保留问题且必须给人物交代', '望诊列为硬禁令明确例外', '作者特批＞自动化流程', '按章型分配：高压慢镜/日常经济', '卷一只需三类（豁免旧人回访）', '写作期守3条/落盘期全查'][i] : ''} | P10 | ${withVerdict ? '2026-09-14' : ''} |`),
+    '',
+  ].join('\n');
+
+  fixture('fw04zy/大纲/执行层一页纸.md', '# 执行层一页纸\n项目自创笔法存在。\n');
+  const zyLedger = path.join(TMP, 'fw04zy', '作者性', '纪律冲突台账.md');
+  fixture('fw04zy/作者性/纪律冲突台账.md', buildLedger(false));
+  r = rc(path.join(TMP, 'fw04zy'), 'all');
+  report = parseJson(r.stdout);
+  check('Fw-04 C-01…C-08 整表落入且未仲裁 → 8 条 unadjudicated advisory',
+    r.status === 1 && report.findings.length === 8
+      && report.findings.every((f) => f.type === 'rule-conflict-unadjudicated')
+      && report.findings.some((f) => /C-01/.test(f.message)),
+    `status=${r.status} n=${report.findings.length}`);
+
+  fs.writeFileSync(zyLedger, buildLedger(true));
+  r = rc(path.join(TMP, 'fw04zy'), 'all');
+  report = parseJson(r.stdout);
+  check('Fw-04 八条全部仲裁回填后 exit 0',
+    r.status === 0 && report.findings.length === 0, `status=${r.status} f=${JSON.stringify(report.findings)}`);
+}
+
+// ============================================================
+console.log('== Fw-09 批次 C：C1 页眉约定 / C2 伏笔编号门 / C3 切口门 / C4 术语准入 ==');
+{
+  // C1：过期评估页眉约定进 check-doc-budget.js 头注释（慎建文件，约定随守卫分发）。
+  const budgetSrc = fs.readFileSync(path.join(REPO, 'scripts', 'check-doc-budget.js'), 'utf8');
+  check('Fw-09 C1 过期评估页眉规范有固定文案与落点（check-doc-budget 头注释）',
+    /结论已被 vXX/.test(budgetSrc) && /第一行/.test(budgetSrc) && /仅存档/.test(budgetSrc),
+    '缺页眉约定');
+
+  // C3：切口门接线三处（写指定章预检 ch004 起、建批硬前置、卷末附加）。
+  const writeSkill = fs.readFileSync(
+    path.join(REPO, 'skills', 'guyin-write', 'SKILL.md'), 'utf8');
+  check('Fw-09 C3 写指定章预检含切口门（ch004 起二选一）',
+    /切口门（\*\*ch004 起\*\*：魂档案「私人切口」/.test(writeSkill)
+      && /立即补或显式延期至某卷末/.test(writeSkill),
+    '预检缺切口门');
+  check('Fw-09 C3 建批硬前置含私人切口定稿/显式延期',
+    /私人切口已定稿或持显式延期（Fw-09 C3）/.test(writeSkill), '建批前置缺');
+  check('Fw-09 C3 卷末附加含未定稿/延期到期主动询问',
+    /私人切口未定稿或延期到期者\*\*主动询问\*\*，二选一落字/.test(writeSkill), '卷末附加缺');
+
+  // C4：细纲协议术语准入三件套。
+  const outlineProtocol = fs.readFileSync(
+    path.join(REPO, 'skills', 'guyin-write', 'references', '细纲协议.md'), 'utf8');
+  check('Fw-09 C4 细纲协议含术语准入节（定义+反例+正文可指认特征）',
+    /术语准入（Fw-09 C4/.test(outlineProtocol)
+      && /定义/.test(outlineProtocol) && /反例/.test(outlineProtocol)
+      && /正文可指认特征/.test(outlineProtocol),
+    '缺三件套');
+  check('Fw-09 C4 术语准入点名黑话样例（密/疏、外选、气压、回甘强度）',
+    ['密/疏', '外选', '气压', '回甘强度'].every((w) => outlineProtocol.includes(w)),
+    '黑话样例不全');
+
+  // C2：伏笔编号门。
+  const fc = (dir, failOn) => run('guyin-check-foreshadow-id.js',
+    ['--project', dir, '--json', ...(failOn ? [`--fail-on=${failOn}`] : [])]);
+  const ledgerHeader = [
+    '| ID | 内容 | 埋设章 | 计划回收章 | 状态 | 重要度 | 揭示方式 | 最近变更章 |',
+    '|---|---|---:|---:|---|---|---|---:|',
+  ];
+  const ledgerRow = (id, content) =>
+    `| ${id} | ${content} | 第1章 | 第10章 | 已埋 | 中 | 一句带过 | 第1章 |`;
+
+  // 无台账 → fail-open 静默。
+  fixture('fw09none/追踪/_tracking-state.json', '{}');
+  let r = fc(path.join(TMP, 'fw09none'), 'all');
+  let report = parseJson(r.stdout);
+  check('Fw-09 C2 无伏笔台账静默（fail-open）',
+    r.status === 0 && report && report.findings.length === 0,
+    `status=${r.status} out=${r.stdout.slice(0, 120)}`);
+
+  // 模板态（仅 {{占位}} 行）→ 零 finding。
+  const tplForeshadow = fs.readFileSync(
+    path.join(REPO, 'skills', 'guyin-setup', 'templates', 'long', '追踪', '伏笔.md'), 'utf8');
+  fixture('fw09tpl/追踪/伏笔.md', tplForeshadow);
+  r = fc(path.join(TMP, 'fw09tpl'), 'all');
+  report = parseJson(r.stdout);
+  check('Fw-09 C2 模板占位台账零 finding',
+    r.status === 0 && report.findings.length === 0, `status=${r.status} f=${JSON.stringify(report.findings)}`);
+
+  // 重号 + 空号：默认 advisory 放行，--fail-on=all exit 1。
+  fixture('fw09bad/追踪/伏笔.md', [
+    '# 伏笔当前状态', '', ...ledgerHeader,
+    ledgerRow('F001', '第一件事'),
+    ledgerRow('F001', '重号的另一件事'),
+    '|  | 空号行 | 第1章 | 第10章 | 已埋 | 中 | 一句带过 | 第1章 |',
+    ledgerRow('F003', '第三件事'),
+    '',
+  ].join('\n'));
+  const bad = path.join(TMP, 'fw09bad');
+  r = fc(bad);
+  report = parseJson(r.stdout);
+  check('Fw-09 C2 重号+空号 → 两条 advisory（默认门放行 exit 0）',
+    r.status === 0
+      && report.findings.filter((f) => f.type === 'foreshadow-duplicate-id').length === 1
+      && report.findings.filter((f) => f.type === 'foreshadow-empty-id').length === 1,
+    `status=${r.status} f=${JSON.stringify(report.findings)}`);
+  r = fc(bad, 'all');
+  check('Fw-09 C2 重号+空号在 --fail-on=all 下 exit 1', r.status === 1, `status=${r.status}`);
+
+  // 引用未登记：细纲引用 F009（台账只登记 F001/F003）。
+  fixture('fw09bad/大纲/细纲_第002章.md', '## 细纲（第 2 章）\n承接 F009 的回收预期，本章不动。\n');
+  fixture('fw09bad/正文/第002章_试.md', SCENE + '\n他想起编号 F009 还挂着。\n');
+  r = fc(bad, 'all');
+  report = parseJson(r.stdout);
+  const unreg = report.findings.filter((f) => f.type === 'foreshadow-ref-unregistered');
+  check('Fw-09 C2 正文与大纲引用未登记 F009 → 各一条 ref-unregistered',
+    r.status === 1 && unreg.length === 2
+      && unreg.every((f) => /F009/.test(f.message)),
+    `n=${unreg.length} f=${JSON.stringify(unreg)}`);
+
+  // 规划文件（非细纲）中的「待埋」未来编号是登记源不是引用方——不扫。
+  fixture('fw09bad/大纲/伏笔规划台账.md', '| **F99** | ch180 | 规划中的未来伏笔 | 待埋 |\n');
+  r = fc(bad, 'all');
+  report = parseJson(r.stdout);
+  check('Fw-09 C2 大纲规划台账中的未来编号 F99 不误报（只扫细纲_*.md）',
+    report.findings.every((f) => !/F099|F99/.test(f.message)),
+    `f=${JSON.stringify(report.findings)}`);
+
+  // 登记 F009 后引用 finding 清零（重号/空号仍在）。
+  const fixedLedger = [
+    '# 伏笔当前状态', '', ...ledgerHeader,
+    ledgerRow('F001', '第一件事'),
+    ledgerRow('F003', '第三件事'),
+    ledgerRow('F009', '补上的登记'),
+    '',
+  ].join('\n');
+  fs.writeFileSync(path.join(bad, '追踪', '伏笔.md'), fixedLedger);
+  r = fc(bad, 'all');
+  report = parseJson(r.stdout);
+  check('Fw-09 C2 补登记后无悬空引用（registered 含 F001/F003/F009）',
+    report.findings.every((f) => f.type !== 'foreshadow-ref-unregistered')
+      && ['F001', 'F003', 'F009'].every((id) => report.registered.includes(id)),
+    `f=${JSON.stringify(report.findings)} reg=${report.registered}`);
+
+  // 追影只读对照：台账 12 个 F 号，正文/大纲零悬空引用。
+  const zyRoot = path.join('d:', 'readbook-workspace', '追影');
+  if (fs.existsSync(zyRoot)) {
+    r = fc(zyRoot);
+    report = parseJson(r.stdout);
+    check('Fw-09 C2 追影只读对照：12 编号无重号/空号/悬空引用',
+      r.status === 0 && report.findings.length === 0 && report.registered.length === 12,
+      `status=${r.status} n=${report.registered && report.registered.length} f=${JSON.stringify(report.findings).slice(0, 160)}`);
+  }
+}
+
+// ============================================================
+console.log('== Fw-05 silence-density-tic（沉默短语密度） ==');
+{
+  // 约 1150 字叙述 + 4 处沉默短语 ≈ 3.5/千字 → advisory。
+  const base = [...Array(34)].map(() => SCENE);
+  const hot = fixture('fw05sil/hot/正文/第002章_默.md',
+    `${base.slice(0, 12).join('\n')}\n她没答。\n${base.slice(12, 24).join('\n')}\n他没说话，她也没吭声，两个人都不说话。\n${base.slice(24).join('\n')}\n`);
+  let r = run('guyin-check-ai-patterns.js', ['--json', hot]);
+  let report = parseJson(r.stdout);
+  check('Fw-05 沉默短语 4 处/千余字报 silence-density-tic（advisory）',
+    report && report.findings.some((f) => f.type === 'silence-density-tic' && f.severity === 'advisory'),
+    `types=${JSON.stringify(report && report.findings.map((f) => f.type))}`);
+
+  // 假词不误伤：「没答案」「没接住」不是沉默短语。
+  const fake = fixture('fw05sil/fake/正文/第002章_假.md',
+    `${base.slice(0, 20).join('\n')}\n他没答案，球也没接住。\n${base.slice(20).join('\n')}\n`);
+  r = run('guyin-check-ai-patterns.js', ['--json', fake]);
+  report = parseJson(r.stdout);
+  check('Fw-05 没答案/没接住不计沉默短语（零报）',
+    report && !report.findings.some((f) => f.type === 'silence-density-tic'),
+    `types=${JSON.stringify(report && report.findings.map((f) => f.type))}`);
+}
+
+// ============================================================
+console.log('== Fw-05 dialogue-zero-information（ch1-3 对话零信息启发式） ==');
+{
+  fixture('fw05dz/大纲/批次公约.md', '# 批次公约\n- 叙述契约：第三人称限知。POV＝阿衡。\n');
+  const passiveLines = ['阿衡低着头。', '“嗯。”', '“不知道。”', '“哦。”', '“行。”', '“没。”', '“算了。”', '“不用。”', '“好。”', '掌柜又问了他几句，他始终不肯抬头。'];
+  const passive = fixture('fw05dz/正文/第002章_被动.md', `${passiveLines.join('\n')}\n`);
+  let r = run('guyin-check-ai-patterns.js', ['--json', passive]);
+  let report = parseJson(r.stdout);
+  check('Fw-05 主角零发问＋对白中位≤5字 → dialogue-zero-information',
+    report && report.findings.some((f) => f.type === 'dialogue-zero-information'),
+    `types=${JSON.stringify(report && report.findings.map((f) => f.type))}`);
+
+  const activeLines = [
+    '阿衡问：“掌柜的，这药铺今天几时关门？”',
+    '“那这位先生是谁，为何坐在柜台后头翻账本？”阿衡又问。',
+    '阿衡凑过去：“你手里这包药，是不是给前街周家老太太抓的？”',
+    '“我再问一句——这方子谁开的，出了人命算谁的？”阿衡盯着他。',
+    '店家捋着胡子答话，说了一通今年药材行情的涨跌来由。',
+    '阿衡听完点头，又把那包药拿起来对着窗光细看了半天。',
+    '“这药里少了一味黄芪，你当我真认不出来吗？”他把纸包拍回柜上。',
+    '店外雨声淅沥，街上行人撑着伞匆匆走过湿亮的青石板路。',
+  ];
+  const active = fixture('fw05dz/正文/第001章_主动.md', `${activeLines.join('\n')}\n`);
+  r = run('guyin-check-ai-patterns.js', ['--json', active]);
+  report = parseJson(r.stdout);
+  check('Fw-05 主角主动发问＋长对白 → 不报',
+    report && !report.findings.some((f) => f.type === 'dialogue-zero-information'),
+    `types=${JSON.stringify(report && report.findings.map((f) => f.type))}`);
+
+  // ch004 即使同形态也静默（仅黄金三章）。
+  const ch4 = fixture('fw05dz/正文/第004章_后文.md', `${passiveLines.join('\n')}\n`);
+  r = run('guyin-check-ai-patterns.js', ['--json', ch4]);
+  report = parseJson(r.stdout);
+  check('Fw-05 ch004+ 静默（黄金三章契约不外推）',
+    report && !report.findings.some((f) => f.type === 'dialogue-zero-information'),
+    `types=${JSON.stringify(report && report.findings.map((f) => f.type))}`);
+
+  // 无批次公约 → fail-open。
+  const noPactDir = 'fw05dzopen';
+  const noPact = fixture(`${noPactDir}/正文/第003章_无公约.md`, `${passiveLines.join('\n')}\n`);
+  r = run('guyin-check-ai-patterns.js', ['--json', noPact]);
+  report = parseJson(r.stdout);
+  check('Fw-05 无批次公约 POV fail-open 静默',
+    report && !report.findings.some((f) => f.type === 'dialogue-zero-information'),
+    `types=${JSON.stringify(report && report.findings.map((f) => f.type))}`);
 }
 
 // ============================================================

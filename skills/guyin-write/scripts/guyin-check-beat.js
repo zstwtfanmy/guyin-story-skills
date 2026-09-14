@@ -32,11 +32,14 @@ Beat-level deterministic pre-check (self-check card sink-down):
   ④ beat-too-long     (advisory): 去空白字数 > --max (default 1500)
   ⑤ skip-write        (blocking): 跳写模式（此处省略/一番…之后等）
   ⑥ dialogue-run      (advisory): 连续 ≥4 句对话无动作/环境插入（半自动）
-  ⑦ mono-count        (advisory): 心理独白句数超限（半自动）
+  ⑦ mono-count        (advisory): 内心独白标记/情绪告知词句数超限（半自动；
+                       知道/明白/清楚/疑惑/纳闷为合法认知半句，不计数，Fw-05）
 
 After this script, the self-check card only needs the model for:
   - Q7: 必须发生事件是否写到（语义判断）
   - Q8: 续写衔接是否顺畅（语义判断）
+  - Q9-Q11（Fw-05）：留存条件题（主角主动/对话增量/可记忆点），章号与 beat 序
+    条件由编排层组卡时判定，脚本不查——self-check 卡面定义频率（ch1-3 每 beat）。
 
 Report-only: findings go to the review queue, never auto-deleted.`;
 
@@ -55,7 +58,10 @@ const SKIP_WRITE_PATTERNS = [
 // ---- 心理动词（引号外叙述行中的心理活动标记，半自动计数）----
 // 只在引号外（stripQuoted 后的叙述行）匹配；对话内的「想」「觉得」是角色台词不算。
 // SP2（docs/11 §一）：前后字符类加 "——直引号对白外判定同样生效。
-const PSYCH_VERBS = /(?<!["「」『』“”‘’《》])(心想|暗想|思忖|盘算|琢磨|寻思|觉得|心想道|心道|暗忖|心想|知道|明白|清楚|疑惑|纳闷|暗自|内心|心底|心中)(?!["「」『』“”‘’《》])/g;
+// Fw-05（docs/12）拆分：「知道／明白／清楚／疑惑／纳闷」是限知视角的合法认知半句
+//（"他知道这病几年后会要他爸的命"是信息差叙事，不是心理独白），移出计数表；
+// 只保留内心独白标记（心想/暗道/思忖…）与情绪告知词（直接命名情绪=告知而非展示）。
+const PSYCH_VERBS = /(?<!["「」『』“”‘’《》])(心想(?:道)?|心道|暗道|暗想|暗忖|思忖|寻思|盘算|琢磨|觉得|暗自|内心|心底|心中|愤怒|暴怒|恼怒|惊怒|悲愤|震怒|狂喜|恐惧|惊恐|惊惧|惶恐|绝望|崩溃)(?!["「」『』“”‘’《》])/g;
 
 // ---- 对话行判定（含中文引号/书名号包裹的行视为对话行）----
 // SP2（docs/11 §一）：字符类加 "——直引号对白行同样判对话行（dialogue-run 检测覆盖）。
