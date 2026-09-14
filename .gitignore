@@ -1,6 +1,12 @@
 # 上游素材仓库（本地取材用，不随项目分发）
 .upstream/
 
+# skills 安装器（npx skills add 在仓库根下跑会产出这些——guyin-skills 是 skill 提供方，
+# 不是消费项目，不应被当作安装目标；真正消费 skill 的是追影等项目，在那些项目根下跑）
+.agents/
+.claude/
+skills-lock.json
+
 # 系统杂项
 .DS_Store
 Thumbs.db
