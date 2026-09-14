@@ -33,6 +33,10 @@ jobs:
           node --check skills/guyin-write/scripts/guyin-check-reader-signal.js
           node --check skills/guyin-write/scripts/guyin-check-pitch.js
           node --check skills/guyin-write/scripts/guyin-check-outline-slots.js
+          node --check skills/guyin-write/scripts/guyin-check-opening-retention.js
+          node --check skills/guyin-write/scripts/guyin-check-trial-gate.js
+          node --check skills/guyin-write/scripts/guyin-check-rule-conflict.js
+          node --check skills/guyin-write/scripts/guyin-check-foreshadow-id.js
           node --check skills/guyin-write/scripts/guyin-check-outline-deliver.js
           node --check skills/guyin-write/scripts/guyin-check-strip.js
           node --check skills/guyin-write/scripts/guyin-check-authority-leak.js

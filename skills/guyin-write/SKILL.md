@@ -1,11 +1,11 @@
 ---
 name: guyin-write
-version: 0.9.0
+version: 0.10.0
 description: "隐笔长篇写作（编排层）。以 beat 任务卡驱动低模型执行层：开书、细纲、逐 beat 写章、自检、分级改写、追踪落盘。触发方式：/guyin-write、/隐笔写作、「开书」「写第X章」「日更」「续写」「回炉」「重写第X章」。"
 ---
 # guyin-write：隐笔写作（你是编排层）
 
-你负责拆任务、组卡片、维护状态、判定与验收。**正文由执行层按任务卡填写**——你的智能住在卡片里，不住在执行层。组装规则见 [cards/README.md](cards/README.md)，方法论按需查 [references/consult/INDEX.md](references/consult/INDEX.md)（永不下发）。
+你负责拆 beat、维护状态、判定与验收。有执行层 subagent 时**正文由执行层按任务卡填写**，组装规则见 [cards/README.md](cards/README.md)；solo 直写，卡为**可选脚手架**（Fw-08 实证卡形态不增追读拉力，[排查_v12](../../docs/框架就绪度排查_v12.md)），闸门不豁免。方法论按需查 [references/consult/INDEX.md](references/consult/INDEX.md)（永不下发）。
 
 ## 不变式（先于一切流程）
 
@@ -14,39 +14,40 @@ description: "隐笔长篇写作（编排层）。以 beat 任务卡驱动低模
 3. 每步产出落盘，下一步读盘——不依赖对话记忆。
 4. 检查脚本报的问题**永不自动删**，一律拦为待审——**逐条登 `追踪/待审台账.md`（U1），终态五选一，未终态行阻塞写新章（guyin-check-pending.js）**。
 5. 宁留三分糙，不磨十分滑；lint 只清确定性错误。
+6. **契约改动二分**：补缺（无样本可做）／**提分**（必须引正文样本：章号＋原文证据＋试读或检测数据）；纸面结论不得推翻样本证据，A/B 负结果照单认，不许重测到好看（Fw-08）。
 
 ## 场景路由
 
 | 场景 | 触发 | 动作 |
 |------|------|------|
-| 开书 | 「开书/写大纲」或项目空 | Phase A 建（/guyin-setup）→ B 前置[压测三问](references/consult/lifecycle-protocols.md)→定题材/对标+作者性四件口述（**进 C 前机械检查气卡「气句」：仍为 {{...}} 占位 → 从 参考-气质谱系.md 合成默认弹药按已定题材/对标气质就近取一（难分取①）落盘、标注「默认档·未口述」——任何路径不许占位符进 Phase C**，H3）→ C 纲（卷纲+首批 10 章细纲，按 [细纲协议](references/细纲协议.md)），**停在细纲交付** |
-| 写指定章 | 「写第N章」 | 预检（细纲槽位齐/气卡非占位/职责件齐/追踪无时滞（S1，tracking-commit check）/待审清零（guyin-check-pending.js 无未终态行，U1——review/评估报告 findings 亦须先转入台账））：细纲缺→按协议补齐过三道门（槽位/H2/verdict）**停作者过目**（补纲不豁免停靠）；部署缺件→停靠指路 /guyin-setup 不代写；气卡占位→「口述覆盖/默认档继续」二选一；**目标章正文已存在→先拷 `正文/_archive/第N章_vK_时间戳.md` 再动（U4，hook 覆盖门强制）** → 取该章细纲 → 写章循环；空项目先补 A→C |
-| 补纲 | 「出细纲/补纲/规划剧情」且已有大纲 | 只做 Phase C 扩展（按 [细纲协议](references/细纲协议.md)，落盘前过硬门①），停细纲交付；**建批硬前置：产出/核对 `大纲/批次公约.md`（B1：比喻域/引号规格/收束位轮换/批次禁令一次声明，指令区不再逐章重复）＋气卡坐标覆盖本批区间（Y2，不覆盖先刷新坐标再建批）** |
-| 日更续写 | 「日更/续写/继续写」且已有正文+追踪 | 同款预检（细纲/气卡/职责件/时滞/待审清零）后循环执行写章循环，批量默认 2-3 章，单轮上限 3 章；**批收尾五查（J3+Y5）**：① `wordcount --batch`（达标率+方差）② 读复读雷达/黑名单批残留 ③ `tracking-commit check`（时滞=0）④ 落盘核验（本批每章 mtime 为本批时间戳、字数非零——防"跑了没存"）⑤ git commit（本批正文+细纲+台账一次提交）——机械子集非复盘，语义复评归作者/review |
+| 开书 | 「开书/写大纲」或项目空 | Phase A 建（/guyin-setup）→ B 前置[压测三问](references/consult/lifecycle-protocols.md)→定题材/对标+作者性四件口述（**进 C 前机械检查气卡「气句」：{{...}} 占位 → 按已定题材/对标从 参考-气质谱系.md 就近取一（难分取①）落盘、标「默认档·未口述」——占位符不许进 Phase C**，H3）→ C 纲（卷纲+首批 10 章细纲，按 [细纲协议](references/细纲协议.md)；**ch001-003 另读 [opening-design.md](references/consult/opening-design.md)，按细纲协议「黄金三章契约」填四留存字段，Fw-01**），**停在细纲交付** |
+| 写指定章 | 「写第N章」 | 预检（细纲槽位齐/气卡非占位/职责件齐/追踪无时滞（S1，tracking-commit check）/待审清零（guyin-check-pending.js 无未终态行，U1——review/评估报告 findings 亦须先转入台账）/试读门（**ch004 起**：guyin-check-trial-gate.js 须有覆盖 ch1-3 的真人试读记录，Fw-06）/切口门（**ch004 起**：魂档案「私人切口」仍 `{{}}` 占位→停靠二选一：立即补或显式延期至某卷末落字，Fw-09 C3））：细纲缺→按协议补齐过三道门（槽位/H2/verdict）**停作者过目**（补纲不豁免停靠）；部署缺件→停靠指路 /guyin-setup 不代写；气卡占位→「口述覆盖/默认档继续」二选一；**目标章正文已存在→先拷 `正文/_archive/第N章_vK_时间戳.md` 再动（U4，hook 覆盖门强制）** → 取该章细纲 → 写章循环；空项目先补 A→C |
+| 补纲 | 「出细纲/补纲/规划剧情」且已有大纲 | 只做 Phase C 扩展（按 [细纲协议](references/细纲协议.md)，落盘前过硬门①），停细纲交付；**建批硬前置：产出/核对 `大纲/批次公约.md`（B1：比喻域/引号规格/收束位轮换/批次禁令一次声明，指令区不再逐章重复）＋气卡坐标覆盖本批区间（Y2，不覆盖先刷新坐标再建批）＋走查纪律冲突台账无未仲裁行（Fw-04，仅项目已建笔法文件时）＋魂档案私人切口已定稿或持显式延期（Fw-09 C3）** |
+| 日更续写 | 「日更/续写/继续写」且已有正文+追踪 | 同款预检（细纲/气卡/职责件/时滞/待审清零）后循环执行写章循环，批量默认 2-3 章，单轮上限 3 章；**批收尾五查（J3+Y5）**：① `wordcount --batch`（达标率+方差）② 读复读雷达/黑名单批残留 ③ `tracking-commit check`（时滞=0）④ 落盘核验（本批每章 mtime 为本批时间戳、字数非零——防"跑了没存"）⑤ git commit（本批正文+细纲+台账一次提交）——机械子集，语义复评归 review |
 | 完书 | 「完本/收线/进入尾声」 | 读`_tracking-state.json`列未回收伏笔+承诺→过堂（明收/暗收/放弃+说明）→收线清单→尾声细纲消化→[完书复盘](references/consult/lifecycle-protocols.md) |
 | 大修 | 「修改第X章/回炉/重写第X章」 | 读原章+追踪 → **预检过堂：保护资产与涉本章灵感条目（Y4）——保留→组卡落 {{偏执点行}}/本章指令，弃用→登记理由与替代物（同步偏差区"弃用"行）** → 标问题 → **动刀前现稿拷 `正文/_archive/`（无存档不动刀，V1；U4 hook 覆盖门强制）** → 改写卡分级执行（L1 段改/L2 beat 改/L3 章改须确认）→ 落盘后 tracking-commit 重提交（硬门③唯一通道）+ 章检链同跑（V2——大修路径不得绕开章检与状态门）→ 消费后更新待审台账终态（U1）→ 收尾必问：这章**更合**还是只是**更合格**（过度打磨→停靠,C1）；guyin-review 的输出按其 level 字段直接进入本场景 |
 | 人物诊断 | 「显影/戏份/工具人」 | 跑 `guyin-check-flesh.js --all` 戏份+工具人概览；主角色单查（特质断裂/对话呼吸，advisory 终判归作者） |
 | 结构手术 | 「砍线/并线/这条线不对」 | 跑 `guyin-impact-map.js <关键词>` 出影响面清单（悬空债必过堂；定性资产砍线即没收须同章补偿）→ 作者定砍 → 残留处置（留闲笔/补丁章）→ 分批出补丁指令（改写卡 L1-L3 通道，S 级须 tracking-commit 重提交） |
-| 读者信号 | 「掉崖/追读/弃书」 | 读 `追踪/读者信号.md`（作者手动录入）→ 跑 `guyin-check-reader-signal.js` 出掉崖归因表+弃书点候选（连续 2 章无主线推进），归因终判归作者 |
+| 读者信号 | 「掉崖/追读/弃书」 | 读 `追踪/读者信号.md`（作者手动录入）→ 跑 `guyin-check-reader-signal.js` 出掉崖归因表+弃书点候选（连续 2 章无主线推进），归因终判归作者（上线前的真人回路走预检试读门，Fw-06） |
 | 采集 | 「采集/口述/聊聊素材」 | 经验访谈：AI 提问（生活细节向，如「最穷但讲究的房间？」）→ 作者口述两三句 → 整理落盘 `灵感池/`；只注入不强插，组卡时按需取 |
 | 定作者性 | 「定作者性/填作者性/换个气」 | 按 [references/作者性引导.md](references/作者性引导.md) 逐件口述引导，**只问缺的件**；落盘四件定稿列，问完即退 |
 
 **停靠纪律**：裸调用（/guyin-write 无意图）只做项目状态诊断并列出选项；开书默认停在细纲，正文必须由用户显式点名。匹配优先级：大修 → 写指定章 → 补纲 → 日更 → 完书 → 结构手术/人物诊断/读者信号 → 开书。
 
-**落盘硬门**：① 细纲落盘前依次跑 `scripts/guyin-check-outline-slots.js`（槽位完整性，字段权威=细纲协议）、`guyin-check-authority-leak.js`（作者性字面，含复沓锚句字段——锚句洗白在此抓）、`guyin-check-outline-verdict.js`——引用既往章/事件必须有「资产影响档位」声明，档位冲突即停作者仲裁；补纲批次末跑 `guyin-check-hook-rotation.js`（钩子连续同型/爆发无蓄力 advisory）；② 拼章后落盘前跑 `guyin-check-integrity.js`，不过回执行层重拼；③ S 级修复禁止会话裸改正文，唯一通道 = 大修 + tracking-commit 重提交。
+**落盘硬门**：① 细纲落盘前依次跑 `scripts/guyin-check-outline-slots.js`（槽位完整性，字段权威=细纲协议）、`guyin-check-authority-leak.js`（作者性字面，含复沓锚句字段——锚句洗白在此抓）、`guyin-check-outline-verdict.js`——引用既往章/事件必须有「资产影响档位」声明，档位冲突即停作者仲裁；**ch001-003 加跑 `guyin-check-opening-retention.js`（四留存字段/即兑钩子 ≤5 章兑付，Fw-01）**；补纲批次末跑 `guyin-check-hook-rotation.js`（钩子连续同型/爆发无蓄力 advisory）；② 拼章后落盘前跑 `guyin-check-integrity.js`，不过回执行层重拼；③ S 级修复禁止会话裸改正文，唯一通道 = 大修 + tracking-commit 重提交。
 
 ## 写章循环（每章必走）
 
 1. **读盘**：本章细纲 + 上一章结尾 300 字（声线锚）+ 本章涉角色卡 + 追踪状态 + 作者性四件（选切片定禁令，精神件禁字面 H1）+ `大纲/批次公约.md`（B1：规格行与批次禁令的取数源；缺→补纲场景补建后再写）。四件为默认档/未定稿：照常写，附升级提示（同章一次）。
-2. **切 beat**：按细纲把章切成 500-1500 字的 beat（默认；粒度按 `作者性/粒度配置.md`），按细纲情绪落点行标注 beat 情绪目标（Q1）。
-3. **逐 beat**：判模式（Craft/Muse，见下）→ 组装[写作卡](cards/写作卡.md)（**人的落点为空则不组卡，回细纲补——B5**）→ 下发执行层 → 收正文 → 跑 `guyin-check-beat.js`（确定性预检 Q1-Q6，零 token）→ blocking 不过直接[改写卡](cards/改写卡.md)、pass 进[自检卡](cards/自检卡.md)（先抄后判 Q7/Q8）→ 不过则改写卡分级改 → 过则进下一 beat。
-4. **拼接**：按序拼章，检查拼接点衔接；过硬门②＋落盘前过 `guyin-check-strip.js`（成稿剥离门 K3）；落盘前对本章新文件跑 `guyin-normalize-punctuation.js`（Y1：按批次公约引号规格定向——" "→`--quote-mode=ascii`、「」→`--quote-mode=yan`，零存量写入）；落盘 `正文/第XXX章_标题.md`。
+2. **切 beat**：按细纲密/疏预算分组切 beat（档位见 `作者性/粒度配置.md`；Σ 缺口进密 beat 上限扩展；跨章延续见细纲协议 §X3），按情绪落点行标注 beat 情绪目标（Q1）。
+3. **逐 beat**：判模式（Craft/Muse，见下）→ 执行层在卡组[写作卡](cards/写作卡.md)（**人的落点为空回细纲补——B5**）下发；solo 可直写（新题材首章/卡壳 beat 再借卡，Fw-08）→ 收正文 → 跑 `guyin-check-beat.js`（确定性预检 Q1-Q6，零 token，**任何执笔路径不豁免**）→ blocking 不过直接[改写卡](cards/改写卡.md)、pass 进[自检卡](cards/自检卡.md)（先抄后判 Q7/Q8）→ 不过则改写卡分级改 → 过则进下一 beat。
+4. **拼接**：按序拼章，检查拼接点衔接；过硬门②＋落盘前过 `guyin-check-strip.js`（成稿剥离门 K3）；落盘前对本章新文件跑 `guyin-normalize-punctuation.js`（Y1 按批次公约引号规格定向，模式见脚本 USAGE，零存量写入）；落盘 `正文/第XXX章_标题.md`。
 5. **摘要**：组[摘要卡](cards/摘要卡.md)→checker（零温）填空→`delta.result` 章摘要（约300字）。
-6. **追踪提交**：运行 `scripts/guyin-tracking-commit.py`（delta.result 入库 chapter_summaries；全部实体一事务提交；Muse 章必登 verdicts，物证/地名首现当章登 evidence/geo，场景首现/变迁当章登 scenes，锚点存原句禁概括）→ **立即** `guyin-check-repetition.js --commit` 固化段落指纹（原子双命令，缺一不得进下一章——欠账由章检 blocking 拦）。
-7. **章检**：首跑 `guyin-tracking-commit.py check`（时滞=0，V2——第 6 步被跳过在此拦）→ 依次跑 `guyin-check-strip.js`（成稿剥离门，K3）、`guyin-check-degeneration.js`、`guyin-check-integrity.js`、`guyin-check-ai-patterns.js`、`guyin-check-narrative-asset.js`、`guyin-check-consistency.js`、`guyin-check-outline-copy.js`、`guyin-check-outline-deliver.js`（S3+S4 承诺交付；R1 扩：锚句落地/钩子引语匹配/跨章签名句归属——偏差裁决二选一：修=改写卡对齐契约，认=登记细纲执行偏差区，无第三态）、`guyin-check-authority-leak.js`（作者性字面，兼拦声线锚复读）、`guyin-check-wordcount.js`（字数双口径下限：区间取下限、单值 ×90%，缺省 3000——J1；缺则补 beat 勿注水）；报警标**待审**：**逐条登 `追踪/待审台账.md`（U1）**——blocking 改写或豁免（五测试）二选一，编排层不得自判保留；advisory 保留/分诊卡（[分诊卡](cards/分诊卡.md)三选一+3票制）；终态五选一（修复/豁免/契约修订/顺延/升级作者），消费后回填台账行。
+6. **追踪提交**：运行 `scripts/guyin-tracking-commit.py`（delta.result 与全部实体一事务提交；Muse 登 verdicts，物证/地名/场景首现当章登，锚句存原句禁概括）→ **立即** `guyin-check-repetition.js --commit` 固化段落指纹（原子双命令，缺一不得进下一章——欠账由章检 blocking 拦）。
+7. **章检**：首跑 `guyin-tracking-commit.py check`（时滞=0，V2——第 6 步被跳过在此拦）→ 依次跑 `guyin-check-strip.js`（成稿剥离门，K3）、`guyin-check-degeneration.js`、`guyin-check-integrity.js`、`guyin-check-ai-patterns.js`、`guyin-check-narrative-asset.js`、`guyin-check-consistency.js`、`guyin-check-outline-copy.js`、`guyin-check-outline-deliver.js`（S3+S4/R1：锚句落地/钩子引语/跨章签名句归属——偏差二选一：改写卡对齐契约或登记细纲执行偏差区）、`guyin-check-authority-leak.js`（作者性字面，兼拦声线锚复读）、`guyin-check-wordcount.js`（J1 双口径下限，缺省 3000；缺则补 beat 勿注水）、`guyin-check-rule-conflict.js`（advisory，Fw-04，判据见脚本 USAGE）、`guyin-check-foreshadow-id.js`（advisory，Fw-09 C2：伏笔重号/空号/正文与大纲引用未登记）；报警标**待审逐条登台账（U1）**——blocking 改写或豁免（五测试）、advisory 保留或[分诊卡](cards/分诊卡.md)，终态五选一消费后回填。
 8. **灵感登记**：正文里长出的细纲外新元素（道具/习惯/闲笔）登 `追踪/灵感台账.md`，下批细纲时决定转正。
 
-**卷末附加**：卷末章提交后提醒**口述重说气句**（非抄旧，标当前档位；默认档运行升级为主动询问），刷新气卡，旧句入魂档案；核对豁免台账与消化度；仍默认档/未定稿者**主动询问**。
+**卷末附加**：卷末章提交后提醒**口述重说气句**（非抄旧，标当前档位），刷新气卡，旧句入魂档案；核对豁免台账与消化度；气卡默认档、一生之问/私人切口未定稿或延期到期者**主动询问**，二选一落字（补/再延期至某卷末），不得静默滚入下一卷（Fw-09 C3）。
 
 ## Craft / Muse 双模式（机械判据，无语义判断）
 
@@ -57,21 +58,21 @@ Muse 动作：情绪峰值 beat 前置[发散卡](cards/发散卡.md)；细纲�
 
 - 写作 subagent：`guyin-beat-writer`（高温，定义见 [agents/guyin-beat-writer.md](agents/guyin-beat-writer.md)）；
 - 检查 subagent：`guyin-checker`（低温，定义见 [agents/guyin-checker.md](agents/guyin-checker.md)）——自检/摘要零温、分诊中温3票；
-- 无 subagent 环境（或 Codex 报 unknown agent_type）降级：主会话直接扮演执行层填卡，但**先声明「Fallback: solo 执行，声线与节奏由编排层兜底」**；检查类卡卡头加「本次输出保持确定，不要发挥」弱补偿；
-- 多采样：情绪峰值 beat 同卡抽 3-5 版，guyin-check-beat.js + 自检卡淘汰硬错误后进入外选；
+- 无 subagent 环境（或 Codex 报 unknown agent_type、部署件 model 仍为占位）降级 **solo**：主会话扮演执行层，声明「solo 执行，声线节奏由编排层兜底」，守三条（Fw-08 反转后）：**①允许读细纲直写，卡形态可选**（新题材首章/卡壳 beat 才借卡），省卡不省闸门（check-beat＋自检卡＋章检链照跑）；**②读笔法文件只取规格行进工作记忆**，不照抄整篇；**③追踪提交后在 `追踪/逐章记录/第NNN章.md` 末追加一行：模式=solo｜原因｜兜底项**；检查类卡卡头加「保持确定，不要发挥」；
+- 多采样：情绪峰值 beat 同卡抽 3-5 版，机械检＋自检卡淘汰后外选；
 - **外选判词（合问进选择器）**：先机械筛超档（G4，判据见 cards/README.md 组装纪律 6）——反转/复盘/识破 beat 的候选版否定强度超过本章声明档位即出局，气句再好不选；候选含精神件字面（气句/魂档案语句原文或近似）直接出局（H1——字面泄漏与超档正交，不论 beat 类型）；再在合规候选里只问一句「哪版更接近气句」（读 `作者性/气卡.md`，永不下发）；选中版编号+理由留在对话；难分时任选。
 
 ## 文件契约
 
 ```
-读：大纲/卷纲_*.md、大纲/批次公约.md、大纲/细纲_第XXX章.md、设定/角色/*.md、设定/世界观/*.md、
+读：大纲/卷纲_*.md、大纲/批次公约.md、大纲/细纲_第XXX章.md、大纲/执行层一页纸.md（可选，Fw-04）、设定/角色/*.md、设定/世界观/*.md、
     追踪/{伏笔,上下文,事件定性资产}.md、追踪/时间线/*、追踪/角色状态/*、追踪/{灵感,豁免,待审}台账.md、
-    作者性/{指纹,偏执点,气卡,魂档案,粒度配置}.md、references/exemplars/{题材}.md
+    作者性/{指纹,偏执点,气卡,魂档案,粒度配置}.md、作者性/{语言纪律,纪律冲突台账}.md（可选，存在才读，Fw-04）、references/exemplars/{题材}.md
 写：正文/第XXX章_标题.md、追踪/*（经 tracking-commit）、追踪/{灵感,豁免,待审}台账.md
 项目结构按 guyin-setup 模板；新项目先 /guyin-setup。
 ```
 
-**硬护栏**：guyin-setup 模板自带 hook（guard/post-write/session），兜底不替章检；无 hook 宿主靠本文件纪律成立。
+**硬护栏**：guyin-setup 模板自带 hook（guard/post-write/session），兜底不替章检；**Codex/OpenCode 等无 hook 宿主：开新章前必手动跑 `guyin-check-pending.js`（升级作者行备注须已回填「已裁决：…」，Fw-07）**；其余靠本文件纪律成立。
 
 ## 豁免五测试（报警待审的处理，作者主判）
 

@@ -19,6 +19,9 @@ Detect high-risk AI-flavor prose patterns that need human rewrite:
   - 解释链密度过高 (知道/明白/这意味着/必须/需要等判断链聚集)
   - 系统公告公文腔过密 (方括号系统/规则行里硬规则词聚集)
   - 过度精炼短段 (长文本里短叙述段过密且自然连接偏少)
+  - prose-fragment-ratio (Fw-02 密/疏双轨配套: ≤15字叙述段占比 >25% advisory / >40% blocking; 样本不足静默; 细纲声明「碎化豁免」降 advisory)
+  - silence-density-tic (Fw-05: 引号外「没答/没说话/没接话/没吭声/不说话」>3/千字, 人物沉默反应套路化, advisory)
+  - dialogue-zero-information (Fw-05: 仅 ch1-3 启发式, 主角邻近发问=0 且对白中位≤5字 双中, advisory; 无批次公约 POV 静默)
   - 低连接密度 (引号外叙述功能词/白话连接偏少且中长句不足，像提纲/电报体)
   - 监控摄像头式动作清单 (同段连续摆放动作动词，缺少视角温度/情绪缓冲)
   - 音量反差腔 (声音不高/不大…却…, 实战漏网句式)
@@ -37,7 +40,7 @@ Detect high-risk AI-flavor prose patterns that need human rewrite:
   - pov-drift (PV2, docs/11 §二): 第三有限视角越界——对手/配角内心直写 ≥2 处(1 处静默), advisory; 显式人名 + 一跳代词回指 + 「他/她哪是/哪要的是」弱信号; 无批次公约 POV 行/POV=全知/多视角 → fail-open 静默
 
 Each finding carries severity: blocking by default for generation/deslop cleanup (not-is-comparison / em-dash / voice-contrast / negation-parade / reverse-not-is / trailer-ending / trailer-summary). This is a local style/readability gate, not an AIGC detector score; functional human text can be marked for review instead of hard-edited for a detector.
-或 advisory (period-stutter / long-paragraph / micro-action-tic / action-list-tic / abstract-summary-tic / cliche-density-tic / metaphor-density-tic / reasoning-chain-tic / system-notice-formality-tic / overcompressed-prose-tic / low-connective-density-tic / quote-emphasis-tic / formulaic-parallelism / explain-tic / mid-trailer / aphorism-tic / phrase-quota / sensory-repeat / stutter-punct / pov-drift，是提示，justified 的长推理/氛围段可保留)。
+或 advisory (period-stutter / long-paragraph / micro-action-tic / action-list-tic / abstract-summary-tic / cliche-density-tic / metaphor-density-tic / reasoning-chain-tic / system-notice-formality-tic / overcompressed-prose-tic / prose-fragment-ratio / silence-density-tic / low-connective-density-tic / quote-emphasis-tic / formulaic-parallelism / explain-tic / mid-trailer / aphorism-tic / phrase-quota / sensory-repeat / stutter-punct / pov-drift / dialogue-zero-information，是提示，justified 的长推理/氛围段可保留；prose-fragment-ratio 占比 >40% 时升 blocking，碎化豁免后回降)。
 --fail-on=blocking 只在出现 blocking finding 时退出 1；默认 --fail-on=all 有任何 finding 即退出 1。
 
 The script reports findings only. It never rewrites text, because the safe fix is
@@ -150,6 +153,24 @@ const OVERCOMPRESSED_PROSE_MIN_PARAS = 45;
 const OVERCOMPRESSED_PROSE_SHORT_MAX_CHARS = 15;
 const OVERCOMPRESSED_PROSE_SHORT_RATIO = 0.58;
 const OVERCOMPRESSED_PROSE_PARTICLE_PER_KILO = 85;
+
+// Fw-02 碎化率（密/疏双轨的机械配套，细纲协议「密/疏双轨」节）：单章 ≤15 字「叙述段」
+// （一行=一段，剥引号只算引号外叙述）占比 >25% advisory、>40% blocking。
+// 与 overcompressed 的区别：那条要短段多+语气词少双条件，这条只看碎化占比，故阈值更低且分两档。
+// 样本规模不足静默（短 beat/片段不判）；低压/过场章在 大纲/细纲_第NNN章.md 声明「碎化豁免」后
+// blocking 降为 advisory（降级在主循环处理，因为细纲定位需要受检文件路径）。
+const PROSE_FRAGMENT_MAX_CHARS = 15;
+const PROSE_FRAGMENT_ADVISORY_RATIO = 0.25;
+const PROSE_FRAGMENT_BLOCKING_RATIO = 0.40;
+const PROSE_FRAGMENT_MIN_CHARS = 800;
+const PROSE_FRAGMENT_MIN_PARAS = 30;
+
+// Fw-05 沉默短语密度（追影 ch001-003 实证：人物反应全靠「没答/没说话」带过，对话无信息增量）：
+// 只扫引号外叙述；「没答案」「没接住」等非沉默用法用后字排除。每千字 >3 次 advisory。
+// 样本不足 1000 字静默（密度型阈值的自然窗口，同 low-connective 的 fail-open 哲学）。
+const SILENCE_TIC_PATTERN = /没答(?!案)|没说话|没接(?:话|茬)?(?![住过到起力])|没吭声|不说话/g;
+const SILENCE_TIC_PER_KILO = 3;
+const SILENCE_TIC_MIN_CHARS = 1000;
 
 // 低连接密度：单纯低功能词会误抓有大量中长句的文本；
 // 因此必须叠加“中长句不足”，并只看引号外叙述。这是 overcompressed 的短窗口补充，只做 advisory。
@@ -366,6 +387,17 @@ for (const file of options.files) {
   findings.push(...findStutterPunct(fullPath, input).map((finding) => ({ file, ...finding })));
   // PV2 视角纪律（docs/11 §二）：读批次公约 POV 规格 + 扫叙述层心理动词命中，故在主循环接线。
   findings.push(...findPovDrift(fullPath, input).map((finding) => ({ file, ...finding })));
+  // Fw-05 对话零信息启发式（仅 ch001-003）：读批次公约 POV 定位主角，两弱信号同中才报，故主循环接线。
+  findings.push(...findDialogueZeroInformation(fullPath, input).map((finding) => ({ file, ...finding })));
+  // Fw-02 碎化豁免：细纲显式声明「碎化豁免」后，碎化率 blocking 降 advisory（低压/过场章通道）。
+  if (hasFragmentExemption(fullPath)) {
+    for (const finding of findings) {
+      if (finding.type === 'prose-fragment-ratio' && finding.severity === 'blocking') {
+        finding.severity = 'advisory';
+        finding.message += '【细纲已声明碎化豁免，降级 advisory】';
+      }
+    }
+  }
   allFindings.push(...findings);
 }
 
@@ -491,6 +523,8 @@ function scanProsePatterns(proseLines) {
   findings.push(...findReasoningChainTic(proseLines));
   findings.push(...findNoticeFormalityTic(proseLines));
   findings.push(...findOvercompressedProseTic(proseLines));
+  findings.push(...findProseFragmentRatioTic(proseLines));
+  findings.push(...findSilenceDensityTic(proseLines));
   findings.push(...findLowConnectiveDensityTic(proseLines));
   findings.push(...findExplainTic(proseLines));
   findings.push(...findMidTrailerTic(proseLines));
@@ -1131,6 +1165,83 @@ function findOvercompressedProseTic(proseLines) {
     excerpt: compact(samples.join(' | ')),
   }];
 
+}
+
+// Fw-02 碎化率：引号外叙述段（一行=一段）中 ≤15 字短段的占比。只报一条；
+// >40% blocking、>25% advisory，样本不足静默。细纲「碎化豁免」降级在主循环处理。
+function findProseFragmentRatioTic(proseLines) {
+  let narrativeChars = 0;
+  let narrativeParas = 0;
+  let shortParas = 0;
+  let firstLine = null;
+  const samples = [];
+
+  for (const { text, lineNo } of proseLines) {
+    const trimmed = text.trim();
+    if (!trimmed || isDivider(trimmed) || isStructural(trimmed) || /^【[^】]+】$/.test(trimmed)) continue;
+    const narrative = stripQuoted(trimmed).trim();
+    const len = visibleLength(narrative);
+    if (len === 0) continue;
+
+    if (firstLine === null) firstLine = lineNo;
+    narrativeParas += 1;
+    narrativeChars += len;
+    if (len <= PROSE_FRAGMENT_MAX_CHARS) {
+      shortParas += 1;
+      if (samples.length < 6) samples.push(narrative);
+    }
+  }
+
+  if (narrativeChars < PROSE_FRAGMENT_MIN_CHARS || narrativeParas < PROSE_FRAGMENT_MIN_PARAS) return [];
+  const ratio = shortParas / narrativeParas;
+  if (ratio <= PROSE_FRAGMENT_ADVISORY_RATIO) return [];
+  const blocking = ratio > PROSE_FRAGMENT_BLOCKING_RATIO;
+
+  return [{
+    line: firstLine,
+    column: 1,
+    type: 'prose-fragment-ratio',
+    severity: blocking ? 'blocking' : 'advisory',
+    ratio: Number(ratio.toFixed(3)),
+    message: `${blocking ? '碎化严重' : '碎化率偏高'}：叙述段 ${narrativeParas} 个，${shortParas} 个≤${PROSE_FRAGMENT_MAX_CHARS}字（${(ratio * 100).toFixed(0)}%，阈值 ${blocking ? '40' : '25'}%）；一句一段过多会磨掉层次——密点合并出 ≥40 字连续段、疏点也须成段 ≥25 字（细纲协议密/疏双轨，Fw-02）。低压/过场章可在细纲声明「碎化豁免」后复检。`,
+    excerpt: compact(samples.join(' | ')),
+  }];
+}
+
+// Fw-05 沉默短语密度：引号外叙述里「没答/没说话/没接话/没吭声/不说话」>3/千字——
+// 人物反应总用沉默带过的机械指纹，追影开篇对话零信息增量的伴随特征。只报一条 advisory。
+function findSilenceDensityTic(proseLines) {
+  let narrativeChars = 0;
+  let hits = 0;
+  let firstLine = null;
+  const samples = [];
+
+  for (const { text, lineNo } of proseLines) {
+    const trimmed = text.trim();
+    if (!trimmed || isDivider(trimmed) || isStructural(trimmed)) continue;
+    const narrative = stripQuoted(trimmed);
+    narrativeChars += visibleLength(narrative);
+    SILENCE_TIC_PATTERN.lastIndex = 0;
+    let match;
+    while ((match = SILENCE_TIC_PATTERN.exec(narrative)) !== null) {
+      hits += 1;
+      if (firstLine === null) firstLine = lineNo;
+      if (samples.length < 6) samples.push(match[0]);
+    }
+  }
+
+  if (narrativeChars < SILENCE_TIC_MIN_CHARS) return [];
+  const perKilo = (hits / narrativeChars) * 1000;
+  if (perKilo <= SILENCE_TIC_PER_KILO) return [];
+
+  return [{
+    line: firstLine,
+    column: 1,
+    type: 'silence-density-tic',
+    severity: 'advisory',
+    message: `沉默短语密度偏高：引号外叙述「没答/没说话/没接话/没吭声/不说话」${hits} 处（${perKilo.toFixed(1)}/千字，阈值 3）——人物反应总用沉默带过，对话缺信息增量；用有增量的动作或回话替代沉默套路（Fw-05）。`,
+    excerpt: compact(samples.join(' | ')),
+  }];
 }
 
 // 低连接密度：长文本/中短窗口里，引号外叙述的功能词和白话连接同时偏低，且缺少中长承接句，
@@ -1923,6 +2034,39 @@ function locateTrackingState(file) {
   return null;
 }
 
+// Fw-02：从受检正文文件名（第N章…）向上（≤4 层）定位 大纲/细纲_第NNN章.md。
+// 章号三种写法都试（三位补零为模板规范，原始号/去零兼容存量）。找不到返回 null（fail-open）。
+function locateChapterOutline(file) {
+  const base = path.basename(file);
+  const m = /第0*(\d+)章/.exec(base);
+  if (!m) return null;
+  const padded = m[1].padStart(3, '0');
+  const names = [`细纲_第${padded}章.md`, `细纲_第${m[1]}章.md`];
+  let cur = path.dirname(path.resolve(file));
+  for (let depth = 0; depth < 4; depth += 1) {
+    for (const name of names) {
+      const candidate = path.join(cur, '大纲', name);
+      if (fs.existsSync(candidate)) return candidate;
+    }
+    const parent = path.dirname(cur);
+    if (parent === cur) break;
+    cur = parent;
+  }
+  return null;
+}
+
+// Fw-02：细纲声明「碎化豁免」→ prose-fragment-ratio 的 blocking 降 advisory。
+// 细纲缺失/不可读 → false（按正常阈值判；豁免是显式声明，不搞隐式放行）。
+function hasFragmentExemption(file) {
+  const outlinePath = locateChapterOutline(file);
+  if (!outlinePath) return false;
+  try {
+    return fs.readFileSync(outlinePath, 'utf8').includes('碎化豁免');
+  } catch (error) {
+    return false;
+  }
+}
+
 // 读批次公约的 POV 规格：视角规格行 → POV={人名}。无该行／值「全知」／「多视角」
 // → 静默（多视角书不受此检，同 consistency 对 _tracking-state 的 fail-open 约定）。
 function loadPovFromPact(file) {
@@ -2066,4 +2210,89 @@ function findPovDrift(fullPath, input) {
     excerpt: drifts[0].head10,
   });
   return findings;
+}
+
+// Fw-05 对话零信息启发式（仅 ch001-003，advisory）：追影开篇形态——主角全程不主动发问
+// （只被问/只应答）且全体对白短促无信息增量。两个弱信号同时命中才报，启发式非精确，
+// 误报走豁免；无批次公约/POV（含全角＝/无「视角规格」前缀，兼容写法宽于 PV2）→ fail-open。
+function loadProtagonistName(file) {
+  const pactPath = locateBatchPact(file);
+  if (!pactPath) return null;
+  let text = '';
+  try {
+    text = fs.readFileSync(pactPath, 'utf8');
+  } catch (error) {
+    return null;
+  }
+  const m = /POV\s*[=＝:：]\s*([^\s（(，；;。、]+)/.exec(text);
+  if (!m) return null;
+  const name = m[1].trim();
+  if (!name || name === '全知' || name === '多视角') return null;
+  return name;
+}
+
+// 收集全文所有成对引号片段（多引号源区间去重叠），保序。
+function allQuotedSegments(text) {
+  const ranges = [];
+  for (const src of QUOTE_SOURCES) {
+    const re = new RegExp(src, 'g');
+    let m;
+    while ((m = re.exec(text)) !== null) ranges.push([m.index, m.index + m[0].length]);
+  }
+  ranges.sort((a, b) => a[0] - b[0] || b[1] - a[1]);
+  const segments = [];
+  let lastEnd = -1;
+  for (const [s, e] of ranges) {
+    if (s >= lastEnd) {
+      segments.push(text.slice(s, e));
+      lastEnd = e;
+    }
+  }
+  return segments;
+}
+
+function findDialogueZeroInformation(fullPath, input) {
+  // 仅黄金三章正文生效。
+  const chapterMatch = /第0*(\d+)章/.exec(path.basename(fullPath));
+  if (!chapterMatch) return [];
+  const chapter = Number(chapterMatch[1]);
+  if (chapter < 1 || chapter > 3) return [];
+
+  const hero = loadProtagonistName(fullPath);
+  if (!hero) return []; // 无批次公约/POV 不可解析 → fail-open
+
+  const lines = input.split(/\r?\n/);
+
+  // 信号 A：主角「邻近」发问计数——问号对白所在行或上下相邻行出现主角名即记一次。
+  // 只认问号在引号内的片段（引号片段内含 ？/?）。
+  let heroQuestions = 0;
+  // 信号 B：全体对白可见长度中位数（剥去引号字符本身）。
+  const dialogueLens = [];
+  for (let i = 0; i < lines.length; i += 1) {
+    for (const seg of allQuotedSegments(lines[i])) {
+      if (!/[？?]/.test(seg)) continue;
+      const near = [lines[i - 1], lines[i], lines[i + 1]].filter(Boolean).join('\n');
+      if (near.includes(hero)) heroQuestions += 1;
+    }
+  }
+  for (const seg of allQuotedSegments(input)) {
+    const len = visibleLength(seg);
+    if (len > 0) dialogueLens.push(len);
+  }
+
+  // 对白样本不足 → 启发式不成立（fail-open，宁漏不噪）。
+  if (dialogueLens.length < 6) return [];
+  const sorted = [...dialogueLens].sort((a, b) => a - b);
+  const mid = sorted[Math.floor(sorted.length / 2)];
+
+  if (heroQuestions > 0 || mid > 5) return [];
+
+  return [{
+    line: 1,
+    column: 1,
+    type: 'dialogue-zero-information',
+    severity: 'advisory',
+    message: `对话零信息嫌疑（ch1-3 启发式）：主角「${hero}」邻近的发问对白 0 句、全体对白长度中位仅 ${mid} 字——主角只被问/只短答，没有主动索取信息或抛出筹码；开篇需要主角主动发起的对话。启发式非精确，刻意沉默主角可走豁免（Fw-05）。`,
+    excerpt: '',
+  }];
 }

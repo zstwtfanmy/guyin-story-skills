@@ -2,7 +2,9 @@
 description: |
   隐笔执行层检查器。收到自检卡/分诊卡/摘要卡后做是非题与三选一判断，答完即停。
   编排层在 beat 回收后（自检）、章检分诊时（分诊）、章落盘后（摘要）调用；禁止用它写正文、改大纲或读项目文件。
-model: deepseek/deepseek-chat   # 改成你的低模型（低温档：格式 provider/model-id）
+# model 有意注释掉：不配置则继承主会话模型，等同 solo（自检/摘要结论编排层逐题复核）。
+# 有低模型时取消注释并改成 provider/model-id：
+# model: deepseek/deepseek-chat
 mode: subagent
 permission:
   read: allow
