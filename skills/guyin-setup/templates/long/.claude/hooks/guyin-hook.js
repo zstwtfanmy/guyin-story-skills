@@ -145,8 +145,25 @@ function stateProblem(st) {
 // 同步注释契约（U1/D2）：与技能库 skills/guyin-write/scripts/guyin-check-pending.js 的
 // parseLedger/rowIsOpen 是同一逻辑的两份实现（部署件/技能库路径不互通）；改一处必改另一处
 // （列位 cells[1]=章号、cells[4]=终态、cells[5]=备注；占位跳过；open 判定）。
-// Fw-07（docs/12）：终态含「升级作者」时备注列须回填「已裁决：…」才算终态——
-// 升级是转交不是结案；章号口径与脚本不同（hook 用 < num，脚本 --through 用 <= N），勿统一。
+// Fw-07（docs/12）：终态含「升级作者」时备注列须回填「已裁决：＋结论」才算终态——
+// 升级是转交不是结案，只写冒号不算（v3-A1）。
+// v3-A1（任务书 §4 A1）：终态六选一（修复/豁免/契约修订/顺延/升级作者/不适用），
+// 未知字串保持 open；「不适用」须备注含原文位置（章/行/段/L 号）与理由，缺证据不关闭。
+// 章号口径与脚本不同（hook 用 < num，脚本 --through 用 <= N），勿统一。
+function pendingRowIsOpen(state, note) {
+  const TERMINAL = ['修复', '豁免', '契约修订', '顺延', '升级作者', '不适用'];
+  if (state === '' || state === '待审') return true;
+  if (!TERMINAL.some((t) => state.includes(t))) return true;
+  if (/升级作者/.test(state) && !/已裁决[：:]\s*\S/.test(note || '')) return true;
+  if (/不适用/.test(state)) {
+    const n = (note || '').trim();
+    const hasPos = /(第\s*0*\d+\s*章|L\s*0*\d+|\d+\s*[行段]|行\s*\d+|段\s*\d+|:\s*0*\d+)/i.test(n);
+    const reason = n.replace(/(第\s*0*\d+\s*章|L\s*0*\d+|\d+\s*[行段]|行\s*\d+|段\s*\d+|:\s*0*\d+)/gi, '').replace(/\s/g, '');
+    if (!hasPos || reason.length < 6) return true;
+  }
+  return false;
+}
+
 function pendingBlockers(bookDir, num) {
   try {
     const text = fs.readFileSync(path.join(bookDir, '追踪', '待审台账.md'), 'utf8');
@@ -161,9 +178,7 @@ function pendingBlockers(bookDir, num) {
       if (!chMatch) continue;
       const state = cells[4] || '';
       const note = cells[5] || '';
-      const open = state === '' || state === '待审'
-        || (/升级作者/.test(state) && !/已裁决[：:]/.test(note));
-      if (parseInt(chMatch[1], 10) < num && open) count += 1;
+      if (parseInt(chMatch[1], 10) < num && pendingRowIsOpen(state, note)) count += 1;
     }
     return count;
   } catch (e) {
@@ -229,8 +244,9 @@ function guard() {
       const pending = pendingBlockers(bookDir, num);
       if (pending > 0) {
         console.error(`⛔ 写正文被拦截：待审台账有 ${pending} 行未终态（章号 < ${num}）。`);
-        console.error('   先消费（修复/豁免/契约修订/顺延/升级作者）回填终态，再开新章（guyin-check-pending.js）。');
+        console.error('   先消费（修复/豁免/契约修订/顺延/升级作者/不适用）回填终态，再开新章（guyin-check-pending.js）。');
         console.error('   升级作者的行还须在备注列回填「已裁决：…」（作者结论），单写升级不算终态。');
+        console.error('   不适用（确认误报/有功能写法）还须备注原文位置＋判定理由，缺证据不算终态。');
         process.exit(2);
       }
     } else {

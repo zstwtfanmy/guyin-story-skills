@@ -11,12 +11,23 @@
 //   ① 禁用词检测（原题1）：正文出现「第X章/细纲/伏笔/读者/大纲」等工程词
 //   ② 禁止项检测（原题4/5）：--ban 列表的关键词零出现
 //   ③ 字数检测（原题6上半）：去空白字符数落在 [--min, --max] 区间
-//   ④ 跳写检测（原题6下半）：「此处省略 / 一番…之后 / 随后便 / 不多时」等跳写模式
-//   ⑤ 连续对话检测（原题2，半自动）：连续 ≥4 句对话中间无动作/环境插入
-//   ⑥ 心理独白计数（原题3，半自动）：引号外心理动词句数 ≤ --mono-limit
+//   ④ 跳写检测（原题6下半）：括号省略（未完成输出）blocking；时间压缩词 advisory
+//   ⑤ 连续对话检测（原题2，半自动）：连续 ≥4 行纯对白（叙述余量 ≤4 字）advisory
+//   ⑥ 心理词频计数（原题3，半自动）：引号外心理/情绪词命中数，advisory
 //
 // 模型只剩：原题7（必须发生事件是否写到）、原题8（续写衔接）。
 // 改造后的自检卡将引用本脚本的输出，模型只回答脚本标 SKIP 的题。
+//
+// v3-A1 误报修复（docs/框架整改任务书 §4 A1）：
+//   - 时间概述词（不多时/一番…之后等）不再判 blocking——合法概述与跳过必须展示
+//     的事件须由语义检查区分，脚本只报观测值供判读；括号省略（（此处省略…））是
+//     显式未完成输出，保持 blocking。
+//   - dialogue-run 只累计「纯对白行」（剥引号后叙述余量 ≤4 字）——同行已有动作的
+//     行不再被当作无动作对白，也不再把整段话术误报为「无动作」。
+//   - mono-count 报告的是心理/情绪词命中次数（词频），不是心理独白句数——只报
+//     观测值与「需结合上下文判断」，不声称已检测「心理独白过多」。
+//   - 默认 --fail-on=blocking：advisory 不再因 exit 1 被调用方放大为失败；
+//     advisory 进分诊/判读，不因退出码一律发改写卡。
 //
 // Report-only：报警只标待审，永不自动删。与其他检查脚本同构。
 
@@ -30,15 +41,18 @@ Beat-level deterministic pre-check (self-check card sink-down):
   ② ban-violation     (blocking): --ban 列表关键词出现
   ③ beat-too-short    (blocking): 去空白字数 < --min (default 500)
   ④ beat-too-long     (advisory): 去空白字数 > --max (default 1500)
-  ⑤ skip-write        (blocking): 跳写模式（此处省略/一番…之后等）
-  ⑥ dialogue-run      (advisory): 连续 ≥4 句对话无动作/环境插入（半自动）
-  ⑦ mono-count        (advisory): 内心独白标记/情绪告知词句数超限（半自动；
-                       知道/明白/清楚/疑惑/纳闷为合法认知半句，不计数，Fw-05）
+  ⑤ skip-write        (blocking): 括号省略（（此处省略…）＝未完成输出）
+     skip-write       (advisory): 时间压缩词命中（不多时/一番…之后等——合法
+                       概述与漏写须语义区分，脚本只报观测值）
+  ⑥ dialogue-run      (advisory): 连续 ≥4 行纯对白（剥引号后叙述余量 ≤4 字；
+                       同行含动作的行不计入，不声称「无动作」）
+  ⑦ mono-count        (advisory): 引号外心理/情绪词命中数超 --mono-limit（词频
+                       观测，非独白句数；知道/明白/清楚等认知半句不计数，Fw-05）
 
 After this script, the self-check card only needs the model for:
-  - Q7: 必须发生事件是否写到（语义判断）
+  - Q7: 必须发生事件是否写到完整结果——动作/承受者反应/后果三要素（语义判断，v3-B2）
   - Q8: 续写衔接是否顺畅（语义判断）
-  - Q9-Q11（Fw-05）：留存条件题（主角主动/对话增量/可记忆点），章号与 beat 序
+  - Q9-Q11（Fw-05→v3-B2）：留存条件题（Q9 先问本 beat 功能再查落成/对话增量/可记忆点），章号与 beat 序
     条件由编排层组卡时判定，脚本不查——self-check 卡面定义频率（ch1-3 每 beat）。
 
 Report-only: findings go to the review queue, never auto-deleted.`;
@@ -47,12 +61,16 @@ Report-only: findings go to the review queue, never auto-deleted.`;
 const META_RE = /细纲|情节点|卷纲|功能标签|目标情绪|字数目标|章首钩子|章尾钩子|第[一二三四五六七八九十百千万两0-9]+章|本章|这一章|上一章|下一章|上章|下章|前一章|后一章|前文|后文|伏笔|读者|大纲|任务描述/;
 
 // ---- 跳写模式（自检卡原题6「此处省略 / 一番……之后」的确定性版）----
-const SKIP_WRITE_PATTERNS = [
+// v3-A1 二分：括号省略是显式「未完成输出」（blocking）；时间压缩词是通用概述笔法，
+// 合法概述与「跳过必须展示的事件」须语义区分（自检卡 Q7 / 编排层判读），只报 advisory。
+const SKIP_WRITE_PLACEHOLDER = [
   { re: /[（(](此处|以下|这里|下文|后续)?\s*(省略|略)(去|过)?[^）)]{0,10}[）)]/, label: '括号省略' },
-  { re: /一番[^，。]{0,8}之后/, label: '一番…之后（跳过过程）' },
-  { re: /随后便[是了]/, label: '随后便是/了（跳过过程）' },
-  { re: /不多时[，,便]/, label: '不多时（跳过过程）' },
-  { re: /(经过|度过)了?[^，。]{0,6}(时光|时间|岁月|日夜|工夫)/, label: '经过…时间（跳过过程）' },
+];
+const SKIP_WRITE_TIME_COMPRESS = [
+  { re: /一番[^，。]{0,8}之后/, label: '一番…之后' },
+  { re: /随后便[是了]/, label: '随后便是/了' },
+  { re: /不多时[，,便]/, label: '不多时' },
+  { re: /(经过|度过)了?[^，。]{0,6}(时光|时间|岁月|日夜|工夫)/, label: '经过…时间' },
 ];
 
 // ---- 心理动词（引号外叙述行中的心理活动标记，半自动计数）----
@@ -67,6 +85,15 @@ const PSYCH_VERBS = /(?<!["「」『』“”‘’《》])(心想(?:道)?|心�
 // SP2（docs/11 §一）：字符类加 "——直引号对白行同样判对话行（dialogue-run 检测覆盖）。
 function isDialogueLine(trimmed) {
   return /["「」『』“”'']/  .test(trimmed);
+}
+
+// ---- 纯对白行判定（v3-A1）：剥引号后叙述余量 ≤4 字才算纯对白 ----
+// 「"走吧。"他提起箱子。」同行已有动作——不再计入 dialogue-run 连排，
+// 也不再误报「无动作/表情/环境插入」。叙述余量含标点。
+function isPureDialogueLine(trimmed) {
+  if (!isDialogueLine(trimmed)) return false;
+  const narrative = stripQuoted(trimmed).replace(/\s/g, '');
+  return narrative.length <= 4;
 }
 
 // ---- 去引号内容（复用 degeneration.js 的 stripQuoted 逻辑）----
@@ -93,7 +120,7 @@ function compact(text) {
 // ---- 参数解析 ----
 const options = {
   json: false,
-  failOn: 'all',
+  failOn: 'blocking', // v3-A1：默认只按 blocking 定退出码；advisory 走判读/分诊
   min: 500,
   max: 1500,
   ban: [],
@@ -238,9 +265,10 @@ if (charCount < options.min) {
   });
 }
 
-// ---- ⑤ 跳写检测（skip-write，blocking）----
+// ---- ⑤ 跳写检测（skip-write）----
+// 括号省略＝显式未完成输出，blocking；时间压缩词＝概述笔法观测，advisory（v3-A1）。
 for (const { trimmed, lineNo } of content) {
-  for (const { re, label } of SKIP_WRITE_PATTERNS) {
+  for (const { re, label } of SKIP_WRITE_PLACEHOLDER) {
     const m = re.exec(trimmed);
     if (m) {
       findings.push({
@@ -248,7 +276,22 @@ for (const { trimmed, lineNo } of content) {
         column: m.index + 1,
         type: 'skip-write',
         severity: 'blocking',
-        message: `跳写模式（${label}）：正文不该跳过过程，补写具体动作/细节。`,
+        message: `括号省略（${label}）：未完成输出直接进了正文——把省略的过程写成具体场景。`,
+        excerpt: compact(trimmed.slice(Math.max(0, m.index - 6), m.index + 24)),
+        checkId: 'Q6-skipwrite',
+      });
+      break;
+    }
+  }
+  for (const { re, label } of SKIP_WRITE_TIME_COMPRESS) {
+    const m = re.exec(trimmed);
+    if (m) {
+      findings.push({
+        line: lineNo,
+        column: m.index + 1,
+        type: 'skip-write',
+        severity: 'advisory',
+        message: `时间压缩词命中（${label}）：这是概述笔法的观测值，不必然是错误——是否跳过了必须展示的事件须结合本 beat 的「必须发生」语义判断（自检卡 Q7／编排层判读），不靠删词修复。`,
         excerpt: compact(trimmed.slice(Math.max(0, m.index - 6), m.index + 24)),
         checkId: 'Q6-skipwrite',
       });
@@ -257,46 +300,37 @@ for (const { trimmed, lineNo } of content) {
   }
 }
 
-// ---- ⑥ 连续对话检测（dialogue-run，advisory，半自动）----
-// 连续 ≥4 行对话行（引号包裹）中间无非对话叙述行插入 → 报警
+// ---- ⑥ 连续纯对白检测（dialogue-run，advisory，半自动）----
+// 只累计纯对白行（剥引号后叙述余量 ≤4 字）；同行含动作的行是合法插入，断开连排（v3-A1）。
 let dialogueStreak = 0;
 let streakStart = null;
+function reportDialogueRun() {
+  if (dialogueStreak >= 4) {
+    findings.push({
+      line: streakStart,
+      column: 1,
+      type: 'dialogue-run',
+      severity: 'advisory',
+      count: dialogueStreak,
+      message: `连续 ${dialogueStreak} 行纯对白（剥引号后叙述余量 ≤4 字）——观测值，需结合上下文判断：纯对话场景可成立；若读感单调，可在行间插入动作/环境（半自动检测）`,
+      excerpt: '',
+      checkId: 'Q2',
+    });
+  }
+}
 for (const { trimmed, lineNo } of content) {
-  if (isDialogueLine(trimmed) && trimmed.length > 4) {
+  if (isPureDialogueLine(trimmed)) {
     if (dialogueStreak === 0) streakStart = lineNo;
     dialogueStreak += 1;
   } else {
-    if (dialogueStreak >= 4) {
-      findings.push({
-        line: streakStart,
-        column: 1,
-        type: 'dialogue-run',
-        severity: 'advisory',
-        count: dialogueStreak,
-        message: `连续 ${dialogueStreak} 句对话无动作/表情/环境插入（节奏问题，半自动检测：对话行间插入动作可解）`,
-        excerpt: '',
-        checkId: 'Q2',
-      });
-    }
+    reportDialogueRun();
     dialogueStreak = 0;
   }
 }
-// 文件末尾收尾
-if (dialogueStreak >= 4) {
-  findings.push({
-    line: streakStart,
-    column: 1,
-    type: 'dialogue-run',
-    severity: 'advisory',
-    count: dialogueStreak,
-    message: `连续 ${dialogueStreak} 句对话无动作/表情/环境插入（节奏问题，半自动检测：对话行间插入动作可解）`,
-    excerpt: '',
-    checkId: 'Q2',
-  });
-}
+reportDialogueRun(); // 文件末尾收尾
 
-// ---- ⑦ 心理独白计数（mono-count，advisory，半自动）----
-// 只数引号外叙述行中的心理动词出现次数
+// ---- ⑦ 心理词频计数（mono-count，advisory，半自动）----
+// 只数引号外叙述行中的心理/情绪词命中次数——词频观测，非独白句数（v3-A1）。
 let monoCount = 0;
 const monoLines = [];
 for (const { text, trimmed, lineNo } of content) {
@@ -315,7 +349,7 @@ if (monoCount > options.monoLimit) {
     severity: 'advisory',
     count: monoCount,
     limit: options.monoLimit,
-    message: `心理独白 ${monoCount} 处超过上限 ${options.monoLimit}（半自动检测：引号外心理动词计数；对话内心理词不算）`,
+    message: `引号外心理/情绪词命中 ${monoCount} 处（观测值，非独白句数；对话内心理词不算）——是否过多需结合上下文判断：限知视角的心理活动、情绪峰值处的直陈都可能成立；确属堆砌再进改写，不因词频本身定罪`,
     excerpt: '',
     checkId: 'Q3',
   });
@@ -347,7 +381,7 @@ if (options.json) {
   console.log('');
   console.log(`[summary] beat 字数=${charCount}（区间 ${options.min}-${options.max}）`);
   console.log(`[summary] 脚本已查：${handled.length > 0 ? handled.join(', ') : '（无报警）'}`);
-  console.log(`[summary] 模型需答：Q7（必须发生事件是否写到）、Q8（续写衔接是否顺畅）`);
+  console.log(`[summary] 模型需答：Q7（必须发生事件完整结果：动作/反应/后果）、Q8（续写衔接是否顺畅）`);
 }
 
 const tripped = findings.filter((f) => (options.failOn === 'blocking' ? f.severity === 'blocking' : true));

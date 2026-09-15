@@ -69,7 +69,7 @@
 |------|------|-----------|
 | state-tracking.md | [方法] | 「本节速记」提取逻辑与角色状态格式 |
 | tracking-transaction.md | [方法] | 追踪状态协议：一份权威 JSON + 派生视图 |
-| artifact-protocols.md | [存档] | 各产物标准模板（隐笔项目模板已重定义，冲突以项目模板为准） |
+| artifact-protocols.md | [存档] | 各产物标准模板（隐笔项目模板已重定义，冲突以项目模板为准；其中 题材定位.md 骨架已随 setup 模板分发——项目 `设定/题材定位.md` 为书级唯一来源，v3-A3） |
 | quality-checklist.md | [方法] | 网文质量检查清单 |
 | cross-book-recall.md | [方法] | 多对标跨书召回机制（隐笔魂档案/气卡的跨书资产可参考其检索思路） |
 

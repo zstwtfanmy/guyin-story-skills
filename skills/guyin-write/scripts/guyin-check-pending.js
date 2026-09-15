@@ -1,16 +1,20 @@
 #!/usr/bin/env node
 'use strict';
 
-// guyin-check-pending.js — 待审台账终态门（U1，docs/09-收尾闭环与批次公约加固计划.md §二）
+// guyin-check-pending.js — 待审台账终态门（U1，docs/09 §二；v3-A1 终态扩六）
 //
 // 根因五「检测-消费断链」的封堵：章检报警"拦为待审"不再只是话术——每个 finding 一行
-// 台账（追踪/待审台账.md），终态五选一（修复/豁免/契约修订/顺延/升级作者），无第六态。
-// 本脚本机械查台账：未终态行（终态=「待审」或空）存在即 exit 1；--through N 只查
-// 章号 ≤N 的行（批收尾核对用）。
+// 台账（追踪/待审台账.md），终态六选一（修复/豁免/契约修订/顺延/升级作者/不适用）。
+// 本脚本机械查台账：未终态行存在即 exit 1；--through N 只查章号 ≤N 的行（批收尾核对用）。
 //
-// Fw-07（docs/12）：「升级作者」不再是自终态——终态列写了升级作者，备注列还必须有
-// 作者回填「已裁决：…」（转豁免/关闭/改写等结论）才算闭环；只升级不裁决仍 open。
-// 追影事故：两行「请作者裁决后转豁免/关闭」挂了多批无人回填，脚本/hook 却判终态放行。
+// Fw-07（docs/12）：「升级作者」不是自终态——终态列写了升级作者，备注列还必须有
+// 作者回填「已裁决：＋结论内容」（转豁免/关闭/改写等）才算闭环；只写「已裁决：」
+// 冒号后无内容的仍 open（v3-A1：不能只写冒号）。
+// v3-A1（任务书 §4 A1）：新增终态「不适用」——确认的误报/有功能写法走此终态，
+// 备注必须含原文位置（章/行/段/L 号）与判定理由，缺证据不关闭；不消耗每卷艺术豁免
+// 名额（豁免五测试名额只属于「豁免」）。未知终态值（六种之外的字串）一律视为未终态
+// ——不再「任意字串都算关闭」；真正违反已确认契约仍走修复/契约修订/豁免，不借
+// 「不适用」逃避。所有路径不删历史行。
 //
 //   - 台账缺失 → exit 0（fail-open：老项目/未部署模板不误伤；模板 create-if-absent 部署）
 //   - {{...}} 占位行跳过（未实例化模板行）；分隔行/表头行/章号解析失败行跳过
@@ -20,20 +24,24 @@
 // 同步注释契约（U1/D2）：本脚本与 guyin-setup 模板 hook（templates/long/.claude/hooks/
 // guyin-hook.js 的 pendingBlockers）是同一解析逻辑的两份实现——hook 为部署件随项目走、
 // 脚本在技能库，运行时路径不保证可达，无法抽公共模块；改一处必改另一处
-// （列位/终态判定/占位跳过/章号口径；Fw-07 升级作者回填规则两处同改）。
+// （列位/终态判定/占位跳过/章号口径；终态六选一与「不适用」证据规则两处同改）。
 
 const fs = require('fs');
 
 const USAGE = `Usage: node guyin-check-pending.js [--json] [--through N] <待审台账.md>
 
-Pending findings terminal-state gate (docs/09 §二 U1; docs/12 Fw-07):
+Pending findings terminal-state gate (docs/09 §二 U1; docs/12 Fw-07; v3-A1):
   Parses 追踪/待审台账.md rows: | 章号 | 来源 | 报警/发现 | 终态 | 去向/备注 |
-  A row is open when 终态 is 待审/empty, OR 终态 contains 升级作者 while 备注
-  lacks an author adjudication backfill 「已裁决：…」 (escalation alone is not terminal).
+  A row is open when 终态 is 待审/empty, is NOT one of the six terminal states
+  (修复/豁免/契约修订/顺延/升级作者/不适用), OR the state's evidence rule fails:
+    - 升级作者: 备注 must contain 「已裁决：content」 (colon-only backfill stays open)
+    - 不适用 (v3-A1): 备注 must contain a source position (章/行/段/L 号) AND a
+      reason; position alone or empty note stays open
   --through N: check only rows whose chapter number <= N (batch close-out).
   Missing ledger → exit 0 (fail-open; template deploys create-if-absent).
 Report-only: terminal states are filled by consumption (rewrite card /
-exemption / deviation log / author adjudication), never by this script.`;
+exemption / deviation log / author adjudication / confirmed false-positive),
+never by this script.`;
 
 const options = { json: false, through: null, input: null };
 
@@ -74,12 +82,31 @@ if (options.input === null) die('No ledger file provided');
 // 跳过：非 | 行、{{...}} 占位行、分隔行（---）、章号列无数字行（表头自然落此）。
 // 与 hook pendingBlockers 同口径（同步注释契约 U1/D2）。
 //
-// Fw-07 终态判定：空/待审=open；终态含「升级作者」时备注须回填「已裁决：…」才闭，
-// 否则仍 open（升级是转交不是结案，追影两行挂单事故的封堵）。
+// v3-A1 终态判定（六选一）：
+//   - 空/待审 = open；
+//   - 六种终态（修复/豁免/契约修订/顺延/升级作者/不适用）之外的字串 = open（未知值不关闭）；
+//   - 「升级作者」：备注须回填「已裁决：＋内容」（只写冒号仍 open，Fw-07）；
+//   - 「不适用」：备注须含原文位置（第N章/LN/行N/段N 等数字锚点）与理由
+//     （去掉位置标记后 ≥6 字），缺证据 = open——不适用不是逃避通道。
 // 注意：此函数与 hook 内同名同构逻辑是两份实现，改此必改彼（U1/D2 同步契约）。
+const TERMINAL_STATES = ['修复', '豁免', '契约修订', '顺延', '升级作者', '不适用'];
+
+function hasSourcePosition(note) {
+  return /(第\s*0*\d+\s*章|L\s*0*\d+|\d+\s*[行段]|行\s*\d+|段\s*\d+|:\s*0*\d+)/i.test(note);
+}
+
+function notApplicableEvidence(note) {
+  const n = (note || '').trim();
+  if (!n || !hasSourcePosition(n)) return false;
+  const reason = n.replace(/(第\s*0*\d+\s*章|L\s*0*\d+|\d+\s*[行段]|行\s*\d+|段\s*\d+|:\s*0*\d+)/gi, '').replace(/\s/g, '');
+  return reason.length >= 6;
+}
+
 function rowIsOpen(state, note) {
   if (state === '' || state === '待审') return true;
-  if (/升级作者/.test(state) && !/已裁决[：:]/.test(note || '')) return true;
+  if (!TERMINAL_STATES.some((t) => state.includes(t))) return true; // v3-A1：未知终态值保持 open
+  if (/升级作者/.test(state) && !/已裁决[：:]\s*\S/.test(note || '')) return true;
+  if (/不适用/.test(state) && !notApplicableEvidence(note)) return true;
   return false;
 }
 
@@ -130,9 +157,14 @@ if (options.json) {
   process.stdout.write(`${JSON.stringify({ open, total: scoped.length }, null, 2)}\n`);
 } else {
   for (const r of open) {
-    const hint = /升级作者/.test(r.state)
-      ? '已升级作者但无「已裁决：…」回填——作者给结论后回填备注（转豁免/关闭/改写）'
-      : '消费后回填：修复/豁免/契约修订/顺延/升级作者';
+    let hint;
+    if (/升级作者/.test(r.state)) {
+      hint = '已升级作者但无「已裁决：＋结论」回填——作者给结论后回填备注（转豁免/关闭/改写）';
+    } else if (/不适用/.test(r.state)) {
+      hint = '「不适用」缺证据——备注须含原文位置（章/行/段/L 号）与判定理由（误报或有功能写法才可用，不消耗豁免名额）';
+    } else {
+      hint = '消费后回填：修复/豁免/契约修订/顺延/升级作者/不适用（六选一）';
+    }
     console.log(`${options.input}:${r.line}: [open] 第${r.chapter}章 ${r.source}: ${r.finding}（终态=${r.state}）——${hint}`);
   }
   if (open.length === 0) {

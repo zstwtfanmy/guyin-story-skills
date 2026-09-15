@@ -1,6 +1,6 @@
 ---
 name: guyin-setup
-version: 0.7.0
+version: 0.7.1
 description: "隐笔项目脚手架部署。把长篇/短篇项目模板（三端执行层部署件 + 硬护栏 hook + 双台账 + 作者性）部署到当前目录；模板随本技能分发，无需克隆仓库。触发方式：/guyin-setup、$guyin-setup、「准备写书」「搭环境」「建项目」「初始化写作项目」。"
 ---
 # guyin-setup：隐笔项目部署器
@@ -13,7 +13,7 @@ description: "隐笔项目脚手架部署。把长篇/短篇项目模板（三�
 
 以正在执行的本 `SKILL.md` 所在目录为锚，核对同级 `templates/`：
 
-1. `templates/long/`：`AGENTS.md`、`README.md`、`.claude/settings.json`、`.claude/hooks/guyin-hook.js`、`.claude/agents/guyin-beat-writer.md`、`.claude/agents/guyin-checker.md`、`.codex/agents/guyin-beat-writer.toml`、`.codex/agents/guyin-checker.toml`、`.opencode/agents/guyin-beat-writer.md`、`.opencode/agents/guyin-checker.md`、`.opencode/commands/guyin.md`、`作者性/` 九件（含可选骨架 语言纪律.md 与 纪律冲突台账.md，Fw-04）、`大纲/README.md`、`大纲/魂谱对表.md`、`大纲/执行层一页纸.md`（可选骨架，Fw-04）、`追踪/_tracking-state.json`
+1. `templates/long/`：`AGENTS.md`、`README.md`、`.claude/settings.json`、`.claude/hooks/guyin-hook.js`、`.claude/agents/guyin-beat-writer.md`、`.claude/agents/guyin-checker.md`、`.codex/agents/guyin-beat-writer.toml`、`.codex/agents/guyin-checker.toml`、`.opencode/agents/guyin-beat-writer.md`、`.opencode/agents/guyin-checker.md`、`.opencode/commands/guyin.md`、`作者性/` 九件（含可选骨架 语言纪律.md 与 纪律冲突台账.md，Fw-04）、`大纲/README.md`、`大纲/魂谱对表.md`、`大纲/执行层一页纸.md`（可选骨架，Fw-04）、`设定/题材定位.md`（书级题材/读者契约骨架，v3-A3）、`追踪/_tracking-state.json`
 2. `templates/short/大纲/`：情节节点 / 情绪曲线 / 反转表 三件
 
 任一缺失 → **立即停止，不写任何部署文件**，报告缺哪些（区分「缺文件」与「目录为空」），给修复指令：「guyin-setup 模板包不完整，缺 {文件}。按你的安装方式重装 guyin-story-skills（skills CLI 装的重跑 `npx skills add https://github.com/zstwtfanmy/guyin-story-skills -g`；手动复制的重新复制 skills/ 目录），再执行 /guyin-setup。」
@@ -44,7 +44,7 @@ description: "隐笔项目脚手架部署。把长篇/短篇项目模板（三�
 
 1. 核对落位：Phase 0 清单在目标目录全部存在（create-if-absent 跳过项除外）；
 2. **执行层就绪自检（Fw-03）**：机械扫描三端 agent 文件的 model 配置——`.claude/agents/guyin-*.md` 与 `.opencode/agents/guyin-*.md` 看非注释行的 `model:`、`.codex/agents/guyin-*.toml` 看非注释 `model =`：
-   - 全部未配置（模板默认即如此：model 行已注释/不预置）→ 报告中必须明确写出：**「执行层当前等同 solo——guyin-write 写作时按『执行层调用协议』solo 三硬动作走（先组卡后填卡/笔法嚼碎进卡/逐章留痕）」**，不得让用户误以为编排/执行已分层；
+   - 全部未配置（模板默认即如此：model 行已注释/不预置）→ 报告中必须明确写出：**「执行层当前等同 solo——guyin-write 写作时按『执行层调用协议』solo 三条走（允许直写卡可选/笔法只取规格行/逐章留痕）」**，不得让用户误以为编排/执行已分层；
    - 已配置 → 逐端列出实际 model 值，提示新开会话生效；
 3. 报告输出：
    - 已部署 / 已跳过（用户内容）文件清单；
