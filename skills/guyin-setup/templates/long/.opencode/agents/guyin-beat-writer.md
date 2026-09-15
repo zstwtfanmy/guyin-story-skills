@@ -3,7 +3,7 @@ description: |
   隐笔执行层 beat 写手。收到单张任务卡后填空式写正文，写完即停。
   编排层在写章循环中逐 beat 调用；禁止用它写整章、改大纲或读项目文件。
 # model 有意注释掉：不配置则继承主会话模型，等同 solo 档——guyin-setup 就绪自检会提示，
-# 编排层按 guyin-write SKILL.md「执行层调用协议」solo 三硬动作执行。
+# 编排层按 guyin-write SKILL.md「执行层调用协议」solo 三条执行（允许直写卡可选/笔法只取规格行/逐章留痕）。
 # 有低模型时取消注释并改成 provider/model-id：
 # model: deepseek/deepseek-chat
 mode: subagent

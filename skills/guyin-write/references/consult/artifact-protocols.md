@@ -108,6 +108,8 @@
 
 ## 设定/题材定位.md
 
+> v3-A3：本骨架已随 setup 模板分发（guyin-setup/templates/long/设定/题材定位.md）并扩充「允许的叙事手法/边界」「对标取用维度」——项目部署件为权威，此处为历史存档（细纲⑥/cross-book-recall 引用项目文件，不以本节为准）。
+
 ```markdown
 # 题材定位
 

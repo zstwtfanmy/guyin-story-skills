@@ -24,6 +24,10 @@
 //                               应上移 大纲/批次公约.md，逐章复读=指令放错层；三章同填「无」合法）
 //     outline-scene-floor-conflict 场景下限声明 > 涉及场景清单条目数（B4：ch63 细纲自相矛盾
 //                               形态；清单值「无」=未登记场景不比较，豁免声明跳过）
+//   advisory ×1（v3-A3，任务书 §4 A3）：
+//     outline-genre-contract-missing 设定/题材定位.md 缺失/必要节缺/占位未实例化——
+//                               细纲⑥⑦的对照依赖文件；只查结构不打分（不是 genre-fit
+//                               评分器），「未定」「不适用＋说明」是合法显式决定放行
 //
 // 存量策略：只拦落盘门场景（新建/修订细纲落盘前），存量章不追溯（与 hook-rotation 一致）。
 // 复沓锚句字段值命中作者性词源归 guyin-check-authority-leak.js 管（锚句洗白在那抓），本脚本只查存在性。
@@ -44,6 +48,10 @@ Chapter outline slot integrity gate (docs/06 §二 O2):
               chapter's, non-「无」— batch invariants belong in 大纲/批次公约.md)
             / scene-floor-conflict (B4: declared scene floor exceeds the
               scene-list entry count — ch63 self-contradiction shape)
+            / genre-contract-missing (v3-A3: 设定/题材定位.md absent or its
+              读者契约 / 终局底牌与升级台阶 sections missing/placeholder —
+              structure-only dependency check, NOT a genre-fit scorer;
+              「未定」/「不适用＋说明」are legal explicit decisions)
 Slot definitions live in guyin-write/references/细纲协议.md (single authority).
 Only guards the pre-write gate; existing chapters are not retro-scanned.
 --fail-on=blocking exits 1 only on blocking findings; default --fail-on=all exits 1 on any.`;
@@ -377,6 +385,95 @@ for (const input of options.inputs) {
       });
     }
   }
+}
+
+// ---------- v3-A3 书级题材/读者契约依赖检查（任务书 §4 A3） ----------
+// 细纲⑥阶段位置判据与⑦契约评级对照 设定/题材定位.md（细纲协议单权威引用），落盘门顺带
+// 校验该依赖文件存在与必要节有可用内容。只查结构（节在＋非占位），不检测题材与收放
+// 风格是否匹配、不打分（A3：不新增 genre-fit 好看评分器）。advisory 起步（O2 先例）；
+// 存量不追溯——只在新建/修订细纲的落盘门触发。
+// 合法值：非必要信息「未定」、非升级型「不适用＋替代说明」都算作者显式决定，机械放行；
+// 占位判定＝节体剥去 {{...}} 序列与注释/空白后无实质内容（模板未实例化形态）。
+function locateGenreFile(outlinePath) {
+  let cur = path.dirname(path.resolve(outlinePath));
+  for (let depth = 0; depth < 4; depth += 1) {
+    const candidate = path.join(cur, '设定', '题材定位.md');
+    if (fs.existsSync(candidate)) return candidate;
+    const parent = path.dirname(cur);
+    if (parent === cur) break;
+    cur = parent;
+  }
+  return null;
+}
+
+function sectionBody(text, titleRe) {
+  const lines = text.split(/\r?\n/);
+  const start = lines.findIndex((l) => titleRe.test(l));
+  if (start === -1) return null;
+  const body = [];
+  for (let i = start + 1; i < lines.length; i += 1) {
+    if (/^#{1,2}\s/.test(lines[i])) break;
+    body.push(lines[i]);
+  }
+  return body;
+}
+
+function sectionHasSubstance(body) {
+  const stripped = (body || [])
+    .filter((l) => !l.trim().startsWith('>'))
+    .join('')
+    .replace(/\{\{[^}]*\}\}/g, '')
+    .replace(/[-*|#\s]/g, '');
+  return stripped.length >= 10;
+}
+
+function genreContractFindings() {
+  const first = options.inputs[0];
+  const genrePath = locateGenreFile(first);
+  if (!genrePath) {
+    return {
+      type: 'outline-genre-contract-missing',
+      severity: 'advisory',
+      message: '设定/题材定位.md 不存在——书级读者契约与终局底牌的依赖文件缺失（细纲⑥⑦对照源）；部署 /guyin-setup 模板后开书 Phase B 填写，存量项目由作者显式决定是否补建（v3-A3，不批量追补）',
+    };
+  }
+  let text;
+  try {
+    text = fs.readFileSync(genrePath, 'utf8');
+  } catch (error) {
+    return {
+      type: 'outline-genre-contract-missing',
+      severity: 'advisory',
+      message: `设定/题材定位.md 读取失败（${error.message}）——依赖文件不可读，按缺件处理（v3-A3）`,
+    };
+  }
+  const checks = [
+    ['## 读者契约', /#{2,3}\s*读者契约/, '读者契约（主要阅读回报等）'],
+    ['## 终局底牌与升级台阶', /#{2,3}\s*终局底牌与升级台阶/, '终局底牌与升级台阶（阶段性期待与终局储备）'],
+  ];
+  for (const [, titleRe, label] of checks) {
+    const body = sectionBody(text, titleRe);
+    if (body === null) {
+      return {
+        type: 'outline-genre-contract-missing',
+        severity: 'advisory',
+        message: `设定/题材定位.md 缺「${label}」节——进细纲前必要内容（v3-A3：开书 Phase B 落盘；混合题材按主＋副填，非升级型写「不适用＋替代阶段说明」）`,
+      };
+    }
+    if (!sectionHasSubstance(body)) {
+      return {
+        type: 'outline-genre-contract-missing',
+        severity: 'advisory',
+        message: `设定/题材定位.md「${label}」节仍是占位/空白——{{...}} 未实例化不是可用内容；阅读回报与阶段边界是进细纲前的必要内容（非必要项才允许「未定」，非升级型写「不适用＋替代阶段说明」，不伪造市场事实）（v3-A3）`,
+      };
+    }
+  }
+  return null;
+}
+
+const genreFinding = genreContractFindings();
+if (genreFinding) {
+  allFindings.push({ file: options.inputs[0], line: 1, column: 1, ...genreFinding });
 }
 
 if (options.json) {

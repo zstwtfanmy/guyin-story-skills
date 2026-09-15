@@ -3,7 +3,7 @@ name: guyin-beat-writer
 description: 隐笔执行层 beat 写手。收到单张任务卡后填空式写正文，写完即停。编排层在写章循环中逐 beat 调用；禁止用它写整章、改大纲或读项目文件。
 # model 有意不预置：Claude Code 不指定 model 时本 agent 继承主会话模型——这等价于「没有低模型」。
 # guyin-setup 的执行层就绪自检会就此提示「当前等同 solo」；此时编排层必须按
-# guyin-write SKILL.md「执行层调用协议」solo 三硬动作执行（先组卡后填卡/笔法嚼碎进卡/逐章留痕）。
+# guyin-write SKILL.md「执行层调用协议」solo 三条执行（允许直写卡可选/笔法只取规格行/逐章留痕）。
 # 有可用低模型时自行加一行：model: <你的低模型 ID>
 tools: ()
 ---

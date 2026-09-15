@@ -19,7 +19,7 @@ Detect high-risk AI-flavor prose patterns that need human rewrite:
   - 解释链密度过高 (知道/明白/这意味着/必须/需要等判断链聚集)
   - 系统公告公文腔过密 (方括号系统/规则行里硬规则词聚集)
   - 过度精炼短段 (长文本里短叙述段过密且自然连接偏少)
-  - prose-fragment-ratio (Fw-02 密/疏双轨配套: ≤15字叙述段占比 >25% advisory / >40% blocking; 样本不足静默; 细纲声明「碎化豁免」降 advisory)
+  - prose-fragment-ratio (Fw-02/v3-A1: ≤15字叙述段占比 >25% 报观测值, advisory-only——文体启发式不构成「必然错误」, 不再直接 blocking; 样本不足静默)
   - silence-density-tic (Fw-05: 引号外「没答/没说话/没接话/没吭声/不说话」>3/千字, 人物沉默反应套路化, advisory)
   - dialogue-zero-information (Fw-05: 仅 ch1-3 启发式, 主角邻近发问=0 且对白中位≤5字 双中, advisory; 无批次公约 POV 静默)
   - 低连接密度 (引号外叙述功能词/白话连接偏少且中长句不足，像提纲/电报体)
@@ -40,7 +40,7 @@ Detect high-risk AI-flavor prose patterns that need human rewrite:
   - pov-drift (PV2, docs/11 §二): 第三有限视角越界——对手/配角内心直写 ≥2 处(1 处静默), advisory; 显式人名 + 一跳代词回指 + 「他/她哪是/哪要的是」弱信号; 无批次公约 POV 行/POV=全知/多视角 → fail-open 静默
 
 Each finding carries severity: blocking by default for generation/deslop cleanup (not-is-comparison / em-dash / voice-contrast / negation-parade / reverse-not-is / trailer-ending / trailer-summary). This is a local style/readability gate, not an AIGC detector score; functional human text can be marked for review instead of hard-edited for a detector.
-或 advisory (period-stutter / long-paragraph / micro-action-tic / action-list-tic / abstract-summary-tic / cliche-density-tic / metaphor-density-tic / reasoning-chain-tic / system-notice-formality-tic / overcompressed-prose-tic / prose-fragment-ratio / silence-density-tic / low-connective-density-tic / quote-emphasis-tic / formulaic-parallelism / explain-tic / mid-trailer / aphorism-tic / phrase-quota / sensory-repeat / stutter-punct / pov-drift / dialogue-zero-information，是提示，justified 的长推理/氛围段可保留；prose-fragment-ratio 占比 >40% 时升 blocking，碎化豁免后回降)。
+或 advisory (period-stutter / long-paragraph / micro-action-tic / action-list-tic / abstract-summary-tic / cliche-density-tic / metaphor-density-tic / reasoning-chain-tic / system-notice-formality-tic / overcompressed-prose-tic / prose-fragment-ratio / silence-density-tic / low-connective-density-tic / quote-emphasis-tic / formulaic-parallelism / explain-tic / mid-trailer / aphorism-tic / phrase-quota / sensory-repeat / stutter-punct / pov-drift / dialogue-zero-information，是提示，justified 的长推理/氛围段可保留；prose-fragment-ratio 自 v3-A1 起恒为 advisory——短段占比是文体观测，不是必然错误，是否成立结合场景任务与书级约定判断)。
 --fail-on=blocking 只在出现 blocking finding 时退出 1；默认 --fail-on=all 有任何 finding 即退出 1。
 
 The script reports findings only. It never rewrites text, because the safe fix is
@@ -155,13 +155,12 @@ const OVERCOMPRESSED_PROSE_SHORT_RATIO = 0.58;
 const OVERCOMPRESSED_PROSE_PARTICLE_PER_KILO = 85;
 
 // Fw-02 碎化率（密/疏双轨的机械配套，细纲协议「密/疏双轨」节）：单章 ≤15 字「叙述段」
-// （一行=一段，剥引号只算引号外叙述）占比 >25% advisory、>40% blocking。
-// 与 overcompressed 的区别：那条要短段多+语气词少双条件，这条只看碎化占比，故阈值更低且分两档。
-// 样本规模不足静默（短 beat/片段不判）；低压/过场章在 大纲/细纲_第NNN章.md 声明「碎化豁免」后
-// blocking 降为 advisory（降级在主循环处理，因为细纲定位需要受检文件路径）。
+// （一行=一段，剥引号只算引号外叙述）占比 >25% 报观测；v3-A1 起恒 advisory。
+// 与 overcompressed 的区别：那条要短段多+语气词少双条件，这条只看碎化占比，故阈值更低。
+// 样本规模不足静默（短 beat/片段不判）。
 const PROSE_FRAGMENT_MAX_CHARS = 15;
 const PROSE_FRAGMENT_ADVISORY_RATIO = 0.25;
-const PROSE_FRAGMENT_BLOCKING_RATIO = 0.40;
+const PROSE_FRAGMENT_BLOCKING_RATIO = 0.40; // v3-A1 起仅作文案分档参考，不再产 blocking
 const PROSE_FRAGMENT_MIN_CHARS = 800;
 const PROSE_FRAGMENT_MIN_PARAS = 30;
 
@@ -389,15 +388,8 @@ for (const file of options.files) {
   findings.push(...findPovDrift(fullPath, input).map((finding) => ({ file, ...finding })));
   // Fw-05 对话零信息启发式（仅 ch001-003）：读批次公约 POV 定位主角，两弱信号同中才报，故主循环接线。
   findings.push(...findDialogueZeroInformation(fullPath, input).map((finding) => ({ file, ...finding })));
-  // Fw-02 碎化豁免：细纲显式声明「碎化豁免」后，碎化率 blocking 降 advisory（低压/过场章通道）。
-  if (hasFragmentExemption(fullPath)) {
-    for (const finding of findings) {
-      if (finding.type === 'prose-fragment-ratio' && finding.severity === 'blocking') {
-        finding.severity = 'advisory';
-        finding.message += '【细纲已声明碎化豁免，降级 advisory】';
-      }
-    }
-  }
+  // v3-A1：prose-fragment-ratio 恒为 advisory（原 Fw-02「碎化豁免降级」随 blocking 取消一并退役；
+  // hasFragmentExemption 保留给需要路径定位的旧调用兼容，不再改判 severity）。
   allFindings.push(...findings);
 }
 
@@ -1168,7 +1160,8 @@ function findOvercompressedProseTic(proseLines) {
 }
 
 // Fw-02 碎化率：引号外叙述段（一行=一段）中 ≤15 字短段的占比。只报一条；
-// >40% blocking、>25% advisory，样本不足静默。细纲「碎化豁免」降级在主循环处理。
+// v3-A1 起恒为 advisory——短段占比是文体启发式观测，不是「必然错误」；是否成立
+// 结合场景任务与书级约定判断（细纲密/疏预算管重点分配，不管段长句式）。
 function findProseFragmentRatioTic(proseLines) {
   let narrativeChars = 0;
   let narrativeParas = 0;
@@ -1195,15 +1188,15 @@ function findProseFragmentRatioTic(proseLines) {
   if (narrativeChars < PROSE_FRAGMENT_MIN_CHARS || narrativeParas < PROSE_FRAGMENT_MIN_PARAS) return [];
   const ratio = shortParas / narrativeParas;
   if (ratio <= PROSE_FRAGMENT_ADVISORY_RATIO) return [];
-  const blocking = ratio > PROSE_FRAGMENT_BLOCKING_RATIO;
+  const heavy = ratio > PROSE_FRAGMENT_BLOCKING_RATIO; // 仅文案分档，不再升 blocking（v3-A1）
 
   return [{
     line: firstLine,
     column: 1,
     type: 'prose-fragment-ratio',
-    severity: blocking ? 'blocking' : 'advisory',
+    severity: 'advisory',
     ratio: Number(ratio.toFixed(3)),
-    message: `${blocking ? '碎化严重' : '碎化率偏高'}：叙述段 ${narrativeParas} 个，${shortParas} 个≤${PROSE_FRAGMENT_MAX_CHARS}字（${(ratio * 100).toFixed(0)}%，阈值 ${blocking ? '40' : '25'}%）；一句一段过多会磨掉层次——密点合并出 ≥40 字连续段、疏点也须成段 ≥25 字（细纲协议密/疏双轨，Fw-02）。低压/过场章可在细纲声明「碎化豁免」后复检。`,
+    message: `碎化率${heavy ? '显著' : '偏高'}（观测值，需结合上下文判断）：叙述段 ${narrativeParas} 个，${shortParas} 个≤${PROSE_FRAGMENT_MAX_CHARS}字（${(ratio * 100).toFixed(0)}%，参考阈值 25/40%）——短段成串是文体启发式信号不是必然错误；刻意的短镜头、低压过场可成立。若确属把「带过」写成了「切碎」，修法是恢复必要连接与句群，不是机械并段注水（Fw-02/v3-A1）`,
     excerpt: compact(samples.join(' | ')),
   }];
 }

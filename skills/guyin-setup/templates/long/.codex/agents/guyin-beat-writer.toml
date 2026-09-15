@@ -9,7 +9,7 @@ description = """
 #   ① 调用报 unknown agent_type 或自定义 agent 注册表不可用；
 #   ② model = 字段被忽略/告警，本 agent 实际与主会话同模型；
 #   ③ guyin-setup 执行层就绪自检报告 model 未配置。
-# 命中后：编排层按 guyin-write SKILL.md「执行层调用协议」solo 三硬动作走，
+# 命中后：编排层按 guyin-write SKILL.md「执行层调用协议」solo 三条走（允许直写卡可选/笔法只取规格行/逐章留痕），
 # 并在当章 追踪/逐章记录/第NNN章.md 末尾留痕（模式=solo｜原因｜兜底项）。
 # model = "deepseek-chat"
 
