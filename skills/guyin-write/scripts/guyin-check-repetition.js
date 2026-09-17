@@ -2,20 +2,88 @@
 'use strict';
 
 const fs = require('fs');
+const os = require('os');
 const path = require('path');
+const { spawnSync } = require('child_process');
+const handling = require('./lib/guyin-handling');
 
-const USAGE = `Usage: node guyin-check-repetition.js [--json] [--fail-on=blocking|all] [--commit] [--project <根>] <正文文件... | 正文目录>
+// ---------- D2 项目级互斥锁（任务书 §2.6，跨语言同协议） ----------
+// 同步注释契约（D2）：与同目录 guyin-tracking-commit.py 的 ProjectLock 是同一协议两份
+// 实现（python 发布器持锁经 --under-lock 调本脚本时，node 只验锁存在不重入；改锁路径/
+// owner.json 字段/死锁判定，两处必同步）。commit/backfill/指纹写入/指纹恢复/journal
+// 推进共享这一把锁，无「跳过锁」开关。
+const LOCK_DIRNAME = '.track-lock';
+
+function pidAlive(pid) {
+  if (!Number.isInteger(pid) || pid <= 0) return true; // 无法判定 → fail-closed
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch (e) {
+    return e.code === 'EPERM'; // ESRCH=死进程；EPERM=存活无权限；libuv 把 Windows 87 映射 ESRCH
+  }
+}
+
+function acquireProjectLock(bookDir, label) {
+  const lockDir = path.join(bookDir, '追踪', LOCK_DIRNAME);
+  fs.mkdirSync(path.dirname(lockDir), { recursive: true });
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    try {
+      fs.mkdirSync(lockDir);
+      fs.writeFileSync(path.join(lockDir, 'owner.json'),
+        `${JSON.stringify({ pid: process.pid, host: os.hostname(), label, started_at: new Date().toISOString() }, null, 2)}\n`,
+        'utf8');
+      return lockDir;
+    } catch (e) {
+      if (e.code !== 'EEXIST') throw e;
+      let owner = null;
+      try { owner = JSON.parse(fs.readFileSync(path.join(lockDir, 'owner.json'), 'utf8')); } catch (_) { /* 无 owner 按损坏锁处理 */ }
+      if (owner && !pidAlive(owner.pid)) {
+        // 持锁进程已死：改名挪走后重试，不直接 rmtree 活锁。
+        const stale = path.join(path.dirname(lockDir), `${LOCK_DIRNAME}.stale-${Date.now()}`);
+        try {
+          fs.renameSync(lockDir, stale);
+          fs.rmSync(stale, { recursive: true, force: true });
+          continue;
+        } catch (e2) {
+          die(`项目锁目录无法清理：${lockDir}（持锁进程已死但目录挪不动）——请人工检查后删除重试`);
+        }
+      }
+      die(`项目被占用：${lockDir} 已被另一进程持有（${(owner && owner.label) || '未知'}，pid=${owner && owner.pid}）——同一本书串行提交/发布；确认无其它进程后人工删除该锁目录重试`);
+    }
+  }
+  die('项目锁获取失败（清理陈旧锁后仍被占用）');
+  return null;
+}
+
+function releaseProjectLock(lockDir) {
+  if (!lockDir) return;
+  try { fs.rmSync(lockDir, { recursive: true, force: true }); } catch (e) { /* 释放只做 best-effort */ }
+}
+
+function atomicWrite(target, content) {
+  const tmp = `${target}.tmp-${process.pid}`;
+  fs.writeFileSync(tmp, content, 'utf8');
+  fs.renameSync(tmp, target);
+}
+
+const USAGE = `Usage: node guyin-check-repetition.js [--json] [--fail-on=block|hard|all] [--commit] [--project <根>] <正文文件... | 正文目录>
+       node guyin-check-repetition.js --recover-library --project <根> [--under-lock] <根/正文>
+       （--under-lock：发布器内部接口——锁已由 tracking-commit.py publish/recover 持有时只验锁存在，勿手工使用）
+       （--unit <N>：显式单元号，短篇单篇项目固定 1；提供后只接受单文件且不从文件名反解章号，F1）
 
 段落指纹库（P6，docs/04-优化路线图.md §3 P6）：跨章复读检测。
 单文件密度检查拦不住跨章复读——那是 flash 级模型分布坍缩的直接产物（04 §2.2），
 是最常见的中期死因之一。本脚本维护段落指纹库（<项目>/追踪/段落指纹库.json）：
 新章入库前先查历史，相似度达阈值报「疑似重复描写」。
 
-  para-repeat-near    bigram Jaccard ≥ 0.90（近乎照抄）——处置直达改写卡：两段原文
+  para-repeat-near    (verify) bigram Jaccard ≥ 0.90（近乎照抄）——处置直达改写卡：两段原文
                       并排 + 方向「换比喻域」。其中约七成可直接删，但脚本只标不删，
-                      删令由作者确认
-  para-repeat-pattern Jaccard 0.72-0.90（换词复读/结构雷同）——升级作者，结合意象
+                      删令由作者确认；可能是有意回环或登记资产，须对照锚句/台账核实
+  para-repeat-pattern (verify) Jaccard 0.72-0.90（换词复读/结构雷同）——升级作者，结合意象
                       台账判「有意回环还是坍缩」：回环是意图，坍缩是分布，flash 判不了
+  fingerprint-arrears (hard) 指纹库欠账：库登记章号落后受检正文（章检模式）——先
+                      --commit 补齐再过章检
 
 两条全部 advisory（只标不拦）。查询只比对叙述段（≥40 字且引号内字符占比 <50%），
 台词与短句不进指纹库。--commit 在追踪提交时固化终稿指纹（同章旧指纹先清再插，幂等）。
@@ -26,9 +94,9 @@ const USAGE = `Usage: node guyin-check-repetition.js [--json] [--fail-on=blockin
 （登记零人工，只收自动来源）；手势类措辞多变无机械消费端，不设列——归复盘点名＋作者
 仲裁，确认后以字符串近似进 短语黑名单.md（I2 通道，项目自有文件不受渲染覆盖）。
 
-  imagery-domain-run   同域比喻滑窗内密度过高（3 章窗口内同域 ≥3 次）——同一比喻域
+  imagery-domain-run   (editorial) 同域比喻滑窗内密度过高（3 章窗口内同域 ≥3 次）——同一比喻域
                        反复采撷即该域疲劳，改写时换域不换词（消费台账选未用域）
-  metaphor-domain-stale 本章主导比喻域连续驻留超阈值（默认 >4 章，--domain-stale=N 可调，
+  metaphor-domain-stale (editorial) 本章主导比喻域连续驻留超阈值（默认 >4 章，--domain-stale=N 可调，
                        B3）——61-63 做饭域三章同值的全篇固化形态；源头治理在批次公约
                        （B1 声明＋换域计划），本 advisory 是汇侧兜底
 
@@ -44,15 +112,15 @@ bigram 集合的 Jaccard 相似度（实测换 4 词复读 ≈0.83，随机不�
 复盘报告点名（滞后一批）、新 tic 靠下一份复盘报告（永远慢一拍），穷举式黑名单结构性
 追不上复读冲动（E7 实证：旧的清掉、五类新的顶上）。治理对象是「复读度」本身：
 
-  phrase-echo-cross    跨章窗口（本章＋近 5 章）同 4-8 字短语 ≥3 次——疑似新 tic，
+  phrase-echo-cross    (editorial) 跨章窗口（本章＋近 5 章）同 4-8 字短语 ≥3 次——疑似新 tic，
                        仲裁：进黑名单限额（I2 通道）或豁免台账
-  phrase-echo-ending   同章 ≥2 次且末次落章尾 20% 区域——E6 章尾同图重复形态
-  phrase-echo-inline   同章中段同 4-8 字短语 ≥2 次（SP1，docs/11 §一）——A1' 同拍重复
+  phrase-echo-ending   (editorial) 同章 ≥2 次且末次落章尾 20% 区域——E6 章尾同图重复形态
+  phrase-echo-inline   (editorial) 同章中段同 4-8 字短语 ≥2 次（SP1，docs/11 §一）——A1' 同拍重复
                        形态：够不到 cross（需 ≥3）/ending（末次落章尾）的剩余出口。
                        疑似 beat 拼接伤或新 tic，处置同 cross（黑名单或豁免台账），
                        或登记 追踪/复沓锚句.md（签名资产）豁免
 
-三条均 advisory 宁报不拦（拦截权归五测试）。黑名单降级为仲裁通道：雷达自动发现 →
+三条均 editorial 宁报不拦（拦截权归五测试）。黑名单降级为仲裁通道：雷达自动发现 →
 台账自动沉淀（N2）→ 作者仲裁 → 黑名单精确限额 → 写前注入（N3）→ 章检复扫。
 防噪三规格（v1.1）：① 不跨标点边界——按标点切段后段内成词，否则「的时候他」类
 虚词搭配是汉语常态，虚词占比过滤救不了；② 子串归并——同一 tic 多长度命中只报最长形；
@@ -60,7 +128,16 @@ bigram 集合的 Jaccard 相似度（实测换 4 词复读 ≈0.83，随机不�
 统计口径与指纹库同源：只扫叙述段（台词口头禅是人物特征不是 tic）。phrases 节只存
 窗口复现 ≥2 的短语（{phrase, total, last, recent}，recent 按章存样本，整条按最近章
 ≥当前−10 修剪、样本按检测窗口修剪）——全量 n-gram 每章上万条，不滤必膨胀。
---commit 时随指纹固化同步统计（与意象台账同一原子双命令）；章检模式只报告。`;
+--commit 时随指纹固化同步统计（与意象台账同一原子双命令）；章检模式只报告。
+
+--fail-on=block（默认）hard/verify 任一存在即 1；hard 仅 hard；all 含 editorial（审计模式）。
+--commit/--recover-library 持项目锁（追踪/.track-lock，与 tracking-commit.py 共享）。
+--recover-library：指纹库损坏（无法解析/形状非法）时的受保护恢复——先隔离成
+  段落指纹库.corrupt-<时间戳>.json，再从正式 正文/ 全量基线重放，最后复检：
+  复检存在阻断（exit 1）绝不冒充恢复成功；库健康时 no-op exit 0。普通 --commit
+  遇库损坏只报错不放行（须显式走本恢复路径，D2 任务书 §2.6）。
+Exit codes: 0=无未决阻断/恢复成功, 1=存在未决阻断(hard/verify)/恢复后复检有阻断,
+            2=执行/输入错误, 3 不使用。`;
 
 const NEAR_THRESHOLD = 0.9;
 const PATTERN_THRESHOLD = 0.72;
@@ -102,7 +179,7 @@ const DOMAINS = [
   { name: '建筑', keys: ['墙', '门', '窗', '梁', '檐', '井', '牢', '塔', '桥', '阶'] },
 ];
 
-const options = { json: false, commit: false, project: null, targets: [], failOn: 'all', domainStale: DOMAIN_STALE_DEFAULT };
+const options = { json: false, commit: false, recoverLibrary: false, underLock: false, project: null, targets: [], failOn: 'block', domainStale: DOMAIN_STALE_DEFAULT, unit: null };
 
 for (let i = 2; i < process.argv.length; i += 1) {
   const arg = process.argv[i];
@@ -110,6 +187,19 @@ for (let i = 2; i < process.argv.length; i += 1) {
     options.json = true;
   } else if (arg === '--commit') {
     options.commit = true;
+  } else if (arg === '--recover-library') {
+    options.recoverLibrary = true;
+  } else if (arg === '--under-lock') {
+    options.underLock = true;
+  } else if (arg.startsWith('--unit=')) {
+    const v = Number(arg.slice('--unit='.length));
+    if (!Number.isInteger(v) || v < 1) die('--unit must be a positive integer');
+    options.unit = v;
+  } else if (arg === '--unit') {
+    const v = Number(process.argv[i + 1]);
+    if (!Number.isInteger(v) || v < 1) die('--unit must be a positive integer');
+    options.unit = v;
+    i += 1;
   } else if (arg.startsWith('--domain-stale=')) {
     const v = Number(arg.slice('--domain-stale='.length));
     if (!Number.isInteger(v) || v < 1) die('--domain-stale must be a positive integer');
@@ -120,9 +210,11 @@ for (let i = 2; i < process.argv.length; i += 1) {
     options.project = process.argv[i + 1] || die('--project requires a value');
     i += 1;
   } else if (arg.startsWith('--fail-on=')) {
-    const v = arg.slice('--fail-on='.length);
-    if (v !== 'blocking' && v !== 'all') die(`--fail-on must be 'blocking' or 'all'`);
-    options.failOn = v;
+    try {
+      options.failOn = handling.parseFailOn(arg.slice('--fail-on='.length), 'block');
+    } catch (error) {
+      die(error.message);
+    }
   } else if (arg === '-h' || arg === '--help') {
     process.stdout.write(`${USAGE}\n`);
     process.exit(0);
@@ -134,6 +226,10 @@ for (let i = 2; i < process.argv.length; i += 1) {
 }
 
 if (options.targets.length === 0) die('No chapter file or directory provided');
+if (options.underLock && !options.commit && !options.recoverLibrary) {
+  die('--under-lock 是发布器内部接口，只能与 --commit/--recover-library 同用');
+}
+if (options.recoverLibrary && !options.project) die('--recover-library 必须显式 --project <书根>');
 
 // ---------- 文件收集：目录 → 第NNN章.md；文件原样 ----------
 
@@ -167,6 +263,18 @@ for (const target of options.targets) {
 }
 
 const CHAPTER_FILE = /第\s*0*(\d+)\s*章/;
+
+// F1：短篇固定单元号 1（单短篇项目）。--unit 是显式单元号——文件名不再被反向解析当章号：
+// 仅允许单文件目标；文件名自身带章号且与 --unit 冲突一律报错（不猜哪个对）。
+if (options.unit !== null) {
+  if (files.length !== 1) {
+    die('--unit <N> 只支持单文件目标（短篇一篇一个显式单元号；目录/多文件沿用文件名章号）');
+  }
+  const encoded = CHAPTER_FILE.exec(path.basename(files[0]));
+  if (encoded && Number(encoded[1]) !== options.unit) {
+    die(`--unit=${options.unit} 与文件名章号 第${encoded[1]}章 冲突——显式单元号与文件名只能信一个，先改调用`);
+  }
+}
 
 // ---------- 复读雷达（N1）：n-gram 统计 + 防噪三规格 ----------
 
@@ -232,6 +340,54 @@ function locateLibrary(chapterDirs) {
 
 const chapterDirs = [...new Set(files.map((f) => path.dirname(f)))];
 const libraryPath = files.length > 0 ? locateLibrary(chapterDirs) : null;
+
+// ---------- D2：写状态操作持锁；--recover-library 先隔离损坏库 ----------
+let lockHeld = null;
+let quarantinePath = null;
+{
+  const projectRoot = options.project
+    ? path.resolve(options.project)
+    : (libraryPath ? path.dirname(path.dirname(libraryPath)) : null);
+  if (options.commit || options.recoverLibrary) {
+    if (options.underLock) {
+      if (!projectRoot || !fs.existsSync(path.join(projectRoot, '追踪', LOCK_DIRNAME))) {
+        die('--under-lock 要求项目锁已由发布器持有（追踪/.track-lock 不存在）');
+      }
+    } else {
+      if (!projectRoot) die('--commit/--recover-library 需要项目根（用 --project 指定，或在 正文/ 内运行）');
+      lockHeld = acquireProjectLock(projectRoot, options.recoverLibrary ? 'recover-library' : 'fingerprint-commit');
+    }
+  }
+  if (options.recoverLibrary) {
+    // 基线重放须覆盖正式 正文/ 全量（只重放单章无法复检未受影响内容）。
+    if (options.targets.length !== 1) die('--recover-library 只接受一个目标：正式 正文/ 目录');
+    let targetStat;
+    try { targetStat = fs.statSync(path.resolve(options.targets[0])); }
+    catch (e) { die(`--recover-library 目标无法读取：${e.message}`); }
+    if (!targetStat.isDirectory()) die('--recover-library 目标必须是正式 正文/ 目录（基线全量重放）');
+    if (libraryPath) {
+      let damaged = false;
+      if (fs.existsSync(libraryPath)) {
+        try {
+          const doc = JSON.parse(fs.readFileSync(libraryPath, 'utf8'));
+          if (!doc || typeof doc !== 'object' || !Array.isArray(doc.entries)
+            || doc.entries.some((e) => !e || !Array.isArray(e.grams))) damaged = true;
+        } catch (e) { damaged = true; }
+      }
+      if (damaged) {
+        const stamp = new Date().toISOString().replace(/[-:T]/g, '').slice(0, 14);
+        quarantinePath = libraryPath.replace(/\.json$/, `.corrupt-${stamp}.json`);
+        try {
+          fs.renameSync(libraryPath, quarantinePath);
+        } catch (e) {
+          die(`损坏库隔离失败（${e.message}）——停用户核查，不静默重建`);
+        }
+      }
+    }
+  }
+}
+process.on('exit', () => releaseProjectLock(lockHeld));
+process.on('uncaughtException', (e) => { releaseProjectLock(lockHeld); throw e; });
 
 // ---------- 段落 bigram 集合（去重排序，即段落指纹）----------
 
@@ -409,16 +565,16 @@ function loadLibrary() {
   try {
     doc = JSON.parse(raw);
   } catch (error) {
-    die(`${libraryPath}: unable to parse library (${error.message})`);
+    die(`${libraryPath}: unable to parse library (${error.message})——库损坏须走显式恢复：node guyin-check-repetition.js --recover-library --project <书根> 正文（隔离备份+基线重放+复检，D2），不得静默重建`);
   }
   if (!doc || typeof doc !== 'object' || !Array.isArray(doc.entries)) {
-    die(`${libraryPath}: library must contain an "entries" array`);
+    die(`${libraryPath}: library must contain an "entries" array——形状损坏须走 --recover-library（D2），不得静默重建`);
   }
   if (!Array.isArray(doc.imagery)) doc.imagery = [];
   if (!Array.isArray(doc.phrases)) doc.phrases = []; // schema 2 旧库 → N1 phrases 视为空，下次 --commit 自动补齐
   for (const e of doc.entries) {
     if (!Array.isArray(e.grams)) {
-      die(`${libraryPath}: entry ${e.chapter || '?'}-${e.para || '?'} missing "grams" (rebuild with --commit)`);
+      die(`${libraryPath}: entry ${e.chapter || '?'}-${e.para || '?'} missing "grams" (rebuild with --recover-library)`);
     }
   }
   return doc;
@@ -482,13 +638,19 @@ function dominantDomain(chapter) {
 }
 
 for (const file of files) {
-  const nameMatch = CHAPTER_FILE.exec(path.basename(file));
-  if (!nameMatch) {
-    failed = true;
-    if (!options.json) console.error(`${file}: filename must match 第NNN章.md`);
-    continue;
+  // 单元号解析：显式 --unit 优先（F1：不靠文件名反解）；缺省回退文件名 第NNN章。
+  let chapter;
+  if (options.unit !== null) {
+    chapter = options.unit;
+  } else {
+    const nameMatch = CHAPTER_FILE.exec(path.basename(file));
+    if (!nameMatch) {
+      failed = true;
+      if (!options.json) console.error(`${file}: filename must match 第NNN章.md（短篇等无章号文件须显式 --unit <单元号>）`);
+      continue;
+    }
+    chapter = Number(nameMatch[1]);
   }
-  const chapter = Number(nameMatch[1]);
   let input;
   try {
     input = fs.readFileSync(file, 'utf8');
@@ -546,7 +708,7 @@ for (const file of files) {
         },
       });
     }
-    if (options.commit) {
+    if (options.commit || options.recoverLibrary) {
       pending.push({
         chapter,
         para: chapterPara,
@@ -557,7 +719,7 @@ for (const file of files) {
     }
   }
 
-  if (options.commit) pendingImagery.push(...currentImagery);
+  if (options.commit || options.recoverLibrary) pendingImagery.push(...currentImagery);
   batchImagery.push(...currentImagery);
   batchChapters.add(chapter);
   scannedChapters.push(chapter);
@@ -742,7 +904,7 @@ function renderImageryView(imagery, phrases) {
 // ---------- --commit：同章旧指纹/旧意象先清再插，写盘 + 台账视图（N1 含 phrases 合并） ----------
 
 let committed = 0;
-if (options.commit && pending.length > 0) {
+if ((options.commit || options.recoverLibrary) && pending.length > 0) {
   const touchedChapters = [...new Set(pending.map((e) => e.chapter))];
   library.entries = library.entries.filter((e) => !touchedChapters.includes(e.chapter));
   library.entries.push(...pending);
@@ -793,8 +955,9 @@ if (options.commit && pending.length > 0) {
   if (libraryPath) {
     try {
       fs.mkdirSync(path.dirname(libraryPath), { recursive: true });
-      fs.writeFileSync(libraryPath, `${JSON.stringify(library, null, 2)}\n`, 'utf8');
-      fs.writeFileSync(path.join(path.dirname(libraryPath), '意象台账.md'), renderImageryView(library.imagery, library.phrases), 'utf8');
+      // D2：原子临时替换（同目录 rename，半截写盘不产生损坏库）。
+      atomicWrite(libraryPath, `${JSON.stringify(library, null, 2)}\n`);
+      atomicWrite(path.join(path.dirname(libraryPath), '意象台账.md'), renderImageryView(library.imagery, library.phrases));
       committed = pending.length;
     } catch (error) {
       failed = true;
@@ -804,6 +967,43 @@ if (options.commit && pending.length > 0) {
     failed = true;
     if (!options.json) console.error('--commit requires a project root (use --project or run inside 正文/)');
   }
+}
+
+// ---------- D2：--recover-library 基线重放后的复检（不冒充通过，任务书 §2.6） ----------
+if (options.recoverLibrary) {
+  if (failed) {
+    if (options.json) {
+      console.log(JSON.stringify({ recovered: false, quarantine: quarantinePath || null, error: 'replay_write_failed' }));
+    } else {
+      console.error('指纹库恢复失败：基线重放写盘出错（见上）。');
+    }
+    process.exit(2);
+  }
+  if (!quarantinePath) {
+    // 库健康（或不存在、刚由普通重放生成）：no-op，不破坏好库。
+    if (options.json) console.log(JSON.stringify({ recover_library: 'healthy', quarantine: null }));
+    else console.error('指纹库可解析且形状合法，无需恢复。');
+    process.exit(0);
+  }
+  // 复检：以重建后的库对同一正式正文目录跑一次只读 --fail-on=block 全扫。
+  const verify = spawnSync(process.execPath,
+    [__filename, '--json', '--fail-on=block', path.resolve(options.targets[0])],
+    { encoding: 'utf8' });
+  const ok = verify.status === 0;
+  if (options.json) {
+    let verification = { status: verify.status };
+    try { verification.scan = JSON.parse(verify.stdout || '{}'); } catch (_) { verification.stdout = verify.stdout || null; }
+    console.log(JSON.stringify({
+      recovered: ok,
+      quarantine: quarantinePath,
+      chapters: scannedChapters.length,
+      verification,
+    }));
+  } else {
+    process.stdout.write(verify.stdout || '');
+    console.error(`损坏库已隔离至 ${quarantinePath}，并从正式正文基线全量重放；复检${ok ? '通过' : `存在阻断/错误（exit ${verify.status}）——恢复不把检测失败冒充通过`}。`);
+  }
+  process.exit(verify.status === 0 ? 0 : (verify.status === 1 ? 1 : 2));
 }
 
 // ---------- I1 指纹库欠账检测（章检模式，docs/06 §三） ----------
@@ -828,6 +1028,12 @@ if (!options.commit && scannedChapters.length > 0 && libraryPath) {
   }
 }
 
+try {
+  handling.finalizeFindings(findings, 'guyin-check-repetition.js');
+} catch (error) {
+  die(error.message);
+}
+
 const summary = {
   files_scanned: files.length,
   paragraphs_scanned: paragraphsScanned,
@@ -850,7 +1056,7 @@ if (options.json) {
     console.log(`# 指纹库为空（首章或未 --commit 过）：${summary.paragraphs_scanned} 段叙述段暂无历史可比`);
   }
   for (const f of findings) {
-    console.log(`${f.file}:${f.line}:${f.column}: [${f.severity}] ${f.type}: ${f.message}`);
+    console.log(`${f.file}:${f.line}:${f.column}: [${handling.label(f)}] ${f.type}: ${f.message}`);
   }
   if (summary.echo_suppressed > 0) {
     console.log(`# 复读雷达另有 ${summary.echo_suppressed} 个候选超 top10 截断未列出（防噪③，只进计数）`);
@@ -861,8 +1067,7 @@ if (options.json) {
 }
 
 if (failed) process.exit(2);
-const hasBlocking = findings.some((f) => f.severity === 'blocking');
-if (options.failOn === 'blocking' ? hasBlocking : findings.length > 0) process.exit(1);
+process.exit(handling.gateTripped(findings, options.failOn) ? 1 : 0);
 
 function die(message) {
   console.error(message);

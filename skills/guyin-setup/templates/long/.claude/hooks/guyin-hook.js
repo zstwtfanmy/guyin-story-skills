@@ -23,6 +23,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 const { spawnSync } = require('child_process');
 
 // 章去空白字数下限：细纲目标驱动（O3，docs/06 §二；双口径 J1，docs/07 §二）——探测
@@ -106,6 +107,25 @@ function readState(bookDir) {
   }
 }
 
+// D2 发布门：追踪/_publication.json 缺失=无在途发布（放行）；存在但损坏/阶段未到
+// complete = 上次发布中断或落盘不一致，写正文一律拦，先 recover，不允许带着悬置
+// 发布继续写（跨语言契约见 guyin-tracking-commit.py 发布状态机，任务书 §2.6）。
+function publicationBlocker(bookDir) {
+  const p = path.join(bookDir, '追踪', '_publication.json');
+  if (!fs.existsSync(p)) return null;
+  let doc;
+  try {
+    doc = JSON.parse(fs.readFileSync(p, 'utf8'));
+  } catch (e) {
+    return { broken: true, stage: null };
+  }
+  if (!doc || typeof doc !== 'object' || typeof doc.stage !== 'string') {
+    return { broken: true, stage: null };
+  }
+  if (doc.stage === 'complete') return null;
+  return { broken: false, stage: doc.stage, runId: doc.run_id || null };
+}
+
 function isBookDir(dir) {
   // 逐个探测：首项不存在时 statSync 抛异常，`||` 短路会直接跳 catch 把后面的探测全部
   // 吞掉（「有大纲无追踪」「有追踪无大纲」两种半项目都会被误判非书项目）。
@@ -136,54 +156,118 @@ function visibleChars(text) {
 }
 
 function stateProblem(st) {
-  return !st || st.schema_version !== 1 || !Number.isInteger(st.last_committed_chapter);
+  // D1：接受 tracking-commit 支持的全谱 schema（4-7，读入兼容、写盘归一 v7）；
+  // 旧模板的 schema 1 已废弃——模板现随 init 管线生成 v7 合法空态。
+  return !st || ![4, 5, 6, 7].includes(st.schema_version) || !Number.isInteger(st.last_committed_chapter);
 }
 
-// ---------------------------------------------------------- U1/U4（docs/09 §二）
-// U1 待审门：解析 追踪/待审台账.md，章号 < num 且未终态的行数（0=过）。
-// 台账缺失 → 0（fail-open）；{{...}} 占位行跳过（未实例化模板）。
+// ---------------------------------------------------------- U1/U4（docs/09 §二；D3 任务书 §2.4）
+// U1 待审门（D3 八列契约）：解析 追踪/待审台账.md（八列按表头名定位，列序可调），
+// 章号 < num、版本匹配当前正文且未终态的行数（0=过）。
+//   - 处置类别 ∈ {hard, verify}——editorial 留审读记录不入台账，出现即数据异常；
+//   - 正文版本 = hash12（文件字节 sha256 前 12 hex，与 guyin-check-trial-gate.js --hash
+//     同口径）；空=按当前保守在册；与当前盘上正文不匹配的历史行只记录不阻塞；
+//   - 终态严格完整匹配：未修复/修复中/未知字串均 open（E16）；
+//   - 「升级作者」是等待态（Fw-07/D3）：「已裁决：」只是线索，仅用户真实决定转结
+//     （终态列改五选一＋决定依据证据）才闭合；
+//   - 证据（决定依据列）：修复=版本非空+复检／豁免=豁免台账／契约修订=偏差／
+//     顺延=伏笔+数字／不适用=位置（章/行/段/L 号）+理由（去位置后 ≥6 字）；
+//   - 台账缺失/损坏/读取失败 → {error}（guard 拦并报告，不再 fail-open——已部署项目
+//     缺台账须停靠；非书项目由 guard 前置 isBookDir 放行，不误拦）。
 // 同步注释契约（U1/D2）：与技能库 skills/guyin-write/scripts/guyin-check-pending.js 的
-// parseLedger/rowIsOpen 是同一逻辑的两份实现（部署件/技能库路径不互通）；改一处必改另一处
-// （列位 cells[1]=章号、cells[4]=终态、cells[5]=备注；占位跳过；open 判定）。
-// Fw-07（docs/12）：终态含「升级作者」时备注列须回填「已裁决：＋结论」才算终态——
-// 升级是转交不是结案，只写冒号不算（v3-A1）。
-// v3-A1（任务书 §4 A1）：终态六选一（修复/豁免/契约修订/顺延/升级作者/不适用），
-// 未知字串保持 open；「不适用」须备注含原文位置（章/行/段/L 号）与理由，缺证据不关闭。
-// 章号口径与脚本不同（hook 用 < num，脚本 --through 用 <= N），勿统一。
-function pendingRowIsOpen(state, note) {
-  const TERMINAL = ['修复', '豁免', '契约修订', '顺延', '升级作者', '不适用'];
+// parseLedger/rowOpenReason 是同一逻辑的两份实现（部署件/技能库路径不互通）；改一处必改
+// 另一处（八列表头定位/严格匹配/等待态/证据/版本比对/损坏即错）。章号口径与脚本不同
+// （hook 用 < num，脚本 --through 用 <= N），勿统一。
+const PENDING_COLUMNS = ['章号', '来源', '报警/发现', '处置类别', '正文版本', '终态', '决定依据', '去向/备注'];
+const PENDING_TERMINAL = ['修复', '豁免', '契约修订', '顺延', '不适用'];
+const PENDING_HANDLING = ['hard', 'verify'];
+const PENDING_HASH12 = /^[0-9a-f]{12}$/;
+
+function pendingNaEvidence(basis) {
+  const n = (basis || '').trim();
+  if (!n) return false;
+  const posRe = /(第\s*0*\d+\s*章|L\s*0*\d+|\d+\s*[行段]|行\s*\d+|段\s*\d+|:\s*0*\d+)/i;
+  if (!posRe.test(n)) return false;
+  return n.replace(/(第\s*0*\d+\s*章|L\s*0*\d+|\d+\s*[行段]|行\s*\d+|段\s*\d+|:\s*0*\d+)/gi, '').replace(/\s/g, '').length >= 6;
+}
+
+function pendingRowIsOpen(state, version, basis) {
   if (state === '' || state === '待审') return true;
-  if (!TERMINAL.some((t) => state.includes(t))) return true;
-  if (/升级作者/.test(state) && !/已裁决[：:]\s*\S/.test(note || '')) return true;
-  if (/不适用/.test(state)) {
-    const n = (note || '').trim();
-    const hasPos = /(第\s*0*\d+\s*章|L\s*0*\d+|\d+\s*[行段]|行\s*\d+|段\s*\d+|:\s*0*\d+)/i.test(n);
-    const reason = n.replace(/(第\s*0*\d+\s*章|L\s*0*\d+|\d+\s*[行段]|行\s*\d+|段\s*\d+|:\s*0*\d+)/gi, '').replace(/\s/g, '');
-    if (!hasPos || reason.length < 6) return true;
+  if (state === '升级作者') return true; // 等待态：仅用户真实决定转结（改五终态＋证据）
+  if (!PENDING_TERMINAL.includes(state)) return true; // 严格完整匹配
+  if (state === '修复') return !(version !== '' && basis.includes('复检'));
+  if (state === '豁免') return !basis.includes('豁免台账');
+  if (state === '契约修订') return !basis.includes('偏差');
+  if (state === '顺延') return !(basis.includes('伏笔') && /\d/.test(basis));
+  return !pendingNaEvidence(basis); // 不适用
+}
+
+function pendingChapterHash(bookDir, chNum) {
+  try {
+    const dir = path.join(bookDir, '正文');
+    const name = fs.readdirSync(dir).find((n) => {
+      const m = /^第0*(\d+)章.*\.md$/.exec(n);
+      return m !== null && parseInt(m[1], 10) === chNum;
+    });
+    if (!name) return null;
+    return crypto.createHash('sha256').update(fs.readFileSync(path.join(dir, name))).digest('hex').slice(0, 12);
+  } catch (e) {
+    return null;
   }
-  return false;
 }
 
 function pendingBlockers(bookDir, num) {
+  let text;
   try {
-    const text = fs.readFileSync(path.join(bookDir, '追踪', '待审台账.md'), 'utf8');
-    let count = 0;
-    for (const line of text.split(/\r?\n/)) {
-      const t = line.trim();
-      if (!t.startsWith('|')) continue;
-      if (t.includes('{{') || /^[-|:\s]+$/.test(t)) continue;
-      const cells = t.split('|').map((c) => c.trim());
-      if (cells.length < 6) continue;
-      const chMatch = /(\d+)/.exec(cells[1]);
-      if (!chMatch) continue;
-      const state = cells[4] || '';
-      const note = cells[5] || '';
-      if (parseInt(chMatch[1], 10) < num && pendingRowIsOpen(state, note)) count += 1;
-    }
-    return count;
+    text = fs.readFileSync(path.join(bookDir, '追踪', '待审台账.md'), 'utf8');
   } catch (e) {
-    return 0; // 台账缺失 → fail-open
+    return { count: 0, error: `追踪/待审台账.md 读取失败（${e.code === 'ENOENT' ? '已部署项目缺台账' : e.message}）——走 /guyin-setup 修复或按模板建合法空表，不静默放行` };
   }
+  let idx = null;
+  let count = 0;
+  let lineNo = 0;
+  for (const line of text.split(/\r?\n/)) {
+    lineNo += 1;
+    const t = line.trim();
+    if (!t.startsWith('|')) continue;
+    if (t.includes('{{') || /^[-|:\s]+$/.test(t)) continue;
+    const cells = t.split('|').map((c) => c.trim());
+    if (idx === null) {
+      const map = {};
+      for (let c = 1; c < cells.length - 1; c += 1) {
+        if (cells[c] === '') continue;
+        if (map[cells[c]] !== undefined) return { count: 0, error: `待审台账表头列名重复「${cells[c]}」` };
+        map[cells[c]] = c;
+      }
+      const missing = PENDING_COLUMNS.filter((n) => map[n] === undefined);
+      if (missing.length > 0) {
+        return { count: 0, error: `待审台账缺列「${missing.join('、')}」（八列契约，D3）——旧格式台账须按模板迁移` };
+      }
+      idx = map;
+      continue;
+    }
+    if (cells.length - 2 !== PENDING_COLUMNS.length) {
+      return { count: 0, error: `待审台账第 ${lineNo} 行损坏（${cells.length - 2} 列，应为 8）——不静默跳过` };
+    }
+    const chRaw = cells[idx['章号']];
+    if (!/^\d+$/.test(chRaw)) {
+      return { count: 0, error: `待审台账第 ${lineNo} 行章号「${chRaw}」非纯数字` };
+    }
+    if (!PENDING_HANDLING.includes(cells[idx['处置类别']])) {
+      return { count: 0, error: `待审台账第 ${lineNo} 行处置类别「${cells[idx['处置类别']] || '（空）'}」非法——台账只收 hard/verify（editorial 留审读记录）` };
+    }
+    const version = cells[idx['正文版本']];
+    if (version !== '' && !PENDING_HASH12.test(version)) {
+      return { count: 0, error: `待审台账第 ${lineNo} 行正文版本「${version}」非法（须 hash12，--hash 生成禁手编）` };
+    }
+    const ch = parseInt(chRaw, 10);
+    if (ch >= num) continue;
+    const cur = pendingChapterHash(bookDir, ch);
+    if (version !== '' && cur !== null && version !== cur) continue; // 历史版本行：只记录不阻塞
+    if (pendingRowIsOpen(cells[idx['终态']], version, cells[idx['决定依据']])) count += 1;
+  }
+  if (idx === null) return { count: 0, error: '待审台账无八列表头——旧格式须按模板迁移（D3）' };
+  return { count, error: null };
 }
 
 // U4 覆盖门：Write/Edit 已存在的章文件时，正文/_archive/ 须有该章快照且其 mtime ≥
@@ -216,6 +300,18 @@ function guard() {
   if (path.basename(path.dirname(abs)) !== '正文') process.exit(0);
   const bookDir = path.dirname(path.dirname(abs));
   if (!isBookDir(bookDir)) process.exit(0); // 非隐笔项目防误伤
+  // D2 发布门（首建与覆盖共用）：在途/损坏发布未恢复前，正文一律不可动。
+  const publication = publicationBlocker(bookDir);
+  if (publication) {
+    if (publication.broken) {
+      console.error('⛔ 写正文被拦截：追踪/_publication.json 损坏（无法解析或字段缺失）。');
+      console.error('   发布状态文件是发布器权威账本，损坏不得静默忽略；人工核查后运行 guyin-tracking-commit.py recover --project . 恢复。');
+    } else {
+      console.error(`⛔ 写正文被拦截：发布进行到一半（阶段=${publication.stage}，run_id=${publication.runId || '未知'}）。`);
+      console.error('   先运行 guyin-tracking-commit.py recover --project . 续跑至 complete（或人工裁决），再写正文；禁止并行第二条发布。');
+    }
+    process.exit(2);
+  }
   const base = path.basename(abs);
   const num = chapterNum(base);
   const exists = fs.existsSync(abs);
@@ -240,13 +336,19 @@ function guard() {
         console.error('   先完成上一章的追踪提交与章检，再开新章。');
         process.exit(2);
       }
-      // U1 待审门：更早章的未终态 finding 阻塞开新章——检测必有终态，无声消失零成本是根因五。
+      // U1 待审门（D3）：更早章、版本匹配当前正文的未决 finding 阻塞开新章——检测必有终态，
+      // 无声消失零成本是根因五；台账缺失/损坏同样拦截（不静默放行）。
       const pending = pendingBlockers(bookDir, num);
-      if (pending > 0) {
-        console.error(`⛔ 写正文被拦截：待审台账有 ${pending} 行未终态（章号 < ${num}）。`);
-        console.error('   先消费（修复/豁免/契约修订/顺延/升级作者/不适用）回填终态，再开新章（guyin-check-pending.js）。');
-        console.error('   升级作者的行还须在备注列回填「已裁决：…」（作者结论），单写升级不算终态。');
-        console.error('   不适用（确认误报/有功能写法）还须备注原文位置＋判定理由，缺证据不算终态。');
+      if (pending.error) {
+        console.error(`⛔ 写正文被拦截：待审台账异常——${pending.error}。`);
+        console.error('   台账是阻断账本，损坏不得静默跳过；修复后重试（guyin-check-pending.js 核查）。');
+        process.exit(2);
+      }
+      if (pending.count > 0) {
+        console.error(`⛔ 写正文被拦截：待审台账有 ${pending.count} 行未决（章号 < ${num}，版本匹配当前正文）。`);
+        console.error('   先消费回填：终态五选一＋决定依据（修复=新版本+复检／豁免=豁免台账／契约修订=偏差／顺延=伏笔+章号／不适用=位置+理由）。');
+        console.error('   「升级作者」是等待态——仅用户真实决定转结（终态列改五选一＋证据）；「已裁决：」字样不解除。');
+        console.error('   正文改版后旧行只记录不阻塞；当前版本须有自己的处置（guyin-check-pending.js --project 核查）。');
         process.exit(2);
       }
     } else {

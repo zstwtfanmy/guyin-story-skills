@@ -1,5 +1,7 @@
 # workflow-daily.md：日更续写工作流
 
+> **【E2 旧产物路径停用】** 本文件为 [存档]，其中 `剧情/节奏.md`、`剧情/情绪模块.md`、`剧情/{单元}.md`、`章节/*_摘要.md` 等「剧情/」与「_摘要」路径均为 v0.5 前旧拆文布局，**无人生产、不得据此召回或要求补建**（第 81-82 行的 missing_primary_contract 停止动作只对新路径 `节奏.md`/`情绪模块.md` 有效，且不补可改标「对标未验证」按无对标继续）。现行召回权威 = [cross-book-recall.md](cross-book-recall.md)（[方法]）。
+
 本文件为"日更续写"场景的完整指引。SKILL.md 路由到本文件后，按以下流程执行。
 
 > **日更准备步骤**：每章写作前 4 步——状态筛选 + 题材正文提示卡召回 + 文风召回 + 意图确认，嵌入 Step 2 逐章循环。
@@ -47,7 +49,7 @@
 
 **首次初始化**：
 
-1. `_tracking-state.json` 不存在且项目尚无正文：构造 `last_chapter=0` 的初始化事务，执行 `tracking_commit.py init`。
+1. `_tracking-state.json` 不存在且项目尚无正文：构造 `last_chapter=0` 的初始化事务，执行 `tracking_commit.py init`。/guyin-setup 部署的模板自带合法空态（v7、`book_title=未命名书稿`）——书名定稿且尚无提交时，删模板占位 state 后用真实书名 init（详见 [tracking-transaction.md](tracking-transaction.md)）。
 2. `_tracking-state.json` 不存在但项目已有正文：停止日更。该目录停在旧追踪结构上，走 `/story-import` 的「旧追踪项目迁移」重建 `追踪/`——**不用重跑全书拆解**，只按最后完整章号和现有追踪文件构造初始化事务。本 workflow 自己不解析旧追踪结构、不推测状态。`init` 会把旧结构按原样整体移入 `追踪/_旧追踪存档/` 再建当前协议——旧内容不删除也不参与解析。
 3. `tracking_commit.py check` 报告派生视图与 state 不一致：重新提交该章的 `mode=revision` 事务让工具整份重建（`expected_state_revision` 取 `追踪/_tracking-state.json` 的 `state_revision` 字段——`check` 失败时只往 stderr 打 ERROR，不输出 JSON）；不得手改 Markdown 或继续写下一章。手写出的逐章记录会让同章 append 永久报 `chapter delta N already exists with different content`，删掉那个手写文件后重跑原事务即可。
 

@@ -3,8 +3,9 @@
 
 const fs = require('fs');
 const path = require('path');
+const handling = require('./lib/guyin-handling');
 
-const USAGE = `Usage: node check-ai-patterns.js [--check] [--json] [--fail-on=blocking|all] <file...>
+const USAGE = `Usage: node check-ai-patterns.js [--check] [--json] [--fail-on=block|hard|all] <file...>
 
 Detect high-risk AI-flavor prose patterns that need human rewrite:
   - negative setup followed by positive flip in the same sentence
@@ -37,11 +38,11 @@ Detect high-risk AI-flavor prose patterns that need human rewrite:
   - phrase quota (项目 追踪/短语黑名单.md 登记短语超限: 每章 ≤N / 近 5 章 ≤N / 相邻章禁用, advisory; 无该文件静默)
   - cross-chapter sensory-repeat (同一情绪落点的谓语动作跨章重复: 咽口水/手心出汗/咬唇等身体动作 tic 在 ≥2 章命中, advisory; 白名单 追踪/复沓锚句.md 登记的签名物件豁免; 无该文件静默)
   - stutter-punct (SP3, docs/11 §一): 同字夹冒号「这:这」确定性错字——应为「这……这」; advisory, 扫全文(对白内外都扫), 出现即报非密度型
-  - pov-drift (PV2, docs/11 §二): 第三有限视角越界——对手/配角内心直写 ≥2 处(1 处静默), advisory; 显式人名 + 一跳代词回指 + 「他/她哪是/哪要的是」弱信号; 无批次公约 POV 行/POV=全知/多视角 → fail-open 静默
+  - pov-drift (PV2, docs/11 §二): 第三有限视角越界——对手/配角内心直写 ≥2 处(1 处静默), advisory, handling=verify(POV 契约违约须对照批次公约核实); 显式人名 + 一跳代词回指 + 「他/她哪是/哪要的是」弱信号; 无批次公约 POV 行/POV=全知/多视角 → fail-open 静默
 
-Each finding carries severity: blocking by default for generation/deslop cleanup (not-is-comparison / em-dash / voice-contrast / negation-parade / reverse-not-is / trailer-ending / trailer-summary). This is a local style/readability gate, not an AIGC detector score; functional human text can be marked for review instead of hard-edited for a detector.
-或 advisory (period-stutter / long-paragraph / micro-action-tic / action-list-tic / abstract-summary-tic / cliche-density-tic / metaphor-density-tic / reasoning-chain-tic / system-notice-formality-tic / overcompressed-prose-tic / prose-fragment-ratio / silence-density-tic / low-connective-density-tic / quote-emphasis-tic / formulaic-parallelism / explain-tic / mid-trailer / aphorism-tic / phrase-quota / sensory-repeat / stutter-punct / pov-drift / dialogue-zero-information，是提示，justified 的长推理/氛围段可保留；prose-fragment-ratio 自 v3-A1 起恒为 advisory——短段占比是文体观测，不是必然错误，是否成立结合场景任务与书级约定判断)。
---fail-on=blocking 只在出现 blocking finding 时退出 1；默认 --fail-on=all 有任何 finding 即退出 1。
+每条 finding 带 handling 处置类（lib/guyin-handling.js 单一事实源；severity 保留 blocking/advisory 原值作证据强度）：本脚本全部规则 editorial——句式/比例/比喻/密度等表达观察，留审读记录、不因未清零阻断写作（justified 的长推理/氛围段可保留；prose-fragment-ratio 短段占比是文体观测，不是必然错误，是否成立结合场景任务与书级约定判断）；唯 pov-drift=verify（POV 契约（批次公约）违约——事实性，须对照公约核实）。This is a local style/readability gate, not an AIGC detector score; functional human text can be marked for review instead of hard-edited for a detector.
+--fail-on=block|hard|all（默认 block）：block=hard 或 verify 任一存在即退 1（两者都进待审台账）；hard=仅 hard 计 1；all=含 editorial 全计 1（审计模式）。
+Exit codes: 0=无未决阻断; 1=存在未决阻断(hard/verify); 2=执行/输入错误。
 
 The script reports findings only. It never rewrites text, because the safe fix is
 contextual: usually delete the negative setup, write the positive term directly,
@@ -302,7 +303,7 @@ const APHORISM_PATTERN = /[\u4e00-\u9fa5A-Za-z0-9]{1,6}是[\u4e00-\u9fa5A-Za-z0-
 const options = {
   json: false,
   files: [],
-  failOn: 'all',
+  failOn: 'block',
 };
 
 for (let i = 2; i < process.argv.length; i += 1) {
@@ -312,9 +313,11 @@ for (let i = 2; i < process.argv.length; i += 1) {
   } else if (arg === '--json') {
     options.json = true;
   } else if (arg.startsWith('--fail-on=')) {
-    const v = arg.slice('--fail-on='.length);
-    if (v !== 'blocking' && v !== 'all') die(`--fail-on must be 'blocking' or 'all'`);
-    options.failOn = v;
+    try {
+      options.failOn = handling.parseFailOn(arg.slice('--fail-on='.length));
+    } catch (e) {
+      die(e.message);
+    }
   } else if (arg === '-h' || arg === '--help') {
     process.stdout.write(`${USAGE}\n`);
     process.exit(0);
@@ -393,18 +396,22 @@ for (const file of options.files) {
   allFindings.push(...findings);
 }
 
+try {
+  handling.finalizeFindings(allFindings, 'guyin-check-ai-patterns.js');
+} catch (e) {
+  die(e.message);
+}
+
 if (options.json) {
   process.stdout.write(`${JSON.stringify({ findings: allFindings }, null, 2)}\n`);
 } else {
   for (const finding of allFindings) {
-    console.log(`${finding.file}:${finding.line}:${finding.column}: [${finding.severity}] ${finding.type}: ${finding.message} (${finding.excerpt})`);
+    console.log(`${finding.file}:${finding.line}:${finding.column}: [${handling.label(finding)}] ${finding.type}: ${finding.message} (${finding.excerpt})`);
   }
 }
 
 if (failed) process.exit(2);
-// --fail-on=blocking 只在出现 blocking finding 时退出 1（advisory 仅报告）；默认 all 沿用「有任何 finding 即 1」。
-const hasBlocking = allFindings.some((f) => f.severity === 'blocking');
-if (options.failOn === 'blocking' ? hasBlocking : allFindings.length > 0) process.exit(1);
+process.exit(handling.gateTripped(allFindings, options.failOn) ? 1 : 0);
 
 function escapeRegExp(text) {
   return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -482,8 +489,10 @@ function scanProsePatterns(proseLines) {
         line: lineNo,
         column: dash.index + 1,
         type: 'em-dash',
-        severity: 'blocking',
-        message: '破折号按功能改写：打断→动作 beat/短句，拖长音→省略或动作，插入说明→逗号/冒号；勿一律改句号。',
+        // v3/F2-T03：破折号是表面风格，正常使用不自动强改（RULE_HANDLING 登记 editorial）。
+        // 只作编辑观察留审读记录，不阻止发布；确属滥用导致阅读损失按 2.3 审读路由处理。
+        severity: 'advisory',
+        message: '破折号按功能复核（editorial，不阻断）：打断→动作 beat/短句，拖长音→省略或动作，插入说明→逗号/冒号；勿一律改句号。',
         excerpt: compact(text.slice(Math.max(0, dash.index - 8), dash.index + dash[0].length + 8)),
       });
     }

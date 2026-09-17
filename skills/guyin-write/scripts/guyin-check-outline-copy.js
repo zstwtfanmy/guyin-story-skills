@@ -33,6 +33,10 @@
  *
  * 退出码：0 = 干净或无法判定（缺细纲/非分章正文）；1 = 有重合待复核。
  * 无发现时完全静默，不污染上下文。
+ *
+ * 处置口径（lib/guyin-handling.js 契约 §2.4）：本脚本无 per-rule findings 结构，
+ * exit 1 即「有重合待复核」——语义等同处置分类 verify（须上下文核实、进待审台账），
+ * 故不接 --fail-on / RULE_HANDLING 表项，CLI 与退出口径维持原样。
  */
 
 'use strict'

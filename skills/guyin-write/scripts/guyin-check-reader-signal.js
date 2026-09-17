@@ -4,32 +4,43 @@
 const fs = require('fs');
 const path = require('path');
 
-const USAGE = `Usage: node guyin-check-reader-signal.js [--json] [--project <根>]
+const handling = require('./lib/guyin-handling');
 
-读者信号分析（P5，docs/04-优化路线图.md §3 P5 第 2 条）：掉崖归因 + 弃书点审计。
+const USAGE = `Usage: node guyin-check-reader-signal.js [--json] [--fail-on=block|hard|all] [--project <根>]
+
+读者信号分析（P5；E1 修订）：只做基于实测追读数据的掉崖观察，不做弃书自动归因。
 框架与 Arena 盲评是封闭系统，这是缺的作品心电图——作者手动录入信号（一分钟/章），
-机械归因交脚本，语义终判归作者（flash 直接判「为什么掉」不可靠）。
+机械观察交脚本，语义终判归作者（flash 直接判「为什么掉」不可靠；
+「连续两章不推主线即弃书」一类的自动归因 E1 已取消——没有读者数据不得替读者下结论）。
 
 输入（均在 追踪/ 下）：
-  读者信号.md          作者手动录入表：| 章 | 追读 | 评论关键词 |（无此文件则只出弃书点审计）
+  读者信号.md          作者手动录入表：| 章 | 追读 | 评论关键词 |（无此文件则不出观察）
   _tracking-state.json 主线推进判据（纯机械）：该章有 timeline 揭示 / 伏笔埋设 / 定性兑付
-                       任一即「有推进」——宁漏报不误报
+                       任一即「有推进」——只用于掉崖表的上下文列，不产生弃书结论
   大纲/细纲_第NNN章.md 钩子类型列（可选，缺失该列留空）
 
-输出（全部 advisory，作者看表归因）：
-  reader-cliff   掉崖章：追读较前章降幅 ≥30%（|1 - 本/前|）——附 ±2 章信号表
-                 （钩子类型/主线推进/评论关键词），归因三问留给作者：钩子失灵？
-                 主线停摆？还是上一章爽点透支？
-  drop-point     弃书点候选：连续 ≥2 章无主线推进——「读者不是因某章差而弃书，
-                 是某章给了他一个离开的借口」，单章看都合格、叠加即弃书点；
-                 该区间含掉崖章则标注「信号佐证」`;
+输出（advisory 观察，作者看表归因）：
+  reader-cliff   掉崖章：追读较前章降幅 ≥30%（|1 - 本/前|，须两章都有实测数）——
+                 附 ±2 章信号表（钩子类型/主线推进/评论关键词），归因三问留给作者：
+                 钩子失灵？主线停摆？还是上一章爽点透支？
 
-const options = { json: false, project: null };
+处置分类（lib/guyin-handling）：reader-cliff = editorial——观察不阻断
+（默认门永不因此 exit 1），终判归作者；--fail-on=all 审计模式才计入。
+Exit codes: 0 = 无未决阻断; 1 = 存在未决阻断（hard/verify）; 2 = 执行/输入错误。
+--fail-on=block（默认）hard+verify 计 1; hard 仅 hard; all 含 editorial（审计模式）。`;
+
+const options = { json: false, failOn: 'block', project: null };
 
 for (let i = 2; i < process.argv.length; i += 1) {
   const arg = process.argv[i];
   if (arg === '--json') {
     options.json = true;
+  } else if (arg.startsWith('--fail-on=')) {
+    try {
+      options.failOn = handling.parseFailOn(arg.slice('--fail-on='.length));
+    } catch (e) {
+      die(e.message);
+    }
   } else if (arg.startsWith('--project=')) {
     options.project = arg.slice('--project='.length);
   } else if (arg === '--project') {
@@ -158,54 +169,34 @@ if (signals.size >= 2) {
   }
 }
 
-// ---------- 弃书点审计（不依赖信号文件，追踪驱动） ----------
+// ---------- 输出 ----------
+// E1：drop-point（连续 ≥2 章无主线推进→弃书点）已废除——追踪状态里没有主线事件
+// 不等于读者弃书，无实测信号不得自动归因；「主线是否停摆」只作为掉崖表的上下文列。
 
 const lastChapter = state ? state.last_committed_chapter : 0;
-const cliffChapters = new Set(cliffs.map((c) => c.chapter));
-if (lastChapter >= 2 && progressChapters.size >= 0) {
-  let runStart = null;
-  for (let ch = 1; ch <= lastChapter + 1; ch += 1) {
-    const progressed = progressChapters.has(ch);
-    if (!progressed && ch <= lastChapter) {
-      if (runStart === null) runStart = ch;
-    } else {
-      if (runStart !== null) {
-        const runEnd = ch - 1;
-        const length = runEnd - runStart + 1;
-        if (length >= 2) {
-          const overlap = [...cliffChapters].some((c) => c >= runStart && c <= runEnd);
-          findings.push({
-            type: 'drop-point',
-            severity: 'advisory',
-            message: `弃书点候选：第${runStart}-${runEnd}章连续 ${length} 章无主线推进（无 timeline 揭示/伏笔埋设/定性兑付）——单章看都合格，叠加即「给读者一个离开的借口」${overlap ? '，且区间含掉崖章（信号佐证）' : ''}。补一拍主线钩或把该区间并章。`,
-            excerpt: `第${runStart}-${runEnd}章 无推进×${length}${overlap ? '·信号佐证' : ''}`,
-          });
-        }
-      }
-      runStart = null;
-    }
-  }
-}
 
-// ---------- 输出 ----------
+try {
+  handling.finalizeFindings(findings, 'guyin-check-reader-signal');
+} catch (e) {
+  die(e.message);
+}
 
 const summary = {
   signal_rows: signals.size,
   has_signal_file: hasSignalFile,
   chapters_tracked: lastChapter,
   cliffs: cliffs.length,
-  drop_points: findings.filter((f) => f.type === 'drop-point').length,
 };
 
 if (options.json) {
   process.stdout.write(`${JSON.stringify({ summary, findings }, null, 2)}\n`);
 } else {
-  console.log(`# 读者信号分析（掉崖 ${summary.cliffs}｜弃书点候选 ${summary.drop_points}）`);
+  console.log(`# 读者信号分析（掉崖 ${summary.cliffs}）`);
   if (!hasSignalFile) console.log('');
-  if (!hasSignalFile) console.log('> 未找到 追踪/读者信号.md：跳过掉崖检测，仅出弃书点审计。录入格式见模板（| 章 | 追读 | 评论关键词 |）。');
+  if (!hasSignalFile) console.log('> 未找到 追踪/读者信号.md：无实测信号，不出观察。录入格式见模板（| 章 | 追读 | 评论关键词 |）。');
   console.log('');
   for (const f of findings) {
-    console.log(`⚠ [${f.severity}] ${f.type}: ${f.message}`);
+    console.log(`⚠ [${handling.label(f)}] ${f.type}: ${f.message}`);
     if (f.table) {
       console.log('');
       console.log('  | 章 | 追读 | 降幅 | 钩子 | 主线 | 评论关键词 | 章摘要 |');
@@ -218,4 +209,4 @@ if (options.json) {
   }
 }
 
-process.exit(0);
+process.exit(handling.gateTripped(findings, options.failOn) ? 1 : 0);

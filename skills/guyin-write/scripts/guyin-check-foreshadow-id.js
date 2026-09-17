@@ -7,9 +7,9 @@
 //   重号（两个 F007 指不同事）、空号（数据行无 ID）、以及正文/大纲里引用了台账没登记的 F 号。
 // 语义（伏笔是否回收、回收章对不对）归 tracking-commit 与 outline-deliver；本脚本只做编号会计：
 //
-//   advisory foreshadow-duplicate-id       同一 F 号在台账出现多行
-//   advisory foreshadow-empty-id            台账数据行（非表头/分隔/{{占位}}）无任何 F 编号
-//   advisory foreshadow-ref-unregistered    正文/*.md 或 大纲/细纲_*.md 引用了台账未登记的 F 号
+//   hard   foreshadow-duplicate-id          同一 F 号在台账出现多行
+//   hard   foreshadow-empty-id              台账数据行（非表头/分隔/{{占位}}）无任何 F 编号
+//   verify foreshadow-ref-unregistered      正文/*.md 或 大纲/细纲_*.md 引用了台账未登记的 F 号
 //
 // 编号空间注意：大纲/ 下的规划文件（伏笔规划台账/总纲/卷纲，含「待埋」未来编号）本身是
 // 编号登记源，不扫；只扫 正文/ 全部 .md 与 大纲/细纲_第NNN章.md——细纲提及未埋设编号时报
@@ -19,22 +19,27 @@
 // 在每行 cells 里寻找 F 编号；追踪视图与 .workbuddy 不扫。
 //
 // 台账文件缺失、或表中无任何数据行（空项目/模板态）→ 静默 exit 0（fail-open）。
-// 全部 advisory：默认 --fail-on=blocking 永不 exit 1；--fail-on=all 才 exit 1。Report-only。
+// 处置分类（lib/guyin-handling）：empty/duplicate-id=hard（编号工程错误）；ref-unregistered=
+// verify（悬空引用，须核实是笔误还是漏登记）。--fail-on=block（默认）hard+verify 任一即
+// exit 1（进待审台账，登记/修复/豁免后解除）；--fail-on=all 为审计模式。Report-only。
 
 const fs = require('fs');
 const path = require('path');
 
-const USAGE = `Usage: node guyin-check-foreshadow-id.js --project <book-root> [--json] [--fail-on=blocking|all]
+const handling = require('./lib/guyin-handling');
 
-Foreshadow ID ledger gate (Fw-09 C2, advisory-only by default):
-  advisory foreshadow-duplicate-id       duplicate F-id rows in 追踪/伏笔.md
-  advisory foreshadow-empty-id           ledger data row without F-id
-  advisory foreshadow-ref-unregistered   F-id referenced in 正文/ or 大纲/细纲_*.md but not registered
-                                         (planning ledgers/总纲/卷纲 are registration sources, not scanned)
+const USAGE = `Usage: node guyin-check-foreshadow-id.js --project <book-root> [--json] [--fail-on=block|hard|all]
+
+Foreshadow ID ledger gate (Fw-09 C2):
+  hard   foreshadow-duplicate-id       duplicate F-id rows in 追踪/伏笔.md
+  hard   foreshadow-empty-id           ledger data row without F-id
+  verify foreshadow-ref-unregistered   F-id referenced in 正文/ or 大纲/细纲_*.md but not registered
+                                       (planning ledgers/总纲/卷纲 are registration sources, not scanned)
   Missing ledger / no data rows -> silent exit 0 (fail-open).
---fail-on=blocking (default) never exits 1; --fail-on=all exits 1 on any finding.`;
+Exit codes: 0 = 无未决阻断; 1 = 存在未决阻断（hard/verify，进待审台账——登记/修复/豁免后解除）;
+  2 = 执行/输入错误。--fail-on=block（默认）hard+verify 计 1; hard 仅 hard; all 含 editorial（审计模式）。`;
 
-const options = { json: false, failOn: 'blocking', project: null };
+const options = { json: false, failOn: 'block', project: null };
 
 function die(message) {
   console.error(message);
@@ -47,9 +52,11 @@ for (let i = 2; i < process.argv.length; i += 1) {
   if (arg === '--json') {
     options.json = true;
   } else if (arg.startsWith('--fail-on=')) {
-    const v = arg.slice('--fail-on='.length);
-    if (v !== 'blocking' && v !== 'all') die("--fail-on must be 'blocking' or 'all'");
-    options.failOn = v;
+    try {
+      options.failOn = handling.parseFailOn(arg.slice('--fail-on='.length));
+    } catch (e) {
+      die(e.message);
+    }
   } else if (arg === '--project') {
     options.project = process.argv[i + 1];
     if (options.project === undefined) die('--project requires a value');
@@ -191,11 +198,17 @@ if (dataRows > 0) {
   }
 }
 
+try {
+  handling.finalizeFindings(findings, 'guyin-check-foreshadow-id');
+} catch (e) {
+  die(e.message);
+}
+
 if (options.json) {
   process.stdout.write(`${JSON.stringify({ findings, registered: [...registered].sort() }, null, 2)}\n`);
 } else if (findings.length > 0) {
   for (const f of findings) {
-    console.log(`${f.file}:${f.line}:${f.column}: [${f.severity}] ${f.type}: ${f.message}`);
+    console.log(`${f.file}:${f.line}:${f.column}: [${handling.label(f)}] ${f.type}: ${f.message}`);
   }
 } else if (dataRows === 0) {
   console.log('foreshadow-id: no ledger data rows (silent)');
@@ -203,4 +216,4 @@ if (options.json) {
   console.log(`foreshadow-id: ${registered.size} registered, no id conflicts`);
 }
 
-if (options.failOn === 'all' && findings.length > 0) process.exit(1);
+process.exit(handling.gateTripped(findings, options.failOn) ? 1 : 0);

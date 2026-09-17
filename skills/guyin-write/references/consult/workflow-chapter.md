@@ -1,5 +1,7 @@
 # workflow-chapter.md：单章正文工作流（Phase 4-5）
 
+> **【E2 旧产物路径停用】** 本文件为 [存档]，其中 `剧情/节奏.md`、`剧情/情绪模块.md`、`剧情/{单元}.md`、`剧情/README.md`、`章节/*_摘要.md` 等「剧情/」与「_摘要」路径均为 v0.5 前旧拆文布局，**无人生产、不得据此召回或要求补建**。现行 guyin-analyze 产物在拆文书根：`节奏.md`、`情绪模块.md`、`章节/第XXX章.md`、`设定/`、`角色/`；现行召回权威 = [cross-book-recall.md](cross-book-recall.md)（[方法]），卷级迁移方法 = [outline-structure-theory.md](outline-structure-theory.md)「对标节奏迁移」。
+
 本文件是「写一章正文」的完整流程。SKILL.md 路由到 Phase 4 后按本文件执行；日更批量由 `workflow-daily.md` 控制批次与追踪事务，每章正文仍走本文件。
 
 项目文件结构、产物映射表、缺失文件处理、对标分析权威优先级在 `SKILL.md` Phase 4 开头，本文件不重复（SKILL.md 恒在上下文里）。

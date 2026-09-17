@@ -4,12 +4,14 @@
 const fs = require('fs');
 const path = require('path');
 
-const USAGE = `Usage: node guyin-check-pitch.js [--json] name <书名> [<书名>...]
-       node guyin-check-pitch.js [--json] blurb --blurb <简介文件> <大纲目录>
-       node guyin-check-pitch.js [--json] titles <目录>
+const handling = require('./lib/guyin-handling');
+
+const USAGE = `Usage: node guyin-check-pitch.js [--json] [--fail-on=block|hard|all] name <书名> [<书名>...]
+       node guyin-check-pitch.js [--json] [--fail-on=block|hard|all] blurb --blurb <简介文件> <大纲目录>
+       node guyin-check-pitch.js [--json] [--fail-on=block|hard|all] titles <目录>
 
 开书文案三判据（P7，docs/04-优化路线图.md §3 P7）——拆文能力的反向应用，
-全部 advisory：候选过滤与覆盖检查归脚本，外选与终判归作者。
+候选过滤与覆盖检查归脚本，外选与终判归作者。
 
   name   书名十年测试：候选含时效热词即标 [热词名]——热词是借来的势能，
          风过了名字就死；剥离热词后剩下的（人名/意象/悬念）才是名字自己的。
@@ -17,7 +19,13 @@ const USAGE = `Usage: node guyin-check-pitch.js [--json] name <书名> [<书名>
          危机钩可隐（隐而不发是钩力），期待钩必须露（许诺要给足）；漏覆盖报
          blurb-missing-promise——简介是承诺清单，写进去的必须兑现。
   titles 章节标题判据：≤8 字、非纯抽象词（往事/心结/疑云类无钩力）、与本章
-         钩子类型不错位（错位=把钩子拆了：危机章配剧透名、反转章配「真相大白」）。`;
+         钩子类型不错位（错位=把钩子拆了：危机章配剧透名、反转章配「真相大白」）。
+
+处置分类（lib/guyin-handling）：hype-title / title-missing / title-too-long /
+  title-abstract / title-hook-mismatch = editorial（默认门不阻断，终判归作者）；
+  blurb-missing-promise = verify（简介承诺缺正文支撑，须对照核实——默认门阻断）。
+Exit codes: 0 = 无未决阻断; 1 = 存在未决阻断（hard/verify）; 2 = 执行/输入错误。
+--fail-on=block（默认）hard+verify 计 1; hard 仅 hard; all 含 editorial（审计模式）。`;
 
 const HYPE_WORDS = [
   '开局', '系统', '神豪', '赘婿', '无敌', '签到', '重生', '穿越', '逆袭', '爽文',
@@ -32,12 +40,18 @@ const SPOILER_BY_HOOK = {
 const HOOK_TYPES = ['危机', '反转', '期待', '悬念', '情绪'];
 const HOOK_LINE = /[-*]\s*章尾钩子[：:]\s*(危机|反转|期待|悬念|情绪)[^—]*—\s*(.+)/;
 
-const options = { json: false, command: null, blurbFile: null, targets: [] };
+const options = { json: false, failOn: 'block', command: null, blurbFile: null, targets: [] };
 
 for (let i = 2; i < process.argv.length; i += 1) {
   const arg = process.argv[i];
   if (arg === '--json') {
     options.json = true;
+  } else if (arg.startsWith('--fail-on=')) {
+    try {
+      options.failOn = handling.parseFailOn(arg.slice('--fail-on='.length));
+    } catch (e) {
+      die(e.message);
+    }
   } else if (arg === '--blurb') {
     options.blurbFile = process.argv[i + 1] || die('--blurb requires a value');
     i += 1;
@@ -211,13 +225,18 @@ if (options.command === 'titles') {
 
 // ---------- 输出 ----------
 
+try {
+  handling.finalizeFindings(findings, 'guyin-check-pitch');
+} catch (e) {
+  die(e.message);
+}
+
 if (options.json) {
   process.stdout.write(`${JSON.stringify(report, null, 2)}\n`);
 } else {
   console.log(`# pitch 检查（${options.command}）：${findings.length} 条 advisory`);
-  for (const f of findings) console.log(`⚠ [${f.severity}] ${f.type}: ${f.message}`);
+  for (const f of findings) console.log(`⚠ [${handling.label(f)}] ${f.type}: ${f.message}`);
   if (findings.length === 0) console.log('（零报警——过机械判据，终判归作者）');
 }
 
-if (findings.length > 0 && !options.json) process.exit(1);
-process.exit(0);
+process.exit(handling.gateTripped(findings, options.failOn) ? 1 : 0);

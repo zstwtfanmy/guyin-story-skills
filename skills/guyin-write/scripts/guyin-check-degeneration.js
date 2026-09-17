@@ -3,18 +3,21 @@
 
 const fs = require('fs');
 const path = require('path');
+const handling = require('./lib/guyin-handling');
 
-const USAGE = `Usage: node check-degeneration.js [--check] [--json] [--fail-on=blocking|all] <file...>
+const USAGE = `Usage: node check-degeneration.js [--check] [--json] [--fail-on=block|hard|all] <file...>
 
 Detect model-degeneration fingerprints that a degrading model cannot self-report:
-  - verbatim repetition (复读/打转): a long sentence repeated, or back-to-back identical lines
-  - mid-sentence truncation (截断): file ends without terminal/closing punctuation
-  - placeholder / refusal / meta leakage (元信息泄漏): 作为AI / 我无法继续 / 此处省略 / 乱码
-  - engineering-word leakage (工程词泄漏): 细纲 / 情节点 / 本章 / 下一章 / 任务描述 漏进正文
+  - verbatim-repeat (verify): 复读/打转——长句重复或紧邻整行重复（可能是登记过的
+    复沓锚句，须对照锚句登记核实）
+  - truncated (hard): 截断——file ends without terminal/closing punctuation
+  - placeholder-leak (hard): 占位/拒绝语/元信息泄漏（作为AI / 我无法继续 / 此处省略 / 乱码）
+  - meta-leak (hard): 工程词泄漏（细纲 / 情节点 / 本章 / 下一章 / 任务描述 漏进正文）
 
-Each finding carries severity: blocking (复读/截断/占位拒绝语/tier1 纯工程词，正文里永不合法，
-命中即重写) 或 advisory (tier2 章节/歧义词、对话行里的工程词，只提示、交人/LLM 判)。
---fail-on=blocking 只在出现 blocking finding 时退出 1；默认 --fail-on=all 有任何 finding 即退出 1。
+Each finding carries severity (blocking/advisory) + handling (hard/verify/editorial，
+lib/guyin-handling.js 分类)。
+--fail-on=block（默认）hard/verify 任一存在即 1；hard 仅 hard；all 含 editorial（审计模式）。
+Exit codes: 0=无未决阻断, 1=存在未决阻断(hard/verify), 2=执行/输入错误。
 
 Report-only. The script never rewrites — the safe response is to regenerate the
 affected unit (chapter / 摘要) with the finding fed back as a constraint, cap retries,
@@ -50,7 +53,7 @@ const PLACEHOLDER_PATTERNS = [
 const META_TIER1_RE = /细纲|情节点|卷纲|功能标签|目标情绪|字数目标|章首钩子|章尾钩子/;
 const META_TIER2_RE = /第[一二三四五六七八九十百千万两0-9]+章|本章|这一章|上一章|下一章|上章|下章|前一章|后一章|前文|后文|伏笔|读者|任务描述/;
 
-const options = { json: false, files: [], failOn: 'all' };
+const options = { json: false, files: [], failOn: 'block' };
 
 for (let i = 2; i < process.argv.length; i += 1) {
   const arg = process.argv[i];
@@ -59,9 +62,11 @@ for (let i = 2; i < process.argv.length; i += 1) {
   } else if (arg === '--json') {
     options.json = true;
   } else if (arg.startsWith('--fail-on=')) {
-    const v = arg.slice('--fail-on='.length);
-    if (v !== 'blocking' && v !== 'all') die(`--fail-on must be 'blocking' or 'all'`);
-    options.failOn = v;
+    try {
+      options.failOn = handling.parseFailOn(arg.slice('--fail-on='.length), 'block');
+    } catch (error) {
+      die(error.message);
+    }
   } else if (arg === '-h' || arg === '--help') {
     process.stdout.write(`${USAGE}\n`);
     process.exit(0);
@@ -93,18 +98,22 @@ for (const file of options.files) {
   allFindings.push(...findings);
 }
 
+try {
+  handling.finalizeFindings(allFindings, 'guyin-check-degeneration.js');
+} catch (error) {
+  die(error.message);
+}
+
 if (options.json) {
   process.stdout.write(`${JSON.stringify({ findings: allFindings }, null, 2)}\n`);
 } else {
   for (const f of allFindings) {
-    console.log(`${f.file}:${f.line}:${f.column}: [${f.severity}] ${f.type}: ${f.message} (${f.excerpt})`);
+    console.log(`${f.file}:${f.line}:${f.column}: [${handling.label(f)}] ${f.type}: ${f.message} (${f.excerpt})`);
   }
 }
 
 if (failed) process.exit(2);
-// --fail-on=blocking 只在出现 blocking finding 时退出 1（advisory 仅报告）；默认 all 沿用「有任何 finding 即 1」。
-const hasBlocking = allFindings.some((f) => f.severity === 'blocking');
-if (options.failOn === 'blocking' ? hasBlocking : allFindings.length > 0) process.exit(1);
+process.exit(handling.gateTripped(allFindings, options.failOn) ? 1 : 0);
 
 function die(message) {
   console.error(message);

@@ -41,7 +41,7 @@ mkdir D:\books\我的书; cd D:\books\我的书
 opencode    # 或 claude / codex
 ```
 
-> 说「准备写书」（或 /guyin-setup）→ 部署项目模板（三端执行层部署件 + 硬护栏 hook + 双台账 + 作者性；幂等，不覆盖已有内容）→ 按报告配低模型 → 新开会话 → 说「开书」。
+> 说「准备写书」（或 /guyin-setup）→ 部署项目模板（三端执行层部署件 + 硬护栏 hook + 台账（灵感/豁免/待审） + 作者性；幂等，不覆盖已有内容）→ 按报告配低模型 → 新开会话 → 说「开书」。
 
 > **OpenCode 本体与两个坑**：未装时 `npm install -g opencode-ai`（或 `scoop install opencode`），首次用 `opencode auth login` 配 provider（编排层强模型 + 执行层 DeepSeek）。坑 1：npm 全局装完命令不识别，用 `npm config get prefix` 查路径并确认其在 PATH；坑 2：进项目后**不要跑 `/init`**——模板已自带路由版 AGENTS.md，`/init` 会覆盖它。
 
@@ -69,6 +69,17 @@ Codex 的 custom agent 新开会话后生效。无 subagent 环境自动降级 s
 ### 第四步：开书
 
 新开会话（让 custom agent 与 hook 注册生效）后，在项目根对 AI 说「开书」（或 `$guyin-write` / `/guyin-write`）→ Phase A/B/C **停在细纲交付**；Phase B 会按 [作者性引导协议](skills/guyin-write/references/作者性引导.md) 逐件口述定四件（不在场则默认档运行、写作中持续提示）→ 说「写第 1 章」进入写章循环。
+
+### 升级旧项目（技能更新 ≠ 旧项目生效）
+
+框架更新后，对已部署的书重跑一次 `/guyin-setup`：
+
+1. **先出差异再动手**——报告将刷新的部署件、将保留的用户内容、检测到的自定义项（来源不明不盲目 replace）；
+2. **保护 model / provider / 路由**——三端 agent 的生效 model 行与 settings 自定义键提取后回填，旧部署件备份到项目 `.guyin/upgrade-backup/{日期}/`；
+3. **schema/台账给「待升级清单」**——如 13 列旧读者信号表（E1：14 列＋验收检查点节）、缺待审台账、落后的 _tracking-state；只报告与给步骤，不自动重写用户台账，不靠双套规则长期并存；
+4. 报告写明**实际加载路径**（全局 skills / 项目 `.agents`·`.claude` / 手动复制）、guyin_version、三端 model 实测值或「等同 solo」、未测宿主。新协议要点：写章产物先隔离在 `.guyin/work/{run_id}/`，publish 是唯一正式发布通道（D2）；新书默认前三章后停验收检查点，来源限用户验收/独立读者（E1）。
+
+> 仓库根的 `.agents/`、`.claude/`（安装器在本仓误跑的产物，已 gitignore）不是分发渠道；以 `skills/` 与 setup 模板为准，镜像目录不保证最新。
 
 ## 仓库结构
 

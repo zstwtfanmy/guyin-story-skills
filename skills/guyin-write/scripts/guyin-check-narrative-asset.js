@@ -3,8 +3,9 @@
 
 const fs = require('fs');
 const path = require('path');
+const handling = require('./lib/guyin-handling');
 
-const USAGE = `Usage: node guyin-check-narrative-asset.js [--json] [--fail-on=blocking|all] [--state=<file>] <chapter.md...>
+const USAGE = `Usage: node guyin-check-narrative-asset.js [--json] [--fail-on=block|hard|all] [--state=<file>] <chapter.md...>
 
 事件定性资产共现检测（G2，docs/05-实战护栏路线图.md §2）。因果链环节④：ch27 兑付给
 读者的「拆神=真破」在账本上不是任何实体，ch36 初稿写「戏是人家排的」没收资产时零报警
@@ -17,6 +18,11 @@ const USAGE = `Usage: node guyin-check-narrative-asset.js [--json] [--fail-on=bl
   × tracking-commit verdicts 实体的登记 keywords（V 编号；视图见 追踪/事件定性资产.md）
   → 同一行两者共现、且该 verdict 为既往章资产（chapter < 本章号；兑付当章建立资产不报）
   → advisory：已兑付资产正被否定翻转，须过 G1 档位仲裁。
+  处置分类（lib/guyin-handling.js）：narrative-asset-violation=verify（资产否定
+  须对照档位声明核实；severity 保留 advisory 原值）。
+  --fail-on=block|hard|all（默认 block）：block=hard 或 verify 任一存在即退 1；
+  hard=仅 hard 计 1；all=含 editorial 全计 1（审计模式）。
+  Exit codes: 0=无未决阻断; 1=存在未决阻断(hard/verify); 2=执行/输入错误。
 
 静默条件（档位一致）：被检文件含「资产影响档位：1/2」声明——作者已在细纲仲裁并声明
 动用资产；声明 0 / 缺声明 / 不可解析则照报（细纲侧缺声明的拦截归 G1 仲裁脚本）。
@@ -33,16 +39,18 @@ const VERDICT_TIER = /资产影响档位[^\d]{0,6}([0-2])/;
 // 被检文件章号（文件名优先）：正文/第036章_标题.md 与 大纲/细纲_第036章.md 皆命中。
 const CHAPTER_IN_NAME = /第\s*0*(\d+)\s*章/;
 
-const options = { json: false, files: [], failOn: 'all', state: null };
+const options = { json: false, files: [], failOn: 'block', state: null };
 
 for (let i = 2; i < process.argv.length; i += 1) {
   const arg = process.argv[i];
   if (arg === '--json') {
     options.json = true;
   } else if (arg.startsWith('--fail-on=')) {
-    const v = arg.slice('--fail-on='.length);
-    if (v !== 'blocking' && v !== 'all') die(`--fail-on must be 'blocking' or 'all'`);
-    options.failOn = v;
+    try {
+      options.failOn = handling.parseFailOn(arg.slice('--fail-on='.length));
+    } catch (e) {
+      die(e.message);
+    }
   } else if (arg.startsWith('--state=')) {
     options.state = arg.slice('--state='.length);
   } else if (arg === '-h' || arg === '--help') {
@@ -74,17 +82,22 @@ for (const file of options.files) {
   allFindings.push(...findings);
 }
 
+try {
+  handling.finalizeFindings(allFindings, 'guyin-check-narrative-asset.js');
+} catch (e) {
+  die(e.message);
+}
+
 if (options.json) {
   process.stdout.write(`${JSON.stringify({ findings: allFindings }, null, 2)}\n`);
 } else {
   for (const f of allFindings) {
-    console.log(`${f.file}:${f.line}:${f.column}: [${f.severity}] ${f.type}: ${f.message} (${f.excerpt})`);
+    console.log(`${f.file}:${f.line}:${f.column}: [${handling.label(f)}] ${f.type}: ${f.message} (${f.excerpt})`);
   }
 }
 
 if (failed) process.exit(2);
-const hasBlocking = allFindings.some((f) => f.severity === 'blocking');
-if (options.failOn === 'blocking' ? hasBlocking : allFindings.length > 0) process.exit(1);
+process.exit(handling.gateTripped(allFindings, options.failOn) ? 1 : 0);
 
 function die(message) {
   console.error(message);

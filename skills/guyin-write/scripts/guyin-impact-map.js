@@ -4,6 +4,8 @@
 const fs = require('fs');
 const path = require('path');
 
+const handling = require('./lib/guyin-handling');
+
 const USAGE = `Usage: node guyin-impact-map.js [--json] [--project <根>] <关键词> [<关键词>...]
 
 结构手术影响面清单（P5，docs/04-优化路线图.md §3 P5 第 1 条）：砍线/并线前的一键查询。
@@ -23,7 +25,12 @@ flash 只出候选线清单与统计，砍不砍终判归作者。
   patch_chapters 补丁目标章 = 章摘要命中 ∪ 伏笔埋设章 ∪ 事件揭示章——分批补丁指令的范围
 
 角色卡关键词命中角色后，该角色名自动并入检索（角色→其事件/伏笔的关联扩散，
-一级扩散即止防雪崩）。`;
+一级扩散即止防雪崩）。
+
+处置分类（lib/guyin-handling）：impact-dangling-foreshadow / impact-verdict-asset /
+impact-patch-spread = verify（结构手术前须过堂核实）。本脚本是信息查询不是门：
+永远 exit 0（无阻断语义，无 --fail-on），handling 只随 warnings 盖章输出，
+供下游待审流程（砍线过堂/G1 补偿）消费。`;
 
 const options = { json: false, project: null, terms: [] };
 
@@ -182,6 +189,12 @@ if (result.patch_chapters.length > 12) {
 }
 result.warnings = warnings;
 
+try {
+  handling.finalizeFindings(warnings, 'guyin-impact-map');
+} catch (e) {
+  die(e.message);
+}
+
 // ---------- 输出 ----------
 
 const summary = {
@@ -240,7 +253,7 @@ if (options.json) {
     console.log(`## 补丁目标章（${result.patch_chapters.length} 章）：${result.patch_chapters.map((c) => `第${c}章`).join('、')}`);
   }
   for (const w of warnings) console.log('');
-  for (const w of warnings) console.log(`⚠ [${w.severity}] ${w.type}: ${w.message}`);
+  for (const w of warnings) console.log(`⚠ [${handling.label(w)}] ${w.type}: ${w.message}`);
 }
 
 process.exit(0);

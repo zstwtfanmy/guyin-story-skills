@@ -3,18 +3,27 @@
 
 const fs = require('fs');
 const path = require('path');
+const handling = require('./lib/guyin-handling');
 
-const USAGE = `Usage: node normalize-punctuation.js [--check] [--quote-mode keep|ascii|yan] <file...>
+const USAGE = `Usage: node normalize-punctuation.js [--check] [--quote-mode keep|ascii|yan] [--fail-on=block|hard|all] <file...>
 
 Normalize正文 punctuation deterministically:
   - replace ellipses, em dashes, and double hyphens with Chinese punctuation
-  - remove markdown divider lines (---) from正文
+    (ellipsis/em-dash/double-hyphen, editorial)
+  - remove markdown divider lines (---) from正文 (markdown-divider, hard)
   - keep quote style by default; convert quotes only when explicitly requested
+    (quote-style, hard)
+  - html-comment-unclosed (hard): 未闭合 <!-- 起始位置具名报错，后续内容按正文检查
+
+--check 只报不改；--fail-on 只作用于 --check 的退出码（写入模式仍修复并退出 0）。
+--fail-on=block（默认）hard/verify 任一存在即 1；hard 仅 hard；all 含 editorial（审计模式）。
+Exit codes: 0=无未决阻断, 1=存在未决阻断(hard/verify), 2=执行/输入错误。
 `;
 
 const options = {
   check: false,
   quoteMode: 'keep',
+  failOn: 'block',
   files: [],
 };
 
@@ -29,6 +38,12 @@ for (let i = 2; i < process.argv.length; i += 1) {
     i += 1;
   } else if (arg.startsWith('--quote-mode=')) {
     options.quoteMode = arg.slice('--quote-mode='.length);
+  } else if (arg.startsWith('--fail-on=')) {
+    try {
+      options.failOn = handling.parseFailOn(arg.slice('--fail-on='.length), 'block');
+    } catch (error) {
+      die(error.message);
+    }
   } else if (arg === '-h' || arg === '--help') {
     process.stdout.write(USAGE);
     process.exit(0);
@@ -49,6 +64,7 @@ if (options.files.length === 0) {
 let totalFindings = 0;
 let changedFiles = 0;
 let failed = false;
+const allFindings = [];
 
 for (const file of options.files) {
   const fullPath = path.resolve(file);
@@ -63,25 +79,31 @@ for (const file of options.files) {
 
   const result = normalizeDocument(input, options.quoteMode);
   totalFindings += result.findings.length;
+  for (const finding of result.findings) allFindings.push({ file, ...finding });
 
-  if (options.check) {
-    for (const finding of result.findings) {
-      console.log(`${file}:${finding.line}:${finding.column}: ${finding.type}: ${finding.message}`);
-    }
-    continue;
-  }
-
-  if (result.output !== input) {
+  if (!options.check && result.output !== input) {
     fs.writeFileSync(fullPath, result.output, 'utf8');
     changedFiles += 1;
     console.log(`${file}: normalized (${result.findings.length} issue${result.findings.length === 1 ? '' : 's'})`);
   }
 }
 
+try {
+  handling.finalizeFindings(allFindings, 'guyin-normalize-punctuation.js');
+} catch (error) {
+  die(error.message);
+}
+
+if (options.check) {
+  for (const f of allFindings) {
+    console.log(`${f.file}:${f.line}:${f.column}: [${handling.label(f)}] ${f.type}: ${f.message}`);
+  }
+}
+
 if (failed) {
   process.exit(2);
 }
-if (options.check && totalFindings > 0) {
+if (options.check && handling.gateTripped(allFindings, options.failOn)) {
   process.exit(1);
 }
 if (!options.check) {
@@ -122,6 +144,7 @@ function normalizeDocument(input, quoteMode) {
         line: commentStart?.line || lineNo,
         column: commentStart?.column || 1,
         type: 'html-comment-unclosed',
+        severity: 'blocking',
         message: 'HTML 注释未闭合；后续内容仍按正文检查。',
       });
       commentOpen = false;
@@ -153,6 +176,7 @@ function normalizeDocument(input, quoteMode) {
         line: lineNo,
         column: line.indexOf('-') + 1,
         type: 'markdown-divider',
+        severity: 'blocking',
         message: '正文中不要使用 markdown 分隔线；建议移除该行。',
       });
       continue;
@@ -182,6 +206,7 @@ function normalizeDocument(input, quoteMode) {
       line: commentStart?.line || lines.length,
       column: commentStart?.column || 1,
       type: 'html-comment-unclosed',
+      severity: 'blocking',
       message: 'HTML 注释未闭合；后续内容仍按正文检查。',
     });
   }
@@ -274,6 +299,7 @@ function normalizePausePunctuationPass(line, lineNo, commentSpans) {
       line: lineNo,
       column: match.index + 1,
       type: getPauseType(token),
+      severity: 'advisory',
       message: replacement ? `替换为「${replacement}」。` : '移除重复标点。',
     });
     lastIndex = match.index + token.length;
@@ -393,14 +419,14 @@ function normalizeQuotes(line, quoteMode, quoteOpen, lineNo) {
     const ch = line[i];
     if (quoteMode === 'ascii' && /[「」『』“”]/.test(ch)) {
       output += '"';
-      findings.push({ line: lineNo, column: i + 1, type: 'quote-style', message: '按显式 quote-mode 转为半角双引号。' });
+      findings.push({ line: lineNo, column: i + 1, type: 'quote-style', severity: 'blocking', message: '按显式 quote-mode 转为半角双引号。' });
       continue;
     }
     if (quoteMode === 'yan' && (ch === '"' || ch === '“' || ch === '”')) {
       const replacement = quoteOpen || ch === '”' ? '」' : '「';
       output += replacement;
       quoteOpen = replacement === '「';
-      findings.push({ line: lineNo, column: i + 1, type: 'quote-style', message: '按显式 quote-mode 转为盐言引号。' });
+      findings.push({ line: lineNo, column: i + 1, type: 'quote-style', severity: 'blocking', message: '按显式 quote-mode 转为盐言引号。' });
       continue;
     }
     output += ch;

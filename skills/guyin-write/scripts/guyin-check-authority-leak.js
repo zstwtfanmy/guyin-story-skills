@@ -35,8 +35,9 @@
 
 const fs = require('fs');
 const path = require('path');
+const handling = require('./lib/guyin-handling');
 
-const USAGE = `Usage: node guyin-check-authority-leak.js [--json] [--fail-on=blocking|all] [--project <项目根>] <文件...>
+const USAGE = `Usage: node guyin-check-authority-leak.js [--json] [--fail-on=block|hard|all] [--project <项目根>] <文件...>
 
 Authority leak detector (docs/06 §1.4 H2): literal leakage of authorial
 spirit lines (气句/历次气句/一生之问/私人切口) into outlines or prose.
@@ -44,11 +45,15 @@ Word sources: 作者性/气卡.md (气句 row) + 作者性/魂档案.md (一生�
 私人切口/历次气句). Reader quotes from 回响收编 are NOT sources.
 Normalization strips punctuation and whitespace on both sides.
   blocking: full-sentence / full-clause (>=4 chars) / >=8-char substring hit
-  advisory : 5-7-char substring hit / empty word source (placeholder card)
+            → type=authority-leak, handling=hard（精神件字面泄漏＝H1 硬契约违约）
+  advisory : 5-7-char substring hit → authority-leak-suspect, handling=verify
+             / empty word source → authority-source-empty, handling=verify
 Silent skip ONLY when no 作者性/ directory exists. Exemption must be logged
-in 追踪/豁免台账.md by the author (character-catchphrase ruling + H1-6 dual-registration cleanup).`;
+in 追踪/豁免台账.md by the author (character-catchphrase ruling + H1-6 dual-registration cleanup).
+--fail-on=block|hard|all（默认 block）：block=hard 或 verify 任一存在即退 1；hard=仅 hard 计 1；all=含 editorial 全计（审计模式）。
+Exit codes: 0=无未决阻断; 1=存在未决阻断(hard/verify); 2=执行/输入错误。`;
 
-const options = { json: false, failOn: 'all', project: null, inputs: [] };
+const options = { json: false, failOn: 'block', project: null, inputs: [] };
 
 function die(message) {
   console.error(message);
@@ -61,9 +66,11 @@ for (let i = 2; i < process.argv.length; i += 1) {
   if (arg === '--json') {
     options.json = true;
   } else if (arg.startsWith('--fail-on=')) {
-    const v = arg.slice('--fail-on='.length);
-    if (v !== 'blocking' && v !== 'all') die(`--fail-on must be 'blocking' or 'all'`);
-    options.failOn = v;
+    try {
+      options.failOn = handling.parseFailOn(arg.slice('--fail-on='.length));
+    } catch (e) {
+      die(e.message);
+    }
   } else if (arg.startsWith('--project=')) {
     options.project = arg.slice('--project='.length);
   } else if (arg === '--project') {
@@ -291,11 +298,17 @@ for (const input of options.inputs) {
   allFindings.push(...fileFindings.map((f) => ({ file: input, ...f })));
 }
 
+try {
+  handling.finalizeFindings(allFindings, 'guyin-check-authority-leak.js');
+} catch (e) {
+  die(e.message);
+}
+
 if (options.json) {
   process.stdout.write(`${JSON.stringify({ findings: allFindings }, null, 2)}\n`);
 } else {
   for (const f of allFindings) {
-    console.log(`${f.file}:${f.line}:${f.column}: [${f.severity}] ${f.type}: ${f.message}`);
+    console.log(`${f.file}:${f.line}:${f.column}: [${handling.label(f)}] ${f.type}: ${f.message}`);
   }
   if (allFindings.length === 0 && !failed) {
     console.log(`authority-leak: no literal leakage found (${options.inputs.length} file(s) scanned)`);
@@ -303,5 +316,4 @@ if (options.json) {
 }
 
 if (failed) process.exit(2);
-const hasBlocking = allFindings.some((f) => f.severity === 'blocking');
-if (options.failOn === 'blocking' ? hasBlocking : allFindings.length > 0) process.exit(1);
+process.exit(handling.gateTripped(allFindings, options.failOn) ? 1 : 0);

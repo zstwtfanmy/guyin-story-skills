@@ -3,19 +3,20 @@
 
 const fs = require('fs');
 const path = require('path');
+const handling = require('./lib/guyin-handling');
 
-const USAGE = `Usage: node guyin-check-integrity.js [--json] [--fail-on=blocking|all] <file...>
+const USAGE = `Usage: node guyin-check-integrity.js [--json] [--fail-on=block|hard|all] <file...>
 
 落盘前格式完整性门（F1，docs/05-实战护栏路线图.md §3）。wordcount 只查总量、
 degeneration 只查占位符，以下五类「总量合格但形态崩坏」的事故全部漏检——本门补的是
 「章存在且字数对，但格式已塌」的盲区（实证：ch39 塌缩 2 行 2624 字 / ch59 84 个「个」
 占位错字，均全程带伤运行至 R6 收口才被发现）：
 
-  1. avg-line-collapse  平均行长：去空白总字符 / 非空正文行 > 400 → 全文塌缩（ch39：1312）
-  2. mega-paragraph     单段超长：单行去空白 > 800 字无换行
-  3. doubled-char       叠字：引号外连续相同功能字对（他他/我我/了了…，白名单+AABB豁免）
-  4. char-storm         同字风暴：单字频率显著超出该字常态带（分档阈值，见下）
-  5. quote-mismatch     引号配对：「」『』【』“” 或 ASCII " 开闭计数失衡
+  1. avg-line-collapse  (hard) 平均行长：去空白总字符 / 非空正文行 > 400 → 全文塌缩（ch39：1312）
+  2. mega-paragraph     (hard) 单段超长：单行去空白 > 800 字无换行
+  3. doubled-char       (hard) 叠字：引号外连续相同功能字对（他他/我我/了了…，白名单+AABB豁免）
+  4. char-storm         (hard) 同字风暴：单字频率显著超出该字常态带（分档阈值，见下）
+  5. quote-mismatch     (hard) 引号配对：「」『』【』“” 或 ASCII " 开闭计数失衡
 
 同字风暴分档（分母 = 全文 CJK 字符数；实测正常章上沿：的 4.6%、他 3.6%、题材字「银」
 1.8%、个 <1%；事故样本 ch59「个」4.8%。阈值留 ≥40% 余量，均标注 Arena 验证后收紧）：
@@ -23,7 +24,10 @@ degeneration 只查占位符，以下五类「总量合格但形态崩坏」的�
   C 档（个和就都）> 2.5%；其余任意 CJK 字 > 3%。
 全文 CJK < 800 字不跑风暴检测（短片段频率波动大，本门只做章级 gate）。
 
-全部 blocking：不过不落盘，回执行层重拼。执行点：写章循环第 4 步拼接后、第 5 步落盘前；
+五条全部 hard（处置分类见 lib/guyin-handling.js）：不过不落盘，回执行层重拼。
+--fail-on=block（默认）hard/verify 任一存在即 1；hard 仅 hard；all 含 editorial（审计模式）。
+Exit codes: 0=无未决阻断, 1=存在未决阻断(hard/verify), 2=执行/输入错误。
+执行点：写章循环第 4 步拼接后、第 5 步落盘前；
 同时排进章检序列兜底存量文件。Report-only：本脚本永不改写，报警一律拦为待审。`;
 
 // 规则 1：塌缩判定。正常章（60 章实测）均长 20-60 字/行；400 是「全文挤成几条巨行」的崩坏级。
@@ -45,16 +49,18 @@ const DOUBLED_CHARS = new Set(['他', '她', '它', '我', '你', '谁', '的', 
 // 规则 5：引号/括号对。
 const QUOTE_PAIRS = [['「', '」'], ['『', '』'], ['【', '】'], ['“', '”']];
 
-const options = { json: false, files: [], failOn: 'all' };
+const options = { json: false, files: [], failOn: 'block' };
 
 for (let i = 2; i < process.argv.length; i += 1) {
   const arg = process.argv[i];
   if (arg === '--json') {
     options.json = true;
   } else if (arg.startsWith('--fail-on=')) {
-    const v = arg.slice('--fail-on='.length);
-    if (v !== 'blocking' && v !== 'all') die(`--fail-on must be 'blocking' or 'all'`);
-    options.failOn = v;
+    try {
+      options.failOn = handling.parseFailOn(arg.slice('--fail-on='.length), 'block');
+    } catch (error) {
+      die(error.message);
+    }
   } else if (arg === '-h' || arg === '--help') {
     process.stdout.write(`${USAGE}\n`);
     process.exit(0);
@@ -84,17 +90,22 @@ for (const file of options.files) {
   allFindings.push(...findings);
 }
 
+try {
+  handling.finalizeFindings(allFindings, 'guyin-check-integrity.js');
+} catch (error) {
+  die(error.message);
+}
+
 if (options.json) {
   process.stdout.write(`${JSON.stringify({ findings: allFindings }, null, 2)}\n`);
 } else {
   for (const f of allFindings) {
-    console.log(`${f.file}:${f.line}:${f.column}: [${f.severity}] ${f.type}: ${f.message} (${f.excerpt})`);
+    console.log(`${f.file}:${f.line}:${f.column}: [${handling.label(f)}] ${f.type}: ${f.message} (${f.excerpt})`);
   }
 }
 
 if (failed) process.exit(2);
-const hasBlocking = allFindings.some((f) => f.severity === 'blocking');
-if (options.failOn === 'blocking' ? hasBlocking : allFindings.length > 0) process.exit(1);
+process.exit(handling.gateTripped(allFindings, options.failOn) ? 1 : 0);
 
 function die(message) {
   console.error(message);

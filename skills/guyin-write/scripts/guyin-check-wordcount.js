@@ -27,24 +27,26 @@
 
 const fs = require('fs');
 const path = require('path');
+const handling = require('./lib/guyin-handling');
 
-const USAGE = `Usage: node guyin-check-wordcount.js [--json] [--fail-on=blocking|all] [--min=N] [--max=N] [--batch] [--uniform-gap=N] <file|dir>...
+const USAGE = `Usage: node guyin-check-wordcount.js [--json] [--fail-on=block|hard|all] [--min=N] [--max=N] [--batch] [--uniform-gap=N] <file|dir>...
 
 Chapter wordcount guard for low-model prose assembly:
-  - chapter-too-short (blocking): visible chars < min (default: outline
+  - chapter-too-short (hard): visible chars < min (default: outline
     target from 大纲/细纲_第XXX章.md — range X-Y takes lower bound X,
     single value T takes T x 90%; fallback 3000; --min overrides)
-  - chapter-too-long  (advisory): visible chars > --max (default 6000)
+  - chapter-too-long  (editorial): visible chars > --max (default 6000)
 Visible chars = non-whitespace characters after stripping YAML frontmatter and
 markdown heading lines. Directory input scans 第*.md only.
 --batch: per-chapter checks run as usual, then a batch-variance check on the
-3 highest-numbered chapters: max-min < 400 visible chars → advisory
+3 highest-numbered chapters: max-min < 400 visible chars → editorial
 chapter-length-uniform (E8; --uniform-gap=N overrides; skipped silently with
 fewer than 3 numbered chapters).
---fail-on=blocking exits 1 only on blocking findings; default --fail-on=all exits 1 on any.
+--fail-on=block（默认）hard/verify 任一存在即 1；hard 仅 hard；all 含 editorial（审计模式）。
+Exit codes: 0=无未决阻断, 1=存在未决阻断(hard/verify), 2=执行/输入错误。
 Report-only: findings go to the review queue (rewrite card or exemption), never auto-deleted.`;
 
-const options = { json: false, failOn: 'all', min: null, max: 6000, batch: false, uniformGap: 400, inputs: [] };
+const options = { json: false, failOn: 'block', min: null, max: 6000, batch: false, uniformGap: 400, inputs: [] };
 
 function die(message) {
   console.error(message);
@@ -57,9 +59,11 @@ for (let i = 2; i < process.argv.length; i += 1) {
   if (arg === '--json') {
     options.json = true;
   } else if (arg.startsWith('--fail-on=')) {
-    const v = arg.slice('--fail-on='.length);
-    if (v !== 'blocking' && v !== 'all') die(`--fail-on must be 'blocking' or 'all'`);
-    options.failOn = v;
+    try {
+      options.failOn = handling.parseFailOn(arg.slice('--fail-on='.length), 'block');
+    } catch (error) {
+      die(error.message);
+    }
   } else if (arg.startsWith('--min=')) {
     const n = Number(arg.slice('--min='.length));
     if (!Number.isFinite(n) || n <= 0) die(`--min must be a positive number`);
@@ -270,16 +274,21 @@ if (options.batch) {
   }
 }
 
+try {
+  handling.finalizeFindings(findings, 'guyin-check-wordcount.js');
+} catch (error) {
+  die(error.message);
+}
+
 if (options.json) {
   process.stdout.write(`${JSON.stringify({ findings }, null, 2)}\n`);
 } else {
   for (const f of findings) {
-    console.log(`${f.file}: [${f.severity}] ${f.type}: ${f.message}`);
+    console.log(`${f.file}: [${handling.label(f)}] ${f.type}: ${f.message}`);
   }
   if (findings.length === 0 && files.length > 0) {
     console.log(`wordcount: ${files.length} file(s) within limits [${Number.isFinite(minSeen) ? minSeen : options.min}, ${maxSeen || options.max}]`);
   }
 }
 
-const tripped = findings.filter((f) => (options.failOn === 'blocking' ? f.severity === 'blocking' : true));
-process.exit(tripped.length > 0 ? 1 : 0);
+process.exit(handling.gateTripped(findings, options.failOn) ? 1 : 0);

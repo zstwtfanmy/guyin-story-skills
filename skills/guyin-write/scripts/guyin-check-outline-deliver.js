@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 'use strict';
 
-// guyin-check-outline-deliver.js — 细纲承诺交付检查（S3+S4，docs/07；R1/K2，docs/08）
+// guyin-check-outline-deliver.js — 细纲承诺交付检查（S3，docs/07；R1/K2，docs/08；四组化，任务书 §2.1）
 //
 // 与 outline-slots（落盘门查「契约签了没」）对偶：落盘后查「契约履行没」。高保真管线
 // 1:1 传导，细纲承诺不兑现＝设计意图无声丢失：F7「勘合」锚定连续两章「细纲有、正文无」
@@ -12,49 +12,56 @@
 //                            整场漏写（B8 的真形态）
 //   outline-term-unanchored  S3：术语首现不在引号对白内——首现直接进叙述层就是
 //                            「社会脸」式工艺词泄漏的正文版（读者视角无人教过他这个词）
-//   outline-hook-offtail     S4：章尾钩子声明的实体未落在正文最后约 200 字——E2 章
-//                            尾稀释：钩子写进了细纲，收尾却被别的画面顶出去
 //   outline-anchor-missing   R1：复沓锚句声明的原话未在正文一字不差出现——锚句
 //                            免报通道免的是誊抄指控、不免落地义务（该抄的没抄）
-//   outline-hook-quote-mismatch R1：章尾钩子行引号语未在正文一字不差出现——钩子
-//                            引了一句没人说过的话（S4 幽灵引语的机械封堵）
-//   outline-signature-preempted K2：本章正文包含其他章声明的签名句（锚句/钩子引语）
-//                            且本章细纲未声明复用——提前释放或归属被抢（S3 跨章
-//                            剧透）；已声明复用（复沓仪式）静默
+//   outline-signature-preempted K2：本章正文包含其他章声明的签名句（仅复沓锚句——
+//                            世界内实体原话）且本章细纲未声明复用——提前释放或
+//                            归属被抢（S3 跨章剧透）；已声明复用（复沓仪式）静默
+//
+// 四组化（任务书 §2.1）：章尾钩子字段已废除——outline-hook-offtail /
+// outline-hook-quote-mismatch 随之删除；签名句聚合从「锚句+钩子引语」收窄为仅复沓锚句。
+// 章尾是否有钩、钩多强，由第一组读者承诺与下一章承接自然决定，审读按阅读体验判断。
 //
 // 输入正文文件/目录（章检链第 7 步同源），按章号向上（≤3 层）找 大纲/细纲_第N章*.md。
-// 术语表/实体/锚句提取是启发式（先剥括注再切分、破折号/冒号截断、长度闸滤残渣），解析
+// 术语表/锚句提取是启发式（先剥括注再切分、破折号/冒号截断、长度闸滤残渣），解析
 // 失败一律静默跳过——提取器失手不得变成噪音源（v1.1 注记）；细纲缺失同样静默（契约
 // 存在性归落盘门 outline-slots 管，本脚本只查「有契约时履行没」）。
 // Report-only，永不改写——报警项一律拦为待审（补写或豁免登记），同其他检查脚本。
 
 const fs = require('fs');
 const path = require('path');
+const handling = require('./lib/guyin-handling');
 
-const USAGE = `Usage: node guyin-check-outline-deliver.js [--json] [--fail-on=blocking|all] <正文文件|正文目录>...
+const USAGE = `Usage: node guyin-check-outline-deliver.js [--json] [--fail-on=block|hard|all] <正文文件|正文目录>...
 
-Outline promise delivery check (docs/07 S3+S4, docs/08 R1/K2), the write-side
+Outline promise delivery check (docs/07 S3, docs/08 R1/K2), the write-side
 twin of outline-slots (which guards "contract signed" pre-write; this guards
 "contract honored" post-write):
   outline-term-missing     (advisory) term from the outline's term-anchor line
                            never appears in the prose (the anchor scene is gone)
   outline-term-unanchored  (advisory) term's first occurrence is not inside
                            quotation marks (dialogue-level anchoring missed)
-  outline-hook-offtail     (advisory) hook entity absent from the last ~200
-                           visible chars (hook pushed out of the ending)
   outline-anchor-missing   (advisory) declared repetition anchor sentence not
                            verbatim in the prose (declared but never delivered)
-  outline-hook-quote-mismatch (advisory) hook quotes a line no character ever
-                           says verbatim (ghost quote, S4)
   outline-signature-preempted (advisory) prose contains another chapter's
-                           declared signature line without declaring reuse
+                           declared signature line (repetition anchors only —
+                           世界内实体原话) without declaring reuse
                            (cross-chapter spoiler, S3; declared ritual echoes
                            stay silent)
+Hook rules abolished (任务书 §2.1): 章尾钩子字段已随四组化删除——
+outline-hook-offtail / outline-hook-quote-mismatch no longer emitted;
+signature aggregation narrowed to repetition anchors only.
 Heuristic parsing (paren strip, 、-split, dash/colon cut, length gates) fails
 silent on malformed values; missing outlines are skipped silently.
---fail-on=blocking exits 1 only on blocking findings; default --fail-on=all exits 1 on any.`;
+Handling classes (lib/guyin-handling.js; severity 保留 advisory 原值作证据
+强度): all four rules verify——细纲承诺 vs 正文履行的契约风险，须上下文核实
+(outline-term-missing / outline-term-unanchored / outline-anchor-missing /
+outline-signature-preempted).
+--fail-on=block|hard|all (default block): block exits 1 on hard or verify;
+hard on hard only; all on any finding (audit mode).
+Exit codes: 0=无未决阻断; 1=存在未决阻断(hard/verify); 2=执行/输入错误.`;
 
-const options = { json: false, failOn: 'all', inputs: [] };
+const options = { json: false, failOn: 'block', inputs: [] };
 
 function die(message) {
   console.error(message);
@@ -67,9 +74,11 @@ for (let i = 2; i < process.argv.length; i += 1) {
   if (arg === '--json') {
     options.json = true;
   } else if (arg.startsWith('--fail-on=')) {
-    const v = arg.slice('--fail-on='.length);
-    if (v !== 'blocking' && v !== 'all') die(`--fail-on must be 'blocking' or 'all'`);
-    options.failOn = v;
+    try {
+      options.failOn = handling.parseFailOn(arg.slice('--fail-on='.length));
+    } catch (e) {
+      die(e.message);
+    }
   } else if (arg === '-h' || arg === '--help') {
     process.stdout.write(`${USAGE}\n`);
     process.exit(0);
@@ -84,8 +93,6 @@ if (options.inputs.length === 0) die('No prose file or directory provided');
 
 const TERM_MIN = 2;     // 术语最短字数（单字不是术语）
 const TERM_MAX = 10;    // 超过视为解析残渣，静默丢弃
-const ENTITY_MAX = 20;  // 钩子实体长度闸（模板残留「{挂在什么具体物…}」在此被滤）
-const TAIL_CHARS = 200; // S4 压尾窗口：正文去空白末 N 字
 
 function chapterNumberOf(base) {
   const m = /^第0*(\d+)章.*\.md$/.exec(base);
@@ -201,16 +208,6 @@ function extractTerms(line) {
   return terms;
 }
 
-// 章尾钩子行「实体：X」→ S4 目标词。分号截断（承接声明在实体后），剥圆括注与花括号
-// 模板残留，长度闸滤残渣。解析失败返回 null（静默——无实体归 outline-slots 拦）。
-function extractHookEntity(hookLine) {
-  const m = /实体[:：]\s*([^；;]+)/.exec(hookLine);
-  if (!m) return null;
-  const base = m[1].replace(/[（(][^）)]*[）)]/g, '').replace(/[{}]/g, '').trim();
-  if (base.length < TERM_MIN || base.length > ENTITY_MAX) return null;
-  return base;
-}
-
 // ---- R1/K2 签名句供给 ----
 
 const SIG_MIN = 6; // 签名句最短长度（含标点）——短于 6 字的句子通用性太强，跨章匹配全是噪音
@@ -218,9 +215,9 @@ const SIG_MIN = 6; // 签名句最短长度（含标点）——短于 6 字的�
 // 去空白正文（锚句/引语一字不差判定用：正文排版空白不算差异）。
 const stripWs = (s) => s.replace(/\s/g, '');
 
-// 「复沓锚句」行 → 锚句数组（R1 落地检查 + K2 签名句登记）。支持两种形态：
-// 引号式（「原话」/“原话”嵌在行内）与落点式（点N：原话；点N：原话——按「点N：/情节点N：」
-// 前缀切分后剥前缀）。值「无」起头＝无锚句，静默。长度闸滤残渣，fail-open。
+// 「复沓锚句」行 → 锚句数组（R1 落地检查 + K2 签名句登记——四组化后签名句仅此来源）。
+// 支持两种形态：引号式（「原话」/“原话”嵌在行内）与落点式（点N：原话；点N：原话——按
+// 「点N：/情节点N：」前缀切分后剥前缀）。值「无」起头＝无锚句，静默。长度闸滤残渣，fail-open。
 function extractAnchors(lines) {
   const line = firstLineWith(lines, (l) => l.includes('复沓锚句'));
   if (!line) return [];
@@ -241,19 +238,6 @@ function extractAnchors(lines) {
     if (base.length >= SIG_MIN && /[\u4e00-\u9fff]/.test(base) && !anchors.includes(base)) anchors.push(base);
   }
   return anchors;
-}
-
-// 「章尾钩子」行内引号语 → 钩子引语数组（R1 引语一致性：钩子引用的原话必须有人真的说过）。
-function extractHookQuotes(hookLine) {
-  if (!hookLine) return [];
-  const quotes = [];
-  const re = /[「“]([^」”]{6,})[」”]/g;
-  let m;
-  while ((m = re.exec(hookLine)) !== null) {
-    const t = stripWs(m[1]);
-    if (t.length >= SIG_MIN && !quotes.includes(t)) quotes.push(t);
-  }
-  return quotes;
 }
 
 const allFindings = [];
@@ -319,19 +303,7 @@ for (const { abs, display } of inputFiles) {
     }
   }
 
-  // S4 钩子实体压尾（治 E2：钩子写进了细纲，收尾被别的画面顶出去）
-  const hookLine = firstLineWith(lines, (l) => l.includes('章尾钩子'));
-  if (hookLine) {
-    const entity = extractHookEntity(hookLine);
-    if (entity) {
-      const tail = body.replace(/\s/g, '').slice(-TAIL_CHARS);
-      if (!tail.includes(entity)) {
-        push('outline-hook-offtail', `钩子未压尾：章尾钩子实体「${entity}」未落在正文最后 ${TAIL_CHARS} 字内——E2 章尾稀释形态，张力点被收束动作顶出去；末段切回钩子实体或删稀释段`, entity);
-      }
-    }
-  }
-
-  // R1 锚句落地 + 钩子引语一致（治 S4 幽灵引语 + 该抄没抄）
+  // R1 锚句落地（治该抄没抄）
   const bodyWs = stripWs(body);
   const anchors = extractAnchors(lines);
   for (const a of anchors) {
@@ -339,13 +311,7 @@ for (const { abs, display } of inputFiles) {
       push('outline-anchor-missing', `复沓锚句未落地：「${a.slice(0, 30)}」未在正文一字不差出现——锚句免报通道免的是誊抄指控、不免落地义务；补写锚句落点或登记执行偏差`, a);
     }
   }
-  const hookQuotes = extractHookQuotes(hookLine);
-  for (const q of hookQuotes) {
-    if (!bodyWs.includes(q)) {
-      push('outline-hook-quote-mismatch', `钩子引语幽灵化：章尾钩子引「${q.slice(0, 30)}」正文无人一字不差说过——S4 幽灵引语形态（引的是细纲设计不是角色原话）；改钩子引真实原话或让角色真的说出`, q);
-    }
-  }
-  chapterRecords.push({ num, display, bodyWs, own: new Set([...anchors, ...hookQuotes]) });
+  chapterRecords.push({ num, display, bodyWs, own: new Set(anchors) });
 }
 
 // K2 跨章签名句归属（治 S3 跨章剧透）：本章正文包含其他章声明的签名句且本章未声明
@@ -376,11 +342,17 @@ if (chapterRecords.length > 1) {
   }
 }
 
+try {
+  handling.finalizeFindings(allFindings, 'guyin-check-outline-deliver.js');
+} catch (e) {
+  die(e.message);
+}
+
 if (options.json) {
   process.stdout.write(`${JSON.stringify({ findings: allFindings }, null, 2)}\n`);
 } else {
   for (const f of allFindings) {
-    console.log(`${f.file}:${f.line}:${f.column}: [${f.severity}] ${f.type}: ${f.message}`);
+    console.log(`${f.file}:${f.line}:${f.column}: [${handling.label(f)}] ${f.type}: ${f.message}`);
   }
   if (allFindings.length === 0 && !failed) {
     console.log(`outline-deliver: ${filesChecked} chapter(s) contracts honored`);
@@ -388,5 +360,4 @@ if (options.json) {
 }
 
 if (failed) process.exit(2);
-const hasBlocking = allFindings.some((f) => f.severity === 'blocking');
-if (options.failOn === 'blocking' ? hasBlocking : allFindings.length > 0) process.exit(1);
+process.exit(handling.gateTripped(allFindings, options.failOn) ? 1 : 0);

@@ -3,8 +3,9 @@
 
 const fs = require('fs');
 const path = require('path');
+const handling = require('./lib/guyin-handling');
 
-const USAGE = `Usage: node guyin-check-outline-verdict.js [--json] [--fail-on=blocking|all] <outline.md...>
+const USAGE = `Usage: node guyin-check-outline-verdict.js [--json] [--fail-on=block|hard|all] <outline.md...>
 
 细纲资产影响三档声明仲裁（G1，docs/05-实战护栏路线图.md §2）。因果链环节①：正确答案
 （"一半是送的"）就在细纲辅助字段里，但情节点序列（卡片的唯一取数源）是全盘表述，没有任何
@@ -38,7 +39,15 @@ G3 契约对照（advisory，宁可漏不可拦错）：细纲位于 大纲/ 下
     否定方向对卷2 危机「误信干净账」叠加方向登记项）
   否定定性 + 零命中 → 未登记契约提醒补录
   命中「否定」契约 + 否定定性 → 方向一致放行（合法推翻须提前登记）
-矩阵不存在或解析不出登记行则跳过（自由文本起步，粗对照必有漏报）。`;
+矩阵不存在或解析不出登记行则跳过（自由文本起步，粗对照必有漏报）。
+
+处置分类（lib/guyin-handling.js 单一事实源；severity 保留原值作证据强度）：
+  verdict-declaration-missing / verdict-tier-conflict / verdict-tier-suspect /
+  contract-violation / contract-unregistered = verify（须上下文核实/作者仲裁）；
+  verdict-tier2-uncompensated = hard（档 2 无补偿声明＝明确协议违约）。
+--fail-on=block|hard|all（默认 block）：block=hard 或 verify 任一存在即退 1；
+hard=仅 hard 计 1；all=含 editorial 全计 1（审计模式）。
+Exit codes: 0=无未决阻断; 1=存在未决阻断(hard/verify); 2=执行/输入错误。`;
 
 // 既往章引用：ch26 / 第26章（跳过「第X阶段第Y章」结构位置行；本章号自身与未来章不算）。
 const CH_REF = /(?:ch\s*(\d+)|第\s*(\d+)\s*章)/gi;
@@ -53,7 +62,7 @@ const QUALIFIER = /(一半|半是|某种程度|一部分|部分是)/;
 const VERDICT_LINE = /资产影响档位/;
 const VERDICT_TIER = /资产影响档位[^\d]{0,6}([0-2])/;
 
-const options = { json: false, files: [], failOn: 'all', contracts: null, state: null };
+const options = { json: false, files: [], failOn: 'block', contracts: null, state: null };
 
 // 契约矩阵缓存：多文件同矩阵只解析一次。声明必须先于主循环的 loadContracts 调用，防 TDZ。
 const contractsCache = new Map();
@@ -65,9 +74,11 @@ for (let i = 2; i < process.argv.length; i += 1) {
   if (arg === '--json') {
     options.json = true;
   } else if (arg.startsWith('--fail-on=')) {
-    const v = arg.slice('--fail-on='.length);
-    if (v !== 'blocking' && v !== 'all') die(`--fail-on must be 'blocking' or 'all'`);
-    options.failOn = v;
+    try {
+      options.failOn = handling.parseFailOn(arg.slice('--fail-on='.length));
+    } catch (e) {
+      die(e.message);
+    }
   } else if (arg.startsWith('--contracts=')) {
     options.contracts = arg.slice('--contracts='.length);
   } else if (arg.startsWith('--state=')) {
@@ -101,17 +112,22 @@ for (const file of options.files) {
   allFindings.push(...findings);
 }
 
+try {
+  handling.finalizeFindings(allFindings, 'guyin-check-outline-verdict.js');
+} catch (e) {
+  die(e.message);
+}
+
 if (options.json) {
   process.stdout.write(`${JSON.stringify({ findings: allFindings }, null, 2)}\n`);
 } else {
   for (const f of allFindings) {
-    console.log(`${f.file}:${f.line}:${f.column}: [${f.severity}] ${f.type}: ${f.message} (${f.excerpt})`);
+    console.log(`${f.file}:${f.line}:${f.column}: [${handling.label(f)}] ${f.type}: ${f.message} (${f.excerpt})`);
   }
 }
 
 if (failed) process.exit(2);
-const hasBlocking = allFindings.some((f) => f.severity === 'blocking');
-if (options.failOn === 'blocking' ? hasBlocking : allFindings.length > 0) process.exit(1);
+process.exit(handling.gateTripped(allFindings, options.failOn) ? 1 : 0);
 
 function die(message) {
   console.error(message);

@@ -1,22 +1,21 @@
 #!/usr/bin/env node
 'use strict';
 
-// guyin-check-beat.js — beat 级确定性预检（自检卡下沉脚本）
+// guyin-check-beat.js — 连续场景/整章的确定性预检
 //
-// P1 核心件：自检卡约一半题目是确定性可查的——全交给模型跑是 token 浪费。
-// 本脚本在 beat 回收后、自检卡之前跑，把可查题下沉为零 token 脚本检查，
-// 模型只剩 2-3 道真语义题（必须发生事件是否写到、续写衔接是否顺畅）。
+// P1 核心件：确定性可查的检查下沉为零 token 脚本；语义审读（动机/兑现/承接）
+// 归完整章审读（SKILL.md 步骤 4a + 自检卡三步），本脚本不做语义判断。
 //
-// 下沉的检查项（对应自检卡原题号）：
-//   ① 禁用词检测（原题1）：正文出现「第X章/细纲/伏笔/读者/大纲」等工程词
-//   ② 禁止项检测（原题4/5）：--ban 列表的关键词零出现
-//   ③ 字数检测（原题6上半）：去空白字符数落在 [--min, --max] 区间
-//   ④ 跳写检测（原题6下半）：括号省略（未完成输出）blocking；时间压缩词 advisory
-//   ⑤ 连续对话检测（原题2，半自动）：连续 ≥4 行纯对白（叙述余量 ≤4 字）advisory
-//   ⑥ 心理词频计数（原题3，半自动）：引号外心理/情绪词命中数，advisory
+// 四组化（任务书 §2.2）：beat 只是节奏标签，不再是字数桶/逐拍验收单位——
+// 字数检测（beat-too-short / beat-too-long）与 --min/--max 已删除，正文长度
+// 权威归章级 wordcount；本脚本面向连续场景/整章做确定性预检。
 //
-// 模型只剩：原题7（必须发生事件是否写到）、原题8（续写衔接）。
-// 改造后的自检卡将引用本脚本的输出，模型只回答脚本标 SKIP 的题。
+// 检查项：
+//   ① 禁用词检测：正文出现「第X章/细纲/伏笔/读者/大纲」等工程词
+//   ② 禁止项检测：--ban 列表的关键词零出现
+//   ③ 跳写检测：括号省略（未完成输出）blocking；时间压缩词 advisory
+//   ④ 连续对话检测：连续 ≥4 行纯对白（叙述余量 ≤4 字）advisory
+//   ⑤ 心理词频计数：引号外心理/情绪词命中数，advisory
 //
 // v3-A1 误报修复（docs/框架整改任务书 §4 A1）：
 //   - 时间概述词（不多时/一番…之后等）不再判 blocking——合法概述与跳过必须展示
@@ -26,43 +25,49 @@
 //     行不再被当作无动作对白，也不再把整段话术误报为「无动作」。
 //   - mono-count 报告的是心理/情绪词命中次数（词频），不是心理独白句数——只报
 //     观测值与「需结合上下文判断」，不声称已检测「心理独白过多」。
-//   - 默认 --fail-on=blocking：advisory 不再因 exit 1 被调用方放大为失败；
-//     advisory 进分诊/判读，不因退出码一律发改写卡。
+//   - 默认 --fail-on=block（处置分类口径，lib/guyin-handling.js）：advisory 不再因
+//     exit 1 被调用方放大为失败；advisory 进分诊/判读，不因退出码一律发改写卡。
 //
 // Report-only：报警只标待审，永不自动删。与其他检查脚本同构。
 
 const fs = require('fs');
 const path = require('path');
+const handling = require('./lib/guyin-handling');
 
-const USAGE = `Usage: node guyin-check-beat.js [--json] [--fail-on=blocking|all] [--min=N] [--max=N] [--ban=w1,w2,...] [--mono-limit=N] <file>
+const USAGE = `Usage: node guyin-check-beat.js [--json] [--fail-on=block|hard|all] [--ban=w1,w2,...] [--mono-limit=N] <file>
 
-Beat-level deterministic pre-check (self-check card sink-down):
-  ① meta-leak-beat    (blocking): 工程词泄漏（第X章/细纲/伏笔/读者/大纲）
-  ② ban-violation     (blocking): --ban 列表关键词出现
-  ③ beat-too-short    (blocking): 去空白字数 < --min (default 500)
-  ④ beat-too-long     (advisory): 去空白字数 > --max (default 1500)
-  ⑤ skip-write        (blocking): 括号省略（（此处省略…）＝未完成输出）
-     skip-write       (advisory): 时间压缩词命中（不多时/一番…之后等——合法
+Deterministic pre-check for continuous scenes / whole chapters (self-check
+card sink-down; beat is a rhythm label only — no wordcount buckets):
+  ① meta-leak-beat    (hard; 对话行内变体 verify): 工程词泄漏（第X章/细纲/伏笔/读者/大纲）
+  ② ban-violation     (hard): --ban 列表关键词出现
+  ③ skip-write        (hard): 括号省略（（此处省略…）＝未完成输出）
+     skip-write       (editorial): 时间压缩词命中（不多时/一番…之后等——合法
                        概述与漏写须语义区分，脚本只报观测值）
-  ⑥ dialogue-run      (advisory): 连续 ≥4 行纯对白（剥引号后叙述余量 ≤4 字；
+  ④ dialogue-run      (editorial): 连续 ≥4 行纯对白（剥引号后叙述余量 ≤4 字；
                        同行含动作的行不计入，不声称「无动作」）
-  ⑦ mono-count        (advisory): 引号外心理/情绪词命中数超 --mono-limit（词频
+  ⑤ mono-count        (editorial): 引号外心理/情绪词命中数超 --mono-limit（词频
                        观测，非独白句数；知道/明白/清楚等认知半句不计数，Fw-05）
 
-After this script, the self-check card only needs the model for:
-  - Q7: 必须发生事件是否写到完整结果——动作/承受者反应/后果三要素（语义判断，v3-B2）
-  - Q8: 续写衔接是否顺畅（语义判断）
-  - Q9-Q11（Fw-05→v3-B2）：留存条件题（Q9 先问本 beat 功能再查落成/对话增量/可记忆点），章号与 beat 序
-    条件由编排层组卡时判定，脚本不查——self-check 卡面定义频率（ch1-3 每 beat）。
+Wordcount checks abolished (任务书 §2.2): beat-too-short / beat-too-long 与
+--min/--max 已删除——beat 只是节奏标签，正文长度权威归章级 wordcount；
+传入 --min/--max 按未知参数退 2。
+
+--fail-on=block（默认）hard/verify 任一存在即 1；hard 仅 hard；all 含 editorial（审计模式）。
+Exit codes: 0=无未决阻断, 1=存在未决阻断(hard/verify), 2=执行/输入错误。
+
+After this script, semantic review lives in the full-chapter read (SKILL.md
+step 4a, three-step card): motivation / promise delivery / scene continuity.
+No numbered question system — reactions and consequences may be implicit or
+delayed; do not demand an immediate reaction line after every action.
 
 Report-only: findings go to the review queue, never auto-deleted.`;
 
 // ---- 工程词词表（与 guyin-check-degeneration.js META_TIER1/TIER2 同源，beat 级全 blocking）----
 const META_RE = /细纲|情节点|卷纲|功能标签|目标情绪|字数目标|章首钩子|章尾钩子|第[一二三四五六七八九十百千万两0-9]+章|本章|这一章|上一章|下一章|上章|下章|前一章|后一章|前文|后文|伏笔|读者|大纲|任务描述/;
 
-// ---- 跳写模式（自检卡原题6「此处省略 / 一番……之后」的确定性版）----
+// ---- 跳写模式（「此处省略 / 一番……之后」的确定性版）----
 // v3-A1 二分：括号省略是显式「未完成输出」（blocking）；时间压缩词是通用概述笔法，
-// 合法概述与「跳过必须展示的事件」须语义区分（自检卡 Q7 / 编排层判读），只报 advisory。
+// 合法概述与「跳过必须展示的事件」须语义区分（完整章审读 / 编排层判读），只报 advisory。
 const SKIP_WRITE_PLACEHOLDER = [
   { re: /[（(](此处|以下|这里|下文|后续)?\s*(省略|略)(去|过)?[^）)]{0,10}[）)]/, label: '括号省略' },
 ];
@@ -108,10 +113,6 @@ function stripQuoted(text) {
     .replace(/'[^']*'/g, '');
 }
 
-function visibleChars(text) {
-  return text.replace(/\s/g, '').length;
-}
-
 function compact(text) {
   const normalized = text.replace(/\s+/g, ' ').trim();
   return normalized.length > 80 ? `${normalized.slice(0, 77)}...` : normalized;
@@ -120,9 +121,7 @@ function compact(text) {
 // ---- 参数解析 ----
 const options = {
   json: false,
-  failOn: 'blocking', // v3-A1：默认只按 blocking 定退出码；advisory 走判读/分诊
-  min: 500,
-  max: 1500,
+  failOn: 'block', // 处置分类口径（lib/guyin-handling.js）：hard/verify 计 1；editorial 走判读/分诊
   ban: [],
   monoLimit: 2,
   file: null,
@@ -139,17 +138,11 @@ for (let i = 2; i < process.argv.length; i += 1) {
   if (arg === '--json') {
     options.json = true;
   } else if (arg.startsWith('--fail-on=')) {
-    const v = arg.slice('--fail-on='.length);
-    if (v !== 'blocking' && v !== 'all') die(`--fail-on must be 'blocking' or 'all'`);
-    options.failOn = v;
-  } else if (arg.startsWith('--min=')) {
-    const n = Number(arg.slice('--min='.length));
-    if (!Number.isFinite(n) || n <= 0) die(`--min must be a positive number`);
-    options.min = n;
-  } else if (arg.startsWith('--max=')) {
-    const n = Number(arg.slice('--max='.length));
-    if (!Number.isFinite(n) || n <= 0) die(`--max must be a positive number`);
-    options.max = n;
+    try {
+      options.failOn = handling.parseFailOn(arg.slice('--fail-on='.length), 'block');
+    } catch (error) {
+      die(error.message);
+    }
   } else if (arg.startsWith('--ban=')) {
     const raw = arg.slice('--ban='.length);
     options.ban = raw.split(',').map((s) => s.trim()).filter(Boolean);
@@ -168,7 +161,6 @@ for (let i = 2; i < process.argv.length; i += 1) {
 }
 
 if (!options.file) die('No file provided');
-if (options.min >= options.max) die(`--min (${options.min}) must be smaller than --max (${options.max})`);
 
 // ---- 读取文件 ----
 const filePath = path.resolve(options.file);
@@ -210,6 +202,9 @@ for (const { trimmed, lineNo } of content) {
       column: m.index + 1,
       type: 'meta-leak-beat',
       severity: dialogue ? 'advisory' : 'blocking',
+      // 对话行内变体：写手/编剧题材角色在故事内讨论创作可能合法——语义核实（verify），
+      // 非对话行保持表默认 hard。
+      handling: dialogue ? handling.VERIFY : undefined,
       message: `工程词泄漏：「${m[0]}」是写作流水线术语，beat 正文里不该出现。`,
       excerpt: compact(trimmed.slice(Math.max(0, m.index - 6), m.index + 18)),
       checkId: 'Q1',
@@ -237,35 +232,7 @@ if (options.ban.length > 0) {
   }
 }
 
-// ---- ③④ 字数检测（beat-too-short / beat-too-long）----
-const charCount = content.reduce((sum, { text }) => sum + visibleChars(text), 0);
-if (charCount < options.min) {
-  findings.push({
-    line: 1,
-    column: 1,
-    type: 'beat-too-short',
-    severity: 'blocking',
-    count: charCount,
-    limit: options.min,
-    message: `beat 字数 ${charCount} 低于下限 ${options.min}（低模型写不满；多给细节，不许注水）`,
-    excerpt: '',
-    checkId: 'Q6-wordcount',
-  });
-} else if (charCount > options.max) {
-  findings.push({
-    line: 1,
-    column: 1,
-    type: 'beat-too-long',
-    severity: 'advisory',
-    count: charCount,
-    limit: options.max,
-    message: `beat 字数 ${charCount} 超过上限 ${options.max}（核对 beat 切分是否过大）`,
-    excerpt: '',
-    checkId: 'Q6-wordcount',
-  });
-}
-
-// ---- ⑤ 跳写检测（skip-write）----
+// ---- ③ 跳写检测（skip-write）----
 // 括号省略＝显式未完成输出，blocking；时间压缩词＝概述笔法观测，advisory（v3-A1）。
 for (const { trimmed, lineNo } of content) {
   for (const { re, label } of SKIP_WRITE_PLACEHOLDER) {
@@ -291,7 +258,9 @@ for (const { trimmed, lineNo } of content) {
         column: m.index + 1,
         type: 'skip-write',
         severity: 'advisory',
-        message: `时间压缩词命中（${label}）：这是概述笔法的观测值，不必然是错误——是否跳过了必须展示的事件须结合本 beat 的「必须发生」语义判断（自检卡 Q7／编排层判读），不靠删词修复。`,
+        // 时间压缩词变体：概述笔法观测，editorial（括号省略变体保持表默认 hard）。
+        handling: handling.EDITORIAL,
+        message: `时间压缩词命中（${label}）：这是概述笔法的观测值，不必然是错误——是否跳过了必须展示的事件须结合本章「必须发生」的语义判断（完整章审读／编排层判读），不靠删词修复。`,
         excerpt: compact(trimmed.slice(Math.max(0, m.index - 6), m.index + 24)),
         checkId: 'Q6-skipwrite',
       });
@@ -300,7 +269,7 @@ for (const { trimmed, lineNo } of content) {
   }
 }
 
-// ---- ⑥ 连续纯对白检测（dialogue-run，advisory，半自动）----
+// ---- ④ 连续纯对白检测（dialogue-run，advisory，半自动）----
 // 只累计纯对白行（剥引号后叙述余量 ≤4 字）；同行含动作的行是合法插入，断开连排（v3-A1）。
 let dialogueStreak = 0;
 let streakStart = null;
@@ -329,7 +298,7 @@ for (const { trimmed, lineNo } of content) {
 }
 reportDialogueRun(); // 文件末尾收尾
 
-// ---- ⑦ 心理词频计数（mono-count，advisory，半自动）----
+// ---- ⑤ 心理词频计数（mono-count，advisory，半自动）----
 // 只数引号外叙述行中的心理/情绪词命中次数——词频观测，非独白句数（v3-A1）。
 let monoCount = 0;
 const monoLines = [];
@@ -358,31 +327,32 @@ if (monoCount > options.monoLimit) {
 // ---- 输出 ----
 findings.sort((a, b) => a.line - b.line || a.column - b.column);
 
+try {
+  handling.finalizeFindings(findings, 'guyin-check-beat.js');
+} catch (error) {
+  die(error.message);
+}
+
 if (options.json) {
   const scriptChecks = findings.map((f) => f.checkId);
-  const modelChecks = ['Q7', 'Q8'];
   process.stdout.write(`${JSON.stringify({
     findings,
     summary: {
-      totalChecks: 8,
       scriptHandled: [...new Set(scriptChecks)],
-      modelRemaining: modelChecks,
-      charCount,
+      semanticReview: 'full-chapter-read (SKILL.md 4a)',
       banList: options.ban,
     },
   }, null, 2)}\n`);
 } else {
   for (const f of findings) {
     const excerptStr = f.excerpt ? ` (${f.excerpt})` : '';
-    console.log(`${filePath}:${f.line}:${f.column}: [${f.severity}] ${f.type}: ${f.message}${excerptStr}`);
+    console.log(`${filePath}:${f.line}:${f.column}: [${handling.label(f)}] ${f.type}: ${f.message}${excerptStr}`);
   }
-  // 末尾 summary：告诉编排层哪些题已查、模型只剩哪些
+  // 末尾 summary：脚本已查项 + 语义审读去向
   const handled = [...new Set(findings.map((f) => f.checkId))];
   console.log('');
-  console.log(`[summary] beat 字数=${charCount}（区间 ${options.min}-${options.max}）`);
   console.log(`[summary] 脚本已查：${handled.length > 0 ? handled.join(', ') : '（无报警）'}`);
-  console.log(`[summary] 模型需答：Q7（必须发生事件完整结果：动作/反应/后果）、Q8（续写衔接是否顺畅）`);
+  console.log(`[summary] 语义审读（动机/兑现/承接）归完整章审读（SKILL.md 4a）——反应与后果可隐含可延迟`);
 }
 
-const tripped = findings.filter((f) => (options.failOn === 'blocking' ? f.severity === 'blocking' : true));
-process.exit(tripped.length > 0 ? 1 : 0);
+process.exit(handling.gateTripped(findings, options.failOn) ? 1 : 0);

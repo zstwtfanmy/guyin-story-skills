@@ -1,0 +1,22 @@
+﻿=== 差异三栏 ===
+[将刷新] .claude/agents/guyin-beat-writer.md, .claude/agents/guyin-checker.md, .claude/hooks/guyin-hook.js, .codex/agents/guyin-beat-writer.toml, .codex/agents/guyin-checker.toml, .opencode/agents/guyin-beat-writer.md, .opencode/agents/guyin-checker.md, .opencode/commands/guyin.md 
+[将保留] AGENTS.md, README.md, 正文/, 追踪/, 作者性/, settings 自定义键(model/permissions/用户hook) 
+[需确认] .claude/agents/my-private-tool.md（来源不明 → 用户决定：保留）
+
+=== T11 重部署真实运行结果 ===
+PASS  提取自定义 model（claude=deepseek-flash；codex/opencode 空＝等同solo）  | {"claude":["deepseek-flash"],"codex":[],"opencode":[]}
+PASS  备份落 .guyin/upgrade-backup/{日期}/ 且旧 beat-writer 含 model  | C:\Users\PC\AppData\Local\Temp\t11-deploy-old\.guyin\upgrade-backup\2026-09-17
+PASS  merge-claude-settings.js 真实执行 exit0  | 已合并 hooks 注册到 C:\Users\PC\AppData\Local\Temp\t11-deploy-old\.claude\settings.json（用户配置保留，管理注册刷新）
+
+PASS  settings：guyin 三 hook 更新注册、用户 hook/permissions/model 键保留
+PASS  回填后非注释生效 model: deepseek-flash，且新协议正文生效（无三硬动作）
+PASS  checker 仍零生效 model（等同 solo 提示保留）
+PASS  新 hook D2 发布门真实落位（publicationBlocker/_publication.json）
+PASS  来源不明部署件 my-private-tool.md 原样保留（用户选保留）
+PASS  小说正文/追踪台账/AGENTS/README/作者性/旧13列信号表全部字节不变
+PASS  旧 13 列读者信号表未被冒充新格式（无验收检查点节，列为待升级）
+PASS  AGENTS.md 旧版未被覆盖（建议补丁不由部署器自动写入）
+PASS  部署标记更新为 0.14.0 且记录回填/备份/待升级清单
+
+项目目录: C:\Users\PC\AppData\Local\Temp\t11-deploy-old
+备份目录: C:\Users\PC\AppData\Local\Temp\t11-deploy-old\.guyin\upgrade-backup\2026-09-17

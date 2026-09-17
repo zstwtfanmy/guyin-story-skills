@@ -8,27 +8,31 @@
 // 执行层同时收到相反指令。框架不试图让脚本理解语义矛盾——本脚本只做两件机械事：
 //
 //   1. 项目存在自创笔法文件（作者性/语言纪律.md 或 大纲/执行层一页纸.md）→ 治理激活：
-//      作者性/纪律冲突台账.md 缺失 → advisory（rule-conflict-ledger-missing）。
+//      作者性/纪律冲突台账.md 缺失 → verify（rule-conflict-ledger-missing）。
 //      两件笔法文件都不存在 → 静默（项目无自创笔法，不需要本治理，fail-open）。
 //   2. 台账数据行（非 {{占位}}/分隔/表头）「仲裁结论」列（cells[4]）为空或「无」起头
-//      → advisory（rule-conflict-unadjudicated，附行号）——冲突不过仲裁不得继续堆新纪律。
+//      → verify（rule-conflict-unadjudicated，附行号）——冲突不过仲裁不得继续堆新纪律。
 //
-// 全部 advisory：默认 --fail-on=blocking 永不 exit 1（章检链只挂提醒）；
-// 需要硬卡（建批走查/CI）时用 --fail-on=all。Report-only，永不改写。
+// 处置分类（lib/guyin-handling）：两类均 verify（治理件缺失/未仲裁，须补台账或作者仲裁）。
+// --fail-on=block（默认）verify 即 exit 1（进待审台账，仲裁/补台账后解除）；
+// --fail-on=all 为审计模式。Report-only，永不改写。
 
 const fs = require('fs');
 const path = require('path');
 
-const USAGE = `Usage: node guyin-check-rule-conflict.js --project <book-root> [--json] [--fail-on=blocking|all]
+const handling = require('./lib/guyin-handling');
+
+const USAGE = `Usage: node guyin-check-rule-conflict.js --project <book-root> [--json] [--fail-on=block|hard|all]
 
 Self-authored style-rule conflict ledger gate (Fw-04, docs/12):
   Activated only when 作者性/语言纪律.md or 大纲/执行层一页纸.md exists.
-  advisory rule-conflict-ledger-missing     作者性/纪律冲突台账.md absent while rules exist
-  advisory rule-conflict-unadjudicated      ledger row with empty 仲裁结论 column
+  verify rule-conflict-ledger-missing     作者性/纪律冲突台账.md absent while rules exist
+  verify rule-conflict-unadjudicated      ledger row with empty 仲裁结论 column
   No style-rule files -> silent exit 0 (fail-open for projects without self-authored rules).
---fail-on=blocking (default) never exits 1 (advisory-only); --fail-on=all exits 1 on any finding.`;
+Exit codes: 0 = 无未决阻断; 1 = 存在未决阻断（hard/verify，进待审台账——补台账/仲裁后解除）;
+  2 = 执行/输入错误。--fail-on=block（默认）hard+verify 计 1; hard 仅 hard; all 含 editorial（审计模式）。`;
 
-const options = { json: false, failOn: 'blocking', project: null };
+const options = { json: false, failOn: 'block', project: null };
 
 function die(message) {
   console.error(message);
@@ -41,9 +45,11 @@ for (let i = 2; i < process.argv.length; i += 1) {
   if (arg === '--json') {
     options.json = true;
   } else if (arg.startsWith('--fail-on=')) {
-    const v = arg.slice('--fail-on='.length);
-    if (v !== 'blocking' && v !== 'all') die("--fail-on must be 'blocking' or 'all'");
-    options.failOn = v;
+    try {
+      options.failOn = handling.parseFailOn(arg.slice('--fail-on='.length));
+    } catch (e) {
+      die(e.message);
+    }
   } else if (arg === '--project') {
     options.project = process.argv[i + 1];
     if (options.project === undefined) die('--project requires a value');
@@ -115,11 +121,17 @@ if (governanceActive) {
   }
 }
 
+try {
+  handling.finalizeFindings(findings, 'guyin-check-rule-conflict');
+} catch (e) {
+  die(e.message);
+}
+
 if (options.json) {
   process.stdout.write(`${JSON.stringify({ findings, governanceActive }, null, 2)}\n`);
 } else if (findings.length > 0) {
   for (const f of findings) {
-    console.log(`${f.file}:${f.line}:${f.column}: [${f.severity}] ${f.type}: ${f.message}`);
+    console.log(`${f.file}:${f.line}:${f.column}: [${handling.label(f)}] ${f.type}: ${f.message}`);
   }
 } else {
   console.log(governanceActive
@@ -127,4 +139,4 @@ if (options.json) {
     : 'rule-conflict: no self-authored style-rule files (silent)');
 }
 
-if (options.failOn === 'all' && findings.length > 0) process.exit(1);
+process.exit(handling.gateTripped(findings, options.failOn) ? 1 : 0);

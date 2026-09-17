@@ -1,33 +1,34 @@
 #!/usr/bin/env node
 'use strict';
 
-// guyin-check-outline-slots.js — 细纲槽位完整性门（O2，docs/06-卷三开局复盘整改计划.md §二）
+// guyin-check-outline-slots.js — 细纲槽位完整性门（O2，docs/06 §二；四组化，任务书 §2.1）
 //
 // 根因一「硬门不查槽位」的封堵：61-63 细纲 beat 化后字段整体丢失，outline-verdict 与
-// hook-rotation 对缺失字段都无事可查，缺失零成本。本脚本机械查八槽位（字段定义唯一权威
-// 在 references/细纲协议.md，O1）：
+// hook-rotation 对缺失字段都无事可查，缺失零成本。本脚本机械查四组协议区块与保留行
+//（字段定义唯一权威在 references/细纲协议.md，O1）：
 //
-//   blocking ×5：
-//     outline-missing-hook      章尾钩子行缺失 / 无五型 / 无实体 / 无承接章号
-//     outline-missing-wordcount 字数目标行缺失或不含数字，或场景与对手戏下限行缺失
-//     outline-missing-multiline 情节安排节 / 主线行 / 感情线·关系线行缺失
+//   blocking ×7（四组协议区块 + 保留行，任务书 §2.1 四组化）：
+//     outline-missing-group-1   「一、本章要交付什么」区块缺失
+//     outline-missing-group-2   「二、人为何这样行动」区块缺失
+//     outline-missing-group-3   「三、场景如何承接」区块缺失
+//     outline-missing-group-4   「四、哪些不能擅改」区块缺失
+//     outline-missing-wordcount 字数目标行缺失或不含数字（章检字数下限唯一驱动源）
 //     outline-missing-anchor    复沓锚句字段行缺失（值可写「无」）
 //     outline-missing-holdback  禁止提前释放字段行缺失（值可写「无」）
-//   advisory ×5：
-//     outline-missing-scenes    涉及场景清单字段行缺失
+//   advisory ×3：
 //     outline-missing-terms     术语锚点字段行缺失（值可写「无」）
-//     outline-missing-contract  契约风险结论行缺失
-//     outline-missing-timecheck 时序自检行缺失（P1，docs/07：E1 时序倒错源头封堵，advisory 起步）
 //     qiyun-coord-uncovered     气卡坐标区间未覆盖本章（S2，fail-open：无气卡/无区间静默）
-//   advisory ×3（docs/09）：
 //     outline-instruction-echo  写作指令区与前章归一化逐字相同且非「无」（B2：批次不变量
 //                               应上移 大纲/批次公约.md，逐章复读=指令放错层；三章同填「无」合法）
-//     outline-scene-floor-conflict 场景下限声明 > 涉及场景清单条目数（B4：ch63 细纲自相矛盾
-//                               形态；清单值「无」=未登记场景不比较，豁免声明跳过）
 //   advisory ×1（v3-A3，任务书 §4 A3）：
 //     outline-genre-contract-missing 设定/题材定位.md 缺失/必要节缺/占位未实例化——
-//                               细纲⑥⑦的对照依赖文件；只查结构不打分（不是 genre-fit
-//                               评分器），「未定」「不适用＋说明」是合法显式决定放行
+//                               第一组「读者承诺」的对照依赖文件；只查结构不打分（不是
+//                               genre-fit 评分器），「未定」「不适用＋说明」是合法显式决定放行
+//
+// 已废除槽位（任务书 §2.1：删掉的栏目不能仍由脚本强制补回）：章尾钩子（五型/实体/承接）、
+// 多线节拍（情节安排节/主线/感情线行）、涉及场景清单、契约风险结论行、时序自检行、
+// 情绪落点、场景与对手戏下限——新格式细纲无这些字段不再报错；存量旧格式细纲不追溯
+//（修订该章时按四组重写）。
 //
 // 存量策略：只拦落盘门场景（新建/修订细纲落盘前），存量章不追溯（与 hook-rotation 一致）。
 // 复沓锚句字段值命中作者性词源归 guyin-check-authority-leak.js 管（锚句洗白在那抓），本脚本只查存在性。
@@ -35,28 +36,41 @@
 
 const fs = require('fs');
 const path = require('path');
+const handling = require('./lib/guyin-handling');
 
-const USAGE = `Usage: node guyin-check-outline-slots.js [--json] [--fail-on=blocking|all] <细纲文件...>
+const USAGE = `Usage: node guyin-check-outline-slots.js [--json] [--fail-on=block|hard|all] <细纲文件...>
 
-Chapter outline slot integrity gate (docs/06 §二 O2):
-  blocking: hook / wordcount+scene floor / multi-line / anchor line / holdback line
-  advisory: scene list / term anchors / contract-risk line / time-check (P1)
+Chapter outline slot integrity gate (docs/06 §二 O2; four-group contract, 任务书 §2.1):
+  hard: outline-missing-group-1..4 (四组协议区块：本章要交付什么/人为何这样行动/
+        场景如何承接/哪些不能擅改——loose heading match, 缺哪组报哪组)
+        / outline-missing-wordcount (字数目标行存在且含数字)
+        / outline-missing-anchor (复沓锚句行) / outline-missing-holdback (禁止提前释放行)
+  editorial: outline-missing-terms (术语锚点行，值可「无」)
             / qiyun-coord coverage (S2+Y2: scans 作者性/气卡.md and
               设定/气韵卡.md, only lines containing 当前; silent when no
               card or no such line — volume-plan rows don't count)
             / instruction-echo (B2: instruction block identical to previous
               chapter's, non-「无」— batch invariants belong in 大纲/批次公约.md)
-            / scene-floor-conflict (B4: declared scene floor exceeds the
-              scene-list entry count — ch63 self-contradiction shape)
-            / genre-contract-missing (v3-A3: 设定/题材定位.md absent or its
+  verify: genre-contract-missing (v3-A3: 设定/题材定位.md absent or its
               读者契约 / 终局底牌与升级台阶 sections missing/placeholder —
               structure-only dependency check, NOT a genre-fit scorer;
               「未定」/「不适用＋说明」are legal explicit decisions)
+Abolished slots (任务书 §2.1 — deleted fields must not be forced back):
+  章尾钩子 / 多线节拍（情节安排·主线·感情线）/ 涉及场景清单 / 契约风险结论行 /
+  时序自检行 / 情绪落点 / 场景与对手戏下限 — legacy outlines are not retro-scanned.
 Slot definitions live in guyin-write/references/细纲协议.md (single authority).
 Only guards the pre-write gate; existing chapters are not retro-scanned.
---fail-on=blocking exits 1 only on blocking findings; default --fail-on=all exits 1 on any.`;
+Handling classes (lib/guyin-handling.js; severity 保留原值作证据强度):
+  hard     = outline-missing-group-1..4 / -wordcount / -anchor / -holdback
+             (槽位缺失＝确定工程错误，细纲不完整)
+  verify   = outline-genre-contract-missing (依赖缺件，须核实)
+  editorial= outline-missing-terms / qiyun-coord-uncovered /
+             outline-instruction-echo (表达观察)
+--fail-on=block|hard|all (default block): block exits 1 on hard or verify;
+hard on hard only; all on any finding (audit mode).
+Exit codes: 0=无未决阻断; 1=存在未决阻断(hard/verify); 2=执行/输入错误.`;
 
-const options = { json: false, failOn: 'all', inputs: [] };
+const options = { json: false, failOn: 'block', inputs: [] };
 
 function die(message) {
   console.error(message);
@@ -69,9 +83,11 @@ for (let i = 2; i < process.argv.length; i += 1) {
   if (arg === '--json') {
     options.json = true;
   } else if (arg.startsWith('--fail-on=')) {
-    const v = arg.slice('--fail-on='.length);
-    if (v !== 'blocking' && v !== 'all') die(`--fail-on must be 'blocking' or 'all'`);
-    options.failOn = v;
+    try {
+      options.failOn = handling.parseFailOn(arg.slice('--fail-on='.length));
+    } catch (e) {
+      die(e.message);
+    }
   } else if (arg === '-h' || arg === '--help') {
     process.stdout.write(`${USAGE}\n`);
     process.exit(0);
@@ -84,32 +100,21 @@ for (let i = 2; i < process.argv.length; i += 1) {
 
 if (options.inputs.length === 0) die('No outline files provided');
 
-// 五型钩子（与 hook-rotation 的轮换检测共用类型集，职责分离：那边管已标注章的连续同型，这边管有没有标注）。
-const HOOK_TYPES = ['危机', '反转', '期待', '悬念', '情绪'];
+// 四组协议区块（任务书 §2.1 四组化）：标题匹配宽松——##~###### 任一级、「一/1」类数字
+// 变体、「、/．/.」分隔符均可；缺哪组报哪组（hard）。beat 切分不是细纲格式——字段整体
+// 缺失＝设计意图无声丢失（61-63 实证），四组齐备是落盘门的底线。
+const GROUP_BLOCKS = [
+  { id: 1, title: '本章要交付什么', label: '一、本章要交付什么' },
+  { id: 2, title: '人为何这样行动', label: '二、人为何这样行动' },
+  { id: 3, title: '场景如何承接', label: '三、场景如何承接' },
+  { id: 4, title: '哪些不能擅改', label: '四、哪些不能擅改' },
+];
 
 function firstLineWith(lines, predicate) {
   for (let i = 0; i < lines.length; i += 1) {
     if (predicate(lines[i])) return { text: lines[i], line: i + 1 };
   }
   return null;
-}
-
-// 「承接：第64章…」或完结豁免「承接：无（完结收束）」。
-function carryoverOk(hookLine) {
-  const m = /承接[:：]\s*(.*)/.exec(hookLine);
-  if (!m) return false;
-  const rest = m[1].trim();
-  if (/完结\s*收束/.test(rest)) return true; // E4：完结章无下章可指
-  return /第\s*0*(\d+)\s*章/.test(rest);
-}
-
-function entityOk(hookLine) {
-  const m = /实体[:：]\s*(.*)/.exec(hookLine);
-  return Boolean(m && m[1].trim().length > 0);
-}
-
-function typeOk(hookLine) {
-  return HOOK_TYPES.some((t) => hookLine.includes(t));
 }
 
 function scanSlots(text) {
@@ -127,43 +132,20 @@ function scanSlots(text) {
     });
   };
 
-  // --- blocking ×5 ---
-
-  const hook = firstLineWith(lines, (l) => l.includes('章尾钩子'));
-  if (!hook) {
-    push('outline-missing-hook', 'blocking', 1, '章尾钩子行缺失——细纲契约槽位（beat 版细纲的事故形态，见 references/细纲协议.md）');
-  } else {
-    if (!typeOk(hook.text)) {
-      push('outline-missing-hook', 'blocking', hook.line, '章尾钩子未声明五型（危机/反转/期待/悬念/情绪）——轮换检测与张力判定的机械标注位');
-    }
-    if (!entityOk(hook.text)) {
-      push('outline-missing-hook', 'blocking', hook.line, '章尾钩子缺实体声明（挂在什么具体物/人/话上）——情绪钩子合法（有实体），情绪收束句不合法（无实体）');
-    }
-    if (!carryoverOk(hook.text)) {
-      push('outline-missing-hook', 'blocking', hook.line, '章尾钩子缺承接章号（承接：第X章{事件}；完结章可写「承接：无（完结收束）」）——不指向下一章任何事件的是状态判词不是钩子');
+  // --- 四组协议区块（blocking ×4，任务书 §2.1 四组化）---
+  for (const group of GROUP_BLOCKS) {
+    const re = new RegExp(`#{2,6}\\s*[一二三四1-4]\\s*[、.．]?\\s*${group.title}`);
+    if (!lines.some((l) => re.test(l))) {
+      push(`outline-missing-group-${group.id}`, 'blocking', 1,
+        `四组协议区块缺失：「${group.label}」——细纲四组化契约（references/细纲协议.md，任务书 §2.1）；beat 切分不是细纲格式，契约字段缺失即设计意图无声丢失（61-63 实证）`);
     }
   }
+
+  // --- 保留行（blocking ×3 + advisory ×1；行必须在，值可「无」——字数目标除外，须含数字）---
 
   const wordcount = firstLineWith(lines, (l) => l.includes('字数目标'));
   if (!wordcount || !/\d/.test(wordcount.text)) {
-    push('outline-missing-wordcount', 'blocking', 1, '字数目标行缺失或不含数字——章检字数下限的唯一驱动源（目标×90%，guyin-check-wordcount.js）');
-  }
-  const sceneFloor = firstLineWith(lines, (l) => /场景/.test(l) && /(对手戏|下限)/.test(l));
-  if (!sceneFloor) {
-    push('outline-missing-wordcount', 'blocking', 1, '场景与对手戏下限行缺失（默认 ≥2 场 / ≥1 对手戏；低压/过场章可声明豁免并写理由）——ch63 单场景 2014 字双缺的事故槽位');
-  }
-
-  const arrangement = firstLineWith(lines, (l) => /#{2,4}\s*情节安排/.test(l));
-  if (!arrangement) {
-    push('outline-missing-multiline', 'blocking', 1, '情节安排节缺失——多线节拍的容器');
-  }
-  const mainline = firstLineWith(lines, (l) => l.includes('主线'));
-  if (!mainline) {
-    push('outline-missing-multiline', 'blocking', 1, '主线推进行缺失——多线节拍的主线行');
-  }
-  const relation = firstLineWith(lines, (l) => l.includes('感情线') || l.includes('关系线'));
-  if (!relation) {
-    push('outline-missing-multiline', 'blocking', 1, '感情线/关系线行缺失（值可写「无显性，但关系变化为…」）——行必须在，值可弱化');
+    push('outline-missing-wordcount', 'blocking', 1, '字数目标行缺失或不含数字——章检字数下限的唯一驱动源（区间取下限/单值×90%，guyin-check-wordcount.js）');
   }
 
   const anchor = firstLineWith(lines, (l) => l.includes('复沓锚句'));
@@ -176,65 +158,9 @@ function scanSlots(text) {
     push('outline-missing-holdback', 'blocking', 1, '禁止提前释放字段行缺失（值可写「无」）——契约层显式声明，防「靠卷纲兜底」的隐性放空');
   }
 
-  // --- advisory ×3 ---
-
-  const scenes = firstLineWith(lines, (l) => l.includes('涉及场景'));
-  if (!scenes) {
-    push('outline-missing-scenes', 'advisory', 1, '涉及场景清单字段行缺失（喂 cards {{场景锚点行}}）');
-  }
-
-  // B4 场景下限自洽（docs/09 §一）：下限行声明的场景数 > 涉及场景清单条目数 → 细纲内部
-  // 自相矛盾（ch63：自设 ≥3 场而清单只列 2 处）。豁免声明跳过；清单值「无」＝未登记场景
-  // 不比较（清单喂卡用途与下限剧情约束不同层，机械比较只对已列条目负责）。
-  if (sceneFloor && scenes) {
-    const floorText = sceneFloor.text;
-    if (!/豁免/.test(floorText)) {
-      const floorMatch = /≥\s*(\d+)\s*场/.exec(floorText);
-      if (floorMatch) {
-        const floor = Number(floorMatch[1]);
-        const listVal = scenes.text.replace(/^.*涉及场景[^：:]*[：:]/, '').trim();
-        if (listVal && !/^无/.test(listVal)) {
-          const count = listVal.split(/[、,，;；]/).filter((s) => s.trim()).length;
-          if (count < floor) {
-            push('outline-scene-floor-conflict', 'advisory', scenes.line,
-              `场景下限声明 ≥${floor} 场，涉及场景清单仅 ${count} 条——细纲内部自相矛盾（ch63 形态）；补场景、调下限或声明豁免；B4`);
-          }
-        }
-      }
-    }
-  }
-
   const terms = firstLineWith(lines, (l) => l.includes('术语锚点'));
   if (!terms) {
     push('outline-missing-terms', 'advisory', 1, '术语锚点字段行缺失（值可写「无」）——新术语密集批次的首现台词级锚定位，报告 B8 的机制化');
-  }
-
-  const contract = firstLineWith(lines, (l) => l.includes('契约风险'));
-  if (!contract) {
-    push('outline-missing-contract', 'advisory', 1, '契约风险结论行缺失（判定标准=七检⑥⑦，见 references/细纲协议.md）');
-  }
-
-  const timecheck = firstLineWith(lines, (l) => l.includes('时序自检'));
-  if (!timecheck) {
-    push('outline-missing-timecheck', 'advisory', 1, '时序自检行缺失（出场顺序＝时间顺序/插叙显式标注/beat 时间轴走查）——P1 源头治 E1 时序倒错：细纲即代码，排序 bug 在高保真管线 1:1 传导（ch61 实证）；advisory 起步（O2 先例），Arena 验证后议升 blocking');
-  }
-
-  // Q1 情绪落点：目标情绪行只管章级起终点，落点行管章内分布——情绪欠账写前可见、写后可查。
-  // 行缺失或「@点N/@情节点N」标记 <3（低压/过场章豁免后 <2）报 advisory；值「无」静默
-  // （行必须在值可无，比照锚句哲学）。ch36 起项目侧实践过、06 建制时意外遗漏的资产。
-  const emotion = firstLineWith(lines, (l) => l.includes('情绪落点'));
-  if (!emotion) {
-    push('outline-missing-emotion-beats', 'advisory', 1, '情绪落点行缺失（每章 ≥3 次情绪落点：①情绪@点N 格式）——只有章级目标情绪没有章内分布，情绪欠账写前不可见（ch62 塌方+情绪平的实证形态）；Q1');
-  } else {
-    const val = emotion.text.replace(/^.*情绪落点[^：:]*[：:]/, '');
-    if (val.trim() && !val.trim().startsWith('无')) {
-      const marks = (emotion.text.match(/@\s*(?:情节点|点)\s*\d/g) || []).length;
-      const exempt = /豁免|低压|过场/.test(emotion.text);
-      const floor = exempt ? 2 : 3;
-      if (marks < floor) {
-        push('outline-missing-emotion-beats', 'advisory', 1, `情绪落点计数不足：仅 ${marks} 个（${exempt ? '低压/过场章下限 2' : '下限 3'}）——补落点或声明豁免；Q1`);
-      }
-    }
   }
 
   return findings;
@@ -475,17 +401,22 @@ if (genreFinding) {
   allFindings.push({ file: options.inputs[0], line: 1, column: 1, ...genreFinding });
 }
 
+try {
+  handling.finalizeFindings(allFindings, 'guyin-check-outline-slots.js');
+} catch (e) {
+  die(e.message);
+}
+
 if (options.json) {
   process.stdout.write(`${JSON.stringify({ findings: allFindings }, null, 2)}\n`);
 } else {
   for (const f of allFindings) {
-    console.log(`${f.file}:${f.line}:${f.column}: [${f.severity}] ${f.type}: ${f.message}`);
+    console.log(`${f.file}:${f.line}:${f.column}: [${handling.label(f)}] ${f.type}: ${f.message}`);
   }
   if (allFindings.length === 0 && !failed) {
-    console.log(`outline-slots: ${options.inputs.length} file(s) all slots present`);
+    console.log(`outline-slots: ${options.inputs.length} file(s) four groups + retained lines present`);
   }
 }
 
 if (failed) process.exit(2);
-const hasBlocking = allFindings.some((f) => f.severity === 'blocking');
-if (options.failOn === 'blocking' ? hasBlocking : allFindings.length > 0) process.exit(1);
+process.exit(handling.gateTripped(allFindings, options.failOn) ? 1 : 0);

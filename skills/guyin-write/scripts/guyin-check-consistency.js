@@ -2,27 +2,32 @@
 
 const fs = require('fs');
 const path = require('path');
+const handling = require('./lib/guyin-handling');
 
-const USAGE = `Usage: node guyin-check-consistency.js [--json] [--fail-on=blocking|all] [--state=<file>] <chapter.md...>
+const USAGE = `Usage: node guyin-check-consistency.js [--json] [--fail-on=block|hard|all] [--state=<file>] <chapter.md...>
 
-物证/能力/地理一致性章检（T1/T2，docs/05-实战护栏路线图.md §5）。advisory 只报不拦，
-升级作者判读；与 guyin-check-narrative-asset.js 同一 fail-open 约定——找不到
-追踪/_tracking-state.json 或其中无 evidence/geo/characters 实体时静默跳过。
+物证/能力/地理一致性章检（T1/T2，docs/05-实战护栏路线图.md §5）。全部 verify——
+须上下文核实的事实或契约风险，升级作者判读；与 guyin-check-narrative-asset.js 同一
+fail-open 约定——找不到追踪/_tracking-state.json 或其中无 evidence/geo/characters
+实体时静默跳过。
 
 三规则族（宁漏不拦错，词表全部收窄到高置信形态）：
-  1. 物证状态矛盾（T1）：已登记物证的 keywords 与使用/处置动作同现，但登记链说它
+  1. 物证状态矛盾（T1，verify）：已登记物证的 keywords 与使用/处置动作同现，但登记链说它
      「尚未登场」（登记章 > 本章）或「已销毁/归档」（destroyed/archived 且本章 >
      updated_chapter）→ 报警。拦「修订旧章时引用了未来才登场的物证」与「销毁后
      仍在用」两类登记链断裂。
-  2. 能力空降（T1，拦 ch32 小窦型）：角色表现出「会/能/懂/擅长 X」式能力，但该
+  2. 能力空降（T1，拦 ch32 小窦型，verify）：角色表现出「会/能/懂/擅长 X」式能力，但该
      角色快照 knowledge 列表无对应条目 → 提示登记或铺垫。能力短语与 knowledge 做
      子串粗匹配，匹配命中即静默。
-  3. 地理三查（T2）：① 新地名提示——到达句式「到/至/进/抵 + X州/县/府/城/镇…」
+  3. 地理三查（T2，verify）：① 新地名提示——到达句式「到/至/进/抵 + X州/县/府/城/镇…」
      里的地名不在 geo 台账（含别名）→ 提示登记；② 方向冲突——正文「往/朝/向 +
      方向」句同时出现台账断言的参照地（且近上下文出现断言本名），方向与断言同向
      → 按断言该方向走不到参照地（ch2「顺水往南往通州」而临清在通州以南型矛盾）；
      ③ 行程矛盾——章内相邻方向事件同轴互反（往南…又往北）且无「回/返/折」类
-     回归动词 → 提示核对。跨章行程连续性留给实战认证迭代（M2）。`;
+     回归动词 → 提示核对。跨章行程连续性留给实战认证迭代（M2）。
+
+--fail-on=block（默认）hard/verify 任一存在即 1；hard 仅 hard；all 含 editorial（审计模式）。
+Exit codes: 0=无未决阻断, 1=存在未决阻断(hard/verify), 2=执行/输入错误。`;
 
 // 物证使用/处置动作（第二层共现词表；第一层是 evidence.keywords 命中）。
 const EVIDENCE_ACTION = /拿|取|掏|摊|举|翻|递|比|捏|攥|握|摆|收|塞|揣|带|携|藏|押|缴|起获|呈|封存|入库|销|烧|毁|丢|弃|掷|摔|砸|沉/;
@@ -40,16 +45,18 @@ const GENERIC_PLACE_HEAD = new Set(['了', '的', '这', '那', '一', '半', '�
 // 被检文件章号（文件名优先）：正文/第036章_标题.md 与 大纲/细纲_第036章.md 皆命中。
 const CHAPTER_IN_NAME = /第\s*0*(\d+)\s*章/;
 
-const options = { json: false, files: [], failOn: 'all', state: null };
+const options = { json: false, files: [], failOn: 'block', state: null };
 
 for (let i = 2; i < process.argv.length; i += 1) {
   const arg = process.argv[i];
   if (arg === '--json') {
     options.json = true;
   } else if (arg.startsWith('--fail-on=')) {
-    const v = arg.slice('--fail-on='.length);
-    if (v !== 'blocking' && v !== 'all') die(`--fail-on must be 'blocking' or 'all'`);
-    options.failOn = v;
+    try {
+      options.failOn = handling.parseFailOn(arg.slice('--fail-on='.length), 'block');
+    } catch (error) {
+      die(error.message);
+    }
   } else if (arg.startsWith('--state=')) {
     options.state = arg.slice('--state='.length);
   } else if (arg === '-h' || arg === '--help') {
@@ -81,17 +88,22 @@ for (const file of options.files) {
   allFindings.push(...findings);
 }
 
+try {
+  handling.finalizeFindings(allFindings, 'guyin-check-consistency.js');
+} catch (error) {
+  die(error.message);
+}
+
 if (options.json) {
   process.stdout.write(`${JSON.stringify({ findings: allFindings }, null, 2)}\n`);
 } else {
   for (const f of allFindings) {
-    console.log(`${f.file}:${f.line}:${f.column}: [${f.severity}] ${f.type}: ${f.message} (${f.excerpt})`);
+    console.log(`${f.file}:${f.line}:${f.column}: [${handling.label(f)}] ${f.type}: ${f.message} (${f.excerpt})`);
   }
 }
 
 if (failed) process.exit(2);
-const hasBlocking = allFindings.some((f) => f.severity === 'blocking');
-if (options.failOn === 'blocking' ? hasBlocking : allFindings.length > 0) process.exit(1);
+process.exit(handling.gateTripped(allFindings, options.failOn) ? 1 : 0);
 
 function die(message) {
   console.error(message);

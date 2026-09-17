@@ -3,9 +3,10 @@
 
 const fs = require('fs');
 const path = require('path');
+const handling = require('./lib/guyin-handling');
 
-const USAGE = `Usage: node guyin-check-flesh.js [--json] [--project <根>] <角色名> <正文目录 | 正文文件...>
-       node guyin-check-flesh.js [--json] [--project <根>] --all <正文目录 | 正文文件...>
+const USAGE = `Usage: node guyin-check-flesh.js [--json] [--fail-on=block|hard|all] [--project <根>] <角色名> <正文目录 | 正文文件...>
+       node guyin-check-flesh.js [--json] [--fail-on=block|hard|all] [--project <根>] --all <正文目录 | 正文文件...>
 
 人物显影器（P6，docs/04-优化路线图.md §3 P6 第 3 条）：跨章行为链诊断。
 review「角色对话」视角查单章声线；本脚本查**跨章行为链对设定弧线的累计偏移**——
@@ -15,17 +16,30 @@ review「角色对话」视角查单章声线；本脚本查**跨章行为链对
   flesh-trait-break  设定 vs 呈现断裂：角色卡标某特质轴，正文中该角色反特质
                      行为词 ≥3 次且正特质 0 次（「设定说果决、正文里躲了三次」
                      形态）——终判归作者：可能是有意的成长弧（先怯后勇），
-                     也可能是执行层没接住设定。advisory，只报不拦。
+                     也可能是执行层没接住设定。advisory，只报不拦；handling=verify。
 
   tool-character     配角工具化（P6-4）：连续 ≥3 章登场且每章行为句全为对话
                      （递话形态，占比 ≥80%）或连续 ≥5 章登场但每章行为句 ≤2
-                     （影子戏份）——群像死亡形态：配角全变功能性 NPC。advisory。
+                     （影子戏份）——群像死亡形态：配角全变功能性 NPC。advisory；
+                     handling=verify。
 
 角色卡从 设定/角色/{角色名}.md 读（自由 markdown，特质轴按关键词命中提取；
 无卡则跳过断裂比对只出行为链）。--all 输出全部角色戏份概览（P6-4 姊妹，
-角色名 = 角色卡文件名 ∪ _tracking-state.json characters 键）。`;
+角色名 = 角色卡文件名 ∪ _tracking-state.json characters 键）。
 
-const options = { json: false, all: false, project: null, character: null, targets: [] };
+处置分类（lib/guyin-handling.js 单一事实源）：flesh-trait-break / tool-character
+均 verify（跨章事实核类，须上下文核实；severity 保留 advisory 原值）。
+--fail-on=block|hard|all（默认 block）：block=hard 或 verify 任一存在即退 1；
+hard=仅 hard 计 1；all=含 editorial 全计 1（审计模式）。
+Exit codes: 0=无未决阻断; 1=存在未决阻断(hard/verify); 2=执行/输入错误。`;
+
+const options = { json: false, all: false, project: null, character: null, targets: [], failOn: 'block' };
+
+function die(message) {
+  console.error(message);
+  console.error(USAGE.trimEnd());
+  process.exit(2);
+}
 
 for (let i = 2; i < process.argv.length; i += 1) {
   const arg = process.argv[i];
@@ -33,6 +47,12 @@ for (let i = 2; i < process.argv.length; i += 1) {
     options.json = true;
   } else if (arg === '--all') {
     options.all = true;
+  } else if (arg.startsWith('--fail-on=')) {
+    try {
+      options.failOn = handling.parseFailOn(arg.slice('--fail-on='.length));
+    } catch (e) {
+      die(e.message);
+    }
   } else if (arg.startsWith('--project=')) {
     options.project = arg.slice('--project='.length);
   } else if (arg === '--project') {
@@ -365,12 +385,17 @@ if (options.all) {
     for (const f of detectToolRole(analysis)) findings.push(f);
   }
   rows.sort((a, b) => b.sentences - a.sentences);
+  try {
+    handling.finalizeFindings(findings, 'guyin-check-flesh.js');
+  } catch (e) {
+    die(e.message);
+  }
   if (options.json) {
     process.stdout.write(`${JSON.stringify({ summary: { characters: rows.length }, roles: rows, findings }, null, 2)}\n`);
   } else {
     console.log('# 戏份概览（--all，按行为句数降序）');
     for (const r of rows) console.log(`- ${r.name}：${r.sentences} 句行为 / ${r.chapters} 章登场 / 对话 ${r.dialogue} 句`);
-    for (const f of findings) console.log(`[advisory] ${f.type}: ${f.message}`);
+    for (const f of findings) console.log(`[${handling.label(f)}] ${f.type}: ${f.message}`);
   }
 } else {
   const analysis = analyzeCharacter(options.character, chapterFiles, readCharacterCard(options.character));
@@ -390,6 +415,11 @@ if (options.all) {
     has_card: Boolean(analysis.card),
     breaks: findings.length,
   };
+  try {
+    handling.finalizeFindings(findings, 'guyin-check-flesh.js');
+  } catch (e) {
+    die(e.message);
+  }
   if (options.json) {
     process.stdout.write(`${JSON.stringify({ summary, chapters: analysis.chapters, axes, breath, findings }, null, 2)}\n`);
   } else {
@@ -412,9 +442,9 @@ if (options.all) {
     console.log('');
     console.log(`## 对话呼吸：话轮 ${breath.turns}｜均长 ${breath.avg_len} 字｜最长 ${breath.max_len}｜最短 ${breath.min_len}｜短话轮占比 ${Math.round((breath.short_ratio || 0) * 100)}%｜长短交替率 ${Math.round((breath.alternation_ratio || 0) * 100)}%`);
     for (const f of findings) console.log('');
-    for (const f of findings) console.log(`⚠ [advisory] ${f.type}: ${f.message}`);
+    for (const f of findings) console.log(`⚠ [${handling.label(f)}] ${f.type}: ${f.message}`);
   }
 }
 
 if (failed) process.exit(2);
-if (!options.json && findings.length > 0) process.exit(1);
+process.exit(handling.gateTripped(findings, options.failOn) ? 1 : 0);

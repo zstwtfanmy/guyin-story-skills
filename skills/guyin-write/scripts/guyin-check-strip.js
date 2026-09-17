@@ -21,19 +21,22 @@
 
 const fs = require('fs');
 const path = require('path');
+const handling = require('./lib/guyin-handling');
 
-const USAGE = `Usage: node guyin-check-strip.js [--json] [--fail-on=blocking|all] <正文文件|正文目录>...
+const USAGE = `Usage: node guyin-check-strip.js [--json] [--fail-on=block|hard|all] <正文文件|正文目录>...
 
 Prose structure gate (docs/08 K3): a finished chapter file contains exactly one
 chapter heading and nothing else structural.
-  strip-extra-heading   (blocking) any markdown heading beyond the chapter title
-  strip-carryover       (blocking) outline carry-over tail ("承接：第…") posing as ending
-  strip-framework-word  (advisory) framework process words leaked into prose (S2 backstop)
+  strip-extra-heading   (hard) any markdown heading beyond the chapter title
+  strip-carryover       (hard) outline carry-over tail ("承接：第…") posing as ending
+  strip-framework-word  (verify) framework process words leaked into prose (S2 backstop,
+                        世界内正当用法可能——宁报不拦，分诊核实)
 Heuristic word list ships generic process terms only; book-specific leaks belong
 to the project phrase blacklist channel.
---fail-on=blocking exits 1 only on blocking findings; default --fail-on=all exits 1 on any.`;
+--fail-on=block（默认）hard/verify 任一存在即 1；hard 仅 hard；all 含 editorial（审计模式）。
+Exit codes: 0=无未决阻断, 1=存在未决阻断(hard/verify), 2=执行/输入错误。`;
 
-const options = { json: false, failOn: 'all', inputs: [] };
+const options = { json: false, failOn: 'block', inputs: [] };
 
 function die(message) {
   console.error(message);
@@ -46,9 +49,11 @@ for (let i = 2; i < process.argv.length; i += 1) {
   if (arg === '--json') {
     options.json = true;
   } else if (arg.startsWith('--fail-on=')) {
-    const v = arg.slice('--fail-on='.length);
-    if (v !== 'blocking' && v !== 'all') die(`--fail-on must be 'blocking' or 'all'`);
-    options.failOn = v;
+    try {
+      options.failOn = handling.parseFailOn(arg.slice('--fail-on='.length), 'block');
+    } catch (error) {
+      die(error.message);
+    }
   } else if (arg === '-h' || arg === '--help') {
     process.stdout.write(`${USAGE}\n`);
     process.exit(0);
@@ -182,11 +187,17 @@ for (const { abs, display } of inputFiles) {
   }
 }
 
+try {
+  handling.finalizeFindings(allFindings, 'guyin-check-strip.js');
+} catch (error) {
+  die(error.message);
+}
+
 if (options.json) {
   process.stdout.write(`${JSON.stringify({ findings: allFindings }, null, 2)}\n`);
 } else {
   for (const f of allFindings) {
-    console.log(`${f.file}:${f.line}:${f.column}: [${f.severity}] ${f.type}: ${f.message}`);
+    console.log(`${f.file}:${f.line}:${f.column}: [${handling.label(f)}] ${f.type}: ${f.message}`);
   }
   if (allFindings.length === 0 && !failed) {
     console.log(`strip: ${inputFiles.length} file(s) clean`);
@@ -194,5 +205,4 @@ if (options.json) {
 }
 
 if (failed) process.exit(2);
-const hasBlocking = allFindings.some((f) => f.severity === 'blocking');
-if (options.failOn === 'blocking' ? hasBlocking : allFindings.length > 0) process.exit(1);
+process.exit(handling.gateTripped(allFindings, options.failOn) ? 1 : 0);

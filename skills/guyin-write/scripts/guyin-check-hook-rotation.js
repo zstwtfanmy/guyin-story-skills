@@ -3,8 +3,9 @@
 
 const fs = require('fs');
 const path = require('path');
+const handling = require('./lib/guyin-handling');
 
-const USAGE = `Usage: node guyin-check-hook-rotation.js [--json] [--fail-on=blocking|all] [--run-threshold=N] <大纲目录 | 细纲文件...>
+const USAGE = `Usage: node guyin-check-hook-rotation.js [--json] [--fail-on=block|hard|all] [--run-threshold=N] <大纲目录 | 细纲文件...>
 
 节奏护栏（P4，docs/04-优化路线图.md §3 P4）：钩子类型轮换 + 蓄力-爆发成对检测。
 分布坍缩推论 3（04 §2.2）：跨章的任何模式重复都是坍缩——比喻如此，钩子也如此。
@@ -14,13 +15,22 @@ const USAGE = `Usage: node guyin-check-hook-rotation.js [--json] [--fail-on=bloc
 
   hook-run             连续 ≥N 章（默认 3）章尾钩子同型——须轮换类型
                        （章号相邻且均已标注才计连续；未标注章断开计数；切断型不计入）
+                       handling=editorial（表达观察）
   burst-without-charge 章标「节奏标记：爆发」但前 1-2 章细纲无「节奏标记：蓄力」
                        （前章细纲不存在或本章 ≤3 则跳过——开篇 Muse 无前置可蓄）
+                       handling=editorial（表达观察）
   hook-cut-entity-missing 切断型章尾钩子缺断点实体（批次末兜底 advisory，
                        落盘门 outline-slots 已 blocking 拦空实体）
+                       handling=verify（须对照细纲声明核实）
   hook-cut-quota       切断型钩子本批 >2 个（advisory，可豁免：情绪峰值连续切断的刻意编排）
+                       handling=editorial（表达观察）
 
-细纲标注协议（见 references/细纲协议.md）：
+四组化兼容声明（任务书 §2.1）：四组化细纲（references/细纲协议.md）不再声明
+钩子类型与节奏标记——章尾张力由第一组读者承诺与下一章承接自然决定。本脚本为
+旧格式存量细纲的兼容工具（声明了钩子类型才参与统计，未标注章不报警，存量不
+追溯），检测逻辑不变。
+
+旧格式标注（四组化前细纲的历史字段）：
   - 章尾钩子：{危机|反转|期待|悬念|情绪|切断}·{章尾13式} — {具体内容……}
     切断型（X1，第六型·特殊态）：承接改「同场景延续」（豁免事件指向），
     断点实体必填；不计入本脚本类型轮换统计；一批 ≤2 个（advisory，可豁免）
@@ -28,18 +38,25 @@ const USAGE = `Usage: node guyin-check-hook-rotation.js [--json] [--fail-on=bloc
     禁发散、收敛感官、降字数）
 
 入参为目录时自动收集其下 细纲_第NNN章.md；未标注钩子类型的章不参与 run 检测
-（统计进 summary.unannotated，不报警——存量细纲不追溯）。`;
+（统计进 summary.unannotated，不报警——存量细纲不追溯）。
 
-const options = { json: false, targets: [], failOn: 'all', runThreshold: 3 };
+处置分类（lib/guyin-handling.js 单一事实源；severity 保留原值作证据强度）。
+--fail-on=block|hard|all（默认 block）：block=hard 或 verify 任一存在即退 1；
+hard=仅 hard 计 1；all=含 editorial 全计 1（审计模式）。
+Exit codes: 0=无未决阻断; 1=存在未决阻断(hard/verify); 2=执行/输入错误。`;
+
+const options = { json: false, targets: [], failOn: 'block', runThreshold: 3 };
 
 for (let i = 2; i < process.argv.length; i += 1) {
   const arg = process.argv[i];
   if (arg === '--json') {
     options.json = true;
   } else if (arg.startsWith('--fail-on=')) {
-    const v = arg.slice('--fail-on='.length);
-    if (v !== 'blocking' && v !== 'all') die(`--fail-on must be 'blocking' or 'all'`);
-    options.failOn = v;
+    try {
+      options.failOn = handling.parseFailOn(arg.slice('--fail-on='.length));
+    } catch (e) {
+      die(e.message);
+    }
   } else if (arg.startsWith('--run-threshold=')) {
     const v = Number(arg.slice('--run-threshold='.length));
     if (!Number.isInteger(v) || v < 2) die('--run-threshold must be an integer >= 2');
@@ -228,6 +245,12 @@ const summary = {
   cut_marked: chapters.filter((c) => c.hookType === '切断').length,
 };
 
+try {
+  handling.finalizeFindings(findings, 'guyin-check-hook-rotation.js');
+} catch (e) {
+  die(e.message);
+}
+
 if (options.json) {
   process.stdout.write(`${JSON.stringify({ summary, findings }, null, 2)}\n`);
 } else {
@@ -235,13 +258,12 @@ if (options.json) {
     console.log(`# 已扫描 ${summary.chapters_scanned} 份细纲：${summary.annotated} 章已标注钩子类型，${summary.unannotated} 章未标注（不参与轮换检测，存量不追溯）`);
   }
   for (const f of findings) {
-    console.log(`${f.file}:${f.line}:${f.column}: [${f.severity}] ${f.type}: ${f.message}`);
+    console.log(`${f.file}:${f.line}:${f.column}: [${handling.label(f)}] ${f.type}: ${f.message}`);
   }
 }
 
 if (failed) process.exit(2);
-const hasBlocking = findings.some((f) => f.severity === 'blocking');
-if (options.failOn === 'blocking' ? hasBlocking : findings.length > 0) process.exit(1);
+process.exit(handling.gateTripped(findings, options.failOn) ? 1 : 0);
 
 function die(message) {
   console.error(message);

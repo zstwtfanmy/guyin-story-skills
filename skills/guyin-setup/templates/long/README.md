@@ -14,9 +14,10 @@ AGENTS.md          Codex / OpenCode 读根路由表 + 五条项目不变式
 设定/世界观/      世界规则（一次写成，长期只读）
 设定/角色/        每角色一卡：身份/行当/目标/关系/知识边界/自我叙事/行为铁律/说话习惯
 大纲/             卷纲_第X卷.md + 细纲_第XXX章.md（beat 的事件来源）+ 魂谱对表.md（开书 Phase B 选题）
-正文/             第XXX章_标题.md（beat 拼接产物，落盘即提交追踪）
+正文/             第XXX章_标题.md（beat 拼接产物，经 publish 安装；大修现稿归档 _archive/）
+.guyin/work/      隔离工作区：{run_id}/ 放候选正文＋发布事务/证据（非正式正文，D2）
 追踪/             状态权威层：伏笔.md / 上下文.md / 契约对账矩阵.md / 读者信号.md / _tracking-state.json / 时间线/ / 角色状态/
-                  隐笔双台账：灵感台账.md / 豁免台账.md；短语黑名单.md（tic 词表，ai-patterns 章检读）
+                  台账：灵感台账.md / 豁免台账.md / 待审台账.md；短语黑名单.md（tic 词表，ai-patterns 章检读）
 灵感池/           口述采集落点（作者私货；只注入不强插）
 作者性/           指纹.md / 偏执点.md / 魂档案.md / 气卡.md / 粒度配置.md / 参考-气质谱系.md / 口述定稿单.md
 ```
@@ -54,7 +55,7 @@ AGENTS.md          Codex / OpenCode 读根路由表 + 五条项目不变式
 
 | 子命令 | 挂点 | 行为 |
 |--------|------|------|
-| `guard` | PreToolUse(Write\|Edit\|MultiEdit) | 阻断守卫（exit 2）：首建第 N 章缺细纲 / 追踪 state 缺失或落后 / 短篇骨架缺失，拦下并给补纲引导 |
+| `guard` | PreToolUse(Write\|Edit\|MultiEdit) | 阻断守卫（exit 2）：首建第 N 章缺细纲 / 追踪 state 缺失或落后 / 短篇骨架缺失 / `追踪/_publication.json` 在途或损坏（D2 发布门：先 recover 再写），拦下并给引导 |
 | `post-write` | PostToolUse(Write\|Edit\|MultiEdit) | 兜底网（永不阻断）：落盘极短 / 章字数低于下限时注入提醒，防低模型漏跑章检 |
 | `session` | SessionStart(startup\|resume\|compact) | 恢复注入：追踪/上下文.md 头部 + 提交进度；compact 后自动回到状态，无信息时完全静默 |
 
@@ -63,6 +64,11 @@ AGENTS.md          Codex / OpenCode 读根路由表 + 五条项目不变式
 1. **兜底不是替代**：hook 只做确定性信号（存在性 / schema / 字数 / 极短），毒句式等规则权威在 skills 的 guyin-check 系脚本；章检照跑。
 2. **fail-open**：非隐笔项目、解析失败、任何不确定一律放行——宁可漏拦不可误伤；hook 是增强层，Codex / OpenCode / Web AI 宿主无 hook 时靠 `AGENTS.md` 与 SKILL.md 纪律照样成立。
 3. **豁免权在台账**：细纲/骨架缺失没有豁免通道，只能补；章检报警的豁免一律走 `追踪/豁免台账.md`（五测试），hook 不认正文内标记。
+
+## 隔离发布与验收检查点（D2 / E1）
+
+- **候选隔离**：写章（日更/大修/去味修订同）产物只落 `.guyin/work/{run_id}/candidate.md`＋发布事务与证据；章检对候选跑，修复改候选重跑。`guyin-tracking-commit.py publish` 是正式化唯一通道（安装正文→追踪事务→指纹持锁 `--commit --under-lock`→终验，机械串行）；中断只走 `recover`，不手改事务。
+- **验收检查点**：新书默认前三章后停（ch004 起到点）；续写在 `追踪/读者信号.md` 的「验收检查点」表登记本次连续段；来源限用户验收/独立读者（模型审读不顶替人）；可「延期@第K章」顺延，但必须登记下一检查点，不静默豁免。
 
 ## 短篇 delta（写短篇时叠加 templates/short/）
 
