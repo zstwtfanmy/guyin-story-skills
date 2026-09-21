@@ -1,0 +1,28 @@
+﻿热路径文档预算
+----------------------------------------------------------------------
+  用量 /   预算  余量  文件
+    1220 /   1230     10  skills/guyin-story/SKILL.md  [ok]
+    8828 /   8840     12  skills/guyin-write/SKILL.md  [ok]
+    2770 /   2800     30  skills/guyin-short-write/SKILL.md  [ok]
+    1628 /   1640     12  skills/guyin-analyze/SKILL.md  [ok]
+    1217 /   1230     13  skills/guyin-short-analyze/SKILL.md  [ok]
+    2655 /   2670     15  skills/guyin-review/SKILL.md  [ok]
+    1534 /   1540      6  skills/guyin-deslop/SKILL.md  [ok]
+    1795 /   1800      5  skills/guyin-pitch/SKILL.md  [ok]
+    2570 /   2680    110  skills/guyin-write/cards/README.md  [ok]
+    1104 /   1200     96  skills/guyin-write/cards/写作卡.md  [ok]
+    1019 /   1100     81  skills/guyin-write/cards/自检卡.md  [ok]
+    1049 /   1060     11  skills/guyin-write/cards/改写卡.md  [ok]
+     479 /    500     21  skills/guyin-write/cards/发散卡.md  [ok]
+     498 /    500      2  skills/guyin-write/agents/guyin-beat-writer.md  [ok]
+     399 /    400      1  skills/guyin-write/agents/guyin-checker.md  [ok]
+     611 /    700     89  skills/guyin-write/cards/分诊卡.md  [ok]
+     784 /    800     16  skills/guyin-write/cards/摘要卡.md  [ok]
+    1578 /   1600     22  skills/guyin-setup/templates/long/AGENTS.md  [ok]
+
+路径合计（一次会话真正付的量）
+----------------------------------------------------------------------
+   10951 /  10970     19  长篇写章热路径（编排层会话 + 单 beat 下发）  [ok]
+    1602 /   1760    158  执行层单 beat 上下文  [ok]
+
+Result: 热路径文档预算检查通过

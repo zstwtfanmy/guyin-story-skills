@@ -1,0 +1,24 @@
+{
+  "name": "P3.2 §10 真实创作实验（A/C 首章＋C 三章单元＋中断续写）",
+  "command": "node arena/exp-p3-2/run-experiment.js phase1|phase2|phase3（跨三个独立进程）; node tests/run-tests.js",
+  "cwd": ".",
+  "exit_code": 0,
+  "source": "P3.2 实验场 arena/exp-p3-2（2026-09-21）",
+  "result": "工程证据齐备：A 直写 2 篇（爽文/历史穿越 ch1）；C 真实书根 2 本经 deploy→author-session→候选检查链→publish v2 发布：爽文 ch1-3 rev=1..3（state_revision=3，段落指纹 14/16/15），历史穿越 ch1 rev=1；ch2 跨进程中断半稿 v0001(complete=false)→新进程恢复 v0002 全稿＋input 修订重授→发布 rev2，v0001 字节比对未动；ch3 被 integrity hard 叠字拦截一次，作者改句重发；匿名样本一–四＋阅读问题表导出；全量回归 630/0/0",
+  "log": "arena/p3-2-regression.log",
+  "artifacts": [
+    "arena/exp-p3-2/README.md",
+    "arena/exp-p3-2/shared/facts-shuangwen.md",
+    "arena/exp-p3-2/shared/facts-lichuanyi.md",
+    "arena/exp-p3-2/A-direct/A-爽文-第一章.md",
+    "arena/exp-p3-2/A-direct/A-历史穿越-第一章.md",
+    "arena/exp-p3-2/阅读样本/（样本一–四盲读版＋C 续写两章＋mapping＋阅读问题表）",
+    "arena/exp-p3-2/books/c-爽文-临渠粮事/（rev3 已发布书根）",
+    "arena/exp-p3-2/books/c-历史穿越-阳武河工/（rev1 已发布书根）"
+  ],
+  "pending_acceptance": "真实读者（用户/独立读者）盲读反馈未回收——按 §10.2『没有真实阅读反馈，工程可签收，创作效果仍待验收』，P3.2 仅工程签收；C 是否更好读无证据，禁止外推",
+  "known_limits": [
+    "A/C 同会话同模型产出，非严格独立新会话双盲，可在反馈前补做",
+    "中断为跨进程恢复（真实 author-session/compact 机制），非跨天自然中断，声线连续性待读者第9问确认"
+  ]
+}

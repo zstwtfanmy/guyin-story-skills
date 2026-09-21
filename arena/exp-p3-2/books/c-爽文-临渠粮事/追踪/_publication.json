@@ -1,0 +1,139 @@
+{
+  "archive": null,
+  "expected_state_revision": 2,
+  "final": {
+    "at": "2026-09-21T09:28:36+08:00",
+    "library_hash12": "e7806377b40c",
+    "prose_hash12": "55c434ae79f9",
+    "state_hash12": "5db87784b194",
+    "state_revision": 3
+  },
+  "inputs": {
+    "candidate": {
+      "hash12": "55c434ae79f9",
+      "rel": ".guyin/work/exp-ch3/drafts/v0001.md"
+    },
+    "destination": "正文/第003章_点闸日.md",
+    "transaction": {
+      "hash12": "b2c67a259a90",
+      "rel": ".guyin/work/exp-ch3/transaction.json"
+    }
+  },
+  "run_id": "exp-ch3",
+  "schema_version": 2,
+  "stage": "complete",
+  "steps": {
+    "fingerprint_committed": {
+      "at": "2026-09-21T09:28:35+08:00",
+      "imagery_hash12": "a8f6a450b797",
+      "library_hash12": "e7806377b40c"
+    },
+    "prepared": {
+      "at": "2026-09-21T09:28:35+08:00",
+      "state_revision": 2
+    },
+    "prose_written": {
+      "at": "2026-09-21T09:28:35+08:00",
+      "prose_hash12": "55c434ae79f9"
+    },
+    "tracking_committed": {
+      "at": "2026-09-21T09:28:35+08:00",
+      "chapter": 3,
+      "state_hash12": "5db87784b194",
+      "state_revision": 3,
+      "views": {
+        "上下文.md": "e35b4e55a56b",
+        "事件定性资产.md": "98f7242724f4",
+        "伏笔.md": "19fffdb660ae",
+        "地理台账.md": "96e8cd1e5fe2",
+        "场景台账.md": "d0c1b071a005",
+        "时间线/作者真相.md": "f4e65cf445c0",
+        "时间线/读者已知.md": "00a6eacb0f70",
+        "物证台账.md": "5917322d249a",
+        "章节金字塔.md": "052305ed0d6d",
+        "角色状态/陆争.md": "5460bb286c0e"
+      }
+    }
+  },
+  "target": {
+    "chapter": 3,
+    "mode": "append",
+    "title": "点闸日"
+  },
+  "tracking_plan": {
+    "artifacts": [
+      {
+        "after_sha256": "5db87784b1943ad440e5b362e440db4c591e9955f615e065a7a8710f000b7647",
+        "before_sha256": "8d678bb2107874af410784fce873810a2eea84a98ec7b29207ebe4af7cdbdb97",
+        "path": "追踪/_tracking-state.json",
+        "staged_path": ".guyin/work/exp-ch3/publication/artifacts/追踪___tracking-state.json"
+      },
+      {
+        "after_sha256": "ec8e3ac269f22395281df067ec31a1d0227a5cd1fb2b60ae507c4c70655bfd2c",
+        "before_sha256": null,
+        "path": "追踪/逐章记录/第003章.md",
+        "staged_path": ".guyin/work/exp-ch3/publication/artifacts/追踪__逐章记录__第003章.md"
+      },
+      {
+        "after_sha256": "e35b4e55a56b44439011c752e90fce007d496fb74826e6d618cc41de75175434",
+        "before_sha256": null,
+        "path": "上下文.md",
+        "staged_path": ".guyin/work/exp-ch3/publication/artifacts/上下文.md"
+      },
+      {
+        "after_sha256": "98f7242724f48b14e791e2e7639d32f2a3658a7296df230a79c778a8866dabaa",
+        "before_sha256": null,
+        "path": "事件定性资产.md",
+        "staged_path": ".guyin/work/exp-ch3/publication/artifacts/事件定性资产.md"
+      },
+      {
+        "after_sha256": "19fffdb660ae03fa2cca48948bfb7b6f3cd9d12725f8367331b5a8475a794a78",
+        "before_sha256": null,
+        "path": "伏笔.md",
+        "staged_path": ".guyin/work/exp-ch3/publication/artifacts/伏笔.md"
+      },
+      {
+        "after_sha256": "96e8cd1e5fe28dc1f7259bccb12e695e8d067ddff145ae88080d40497b33b213",
+        "before_sha256": null,
+        "path": "地理台账.md",
+        "staged_path": ".guyin/work/exp-ch3/publication/artifacts/地理台账.md"
+      },
+      {
+        "after_sha256": "d0c1b071a005de3600810f9ffd04fe61fbf88a12f67ba0690482e72fab42f353",
+        "before_sha256": null,
+        "path": "场景台账.md",
+        "staged_path": ".guyin/work/exp-ch3/publication/artifacts/场景台账.md"
+      },
+      {
+        "after_sha256": "f4e65cf445c06d4086bcc3bb061af8f96e2083c5c8bb366511ee596d1a086bac",
+        "before_sha256": null,
+        "path": "时间线/作者真相.md",
+        "staged_path": ".guyin/work/exp-ch3/publication/artifacts/时间线__作者真相.md"
+      },
+      {
+        "after_sha256": "00a6eacb0f70fc700f67b2c5274b87ee92729c30a126e133a895abf4235e1a6d",
+        "before_sha256": null,
+        "path": "时间线/读者已知.md",
+        "staged_path": ".guyin/work/exp-ch3/publication/artifacts/时间线__读者已知.md"
+      },
+      {
+        "after_sha256": "5917322d249a76eeb4f48d65ab9a5ce892d701f4f1f70bc56c3f59af656afbee",
+        "before_sha256": null,
+        "path": "物证台账.md",
+        "staged_path": ".guyin/work/exp-ch3/publication/artifacts/物证台账.md"
+      },
+      {
+        "after_sha256": "052305ed0d6dfdb71ce0915c9889465feca8242c539607a008286b8c888ee619",
+        "before_sha256": null,
+        "path": "章节金字塔.md",
+        "staged_path": ".guyin/work/exp-ch3/publication/artifacts/章节金字塔.md"
+      },
+      {
+        "after_sha256": "5460bb286c0ef8ca5d22ed2ae0a45bb08a1946a6a7708bfc5db19668ffc7b5dd",
+        "before_sha256": null,
+        "path": "角色状态/陆争.md",
+        "staged_path": ".guyin/work/exp-ch3/publication/artifacts/角色状态__陆争.md"
+      }
+    ]
+  }
+}

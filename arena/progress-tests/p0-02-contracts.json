@@ -1,0 +1,9 @@
+{
+  "name": "P0 baseline skill contracts",
+  "command": "node scripts/check-skill-contracts.js",
+  "cwd": ".",
+  "exit_code": 0,
+  "source": "1830b0e",
+  "result": "9 skills ok",
+  "log": "arena/baseline-contracts.log"
+}

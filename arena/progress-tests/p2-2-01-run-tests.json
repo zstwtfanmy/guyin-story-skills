@@ -1,0 +1,15 @@
+{
+  "name": "P2.2 run-tests after candidate-context + evidence chain",
+  "command": "node tests/run-tests.js",
+  "cwd": ".",
+  "exit_code": 0,
+  "source": "P2.2 worktree",
+  "result": "607 pass / 0 fail / 0 skip（较 P2.1 的 571 新增 36 条 T13-T18/T34：候选解析一致/显式章号/越界；exact 逐字/semantic 人工/not_applicable/坏细纲；空作者性/生活素材/工序指令/forbidden/allowed_reuse；只读哈希一致/叙述术语；证据汇总非零扫描+手填/过期/零扫描/换稿拒绝；foreshadow 显式候选+事务新增/悬空/损坏细纲）",
+  "log": "arena/p2-2-run-tests.log",
+  "notes_wired": [
+    "新增 scripts/lib/guyin-candidate-context.js（解析 CLI + --gather 证据汇总 + --validate-evidence 校验）",
+    "outline-deliver/authority-leak/foreshadow-id 增加显式候选模式（legacy 目录模式保留）",
+    "repetition 增加 --prepublish（ready 前不挂指纹欠账门，欠账仍由发布器指纹步骤守）",
+    "outline-copy 显式 --outline 接线未做：无细纲流程按 SKILL 记不适用，legacy 目录模式不变（列为后续可增强项，不影响 T13-T18/T34 断言）"
+  ]
+}

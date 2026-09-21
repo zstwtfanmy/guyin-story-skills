@@ -1,0 +1,27 @@
+﻿热路径文档预算
+----------------------------------------------------------------------
+  用量 /   预算  余量  文件
+    1286 /   1310     24  skills/guyin-story/SKILL.md  [ok]
+    5158 /   5300    142  skills/guyin-write/SKILL.md  [ok]
+    2447 /   2500     53  skills/guyin-short-write/SKILL.md  [ok]
+    1628 /   1640     12  skills/guyin-analyze/SKILL.md  [ok]
+    1217 /   1230     13  skills/guyin-short-analyze/SKILL.md  [ok]
+    2655 /   2670     15  skills/guyin-review/SKILL.md  [ok]
+    1534 /   1540      6  skills/guyin-deslop/SKILL.md  [ok]
+    1795 /   1800      5  skills/guyin-pitch/SKILL.md  [ok]
+     974 /   1000     26  skills/guyin-write/cards/README.md  [ok]
+     618 /    700     82  skills/guyin-write/cards/写作卡.md  [ok]
+     847 /    900     53  skills/guyin-write/cards/自检卡.md  [ok]
+     763 /    800     37  skills/guyin-write/cards/改写卡.md  [ok]
+     375 /    400     25  skills/guyin-write/cards/发散卡.md  [ok]
+     498 /    500      2  skills/guyin-write/agents/guyin-beat-writer.md  [ok]
+     399 /    400      1  skills/guyin-write/agents/guyin-checker.md  [ok]
+     513 /    600     87  skills/guyin-write/cards/分诊卡.md  [ok]
+     855 /    900     45  skills/guyin-write/cards/摘要卡.md  [ok]
+    1578 /   1600     22  skills/guyin-setup/templates/long/AGENTS.md  [ok]
+
+路径合计（一次会话真正付的量）
+----------------------------------------------------------------------
+    5158 /   5300    142  长篇写章热路径（当前会话单模型自主执笔；2026-09-20 v4：执行层/beat/卡默认下发已退役，P1.2 起另加所选单个 profile）  [ok]
+
+Result: 热路径文档预算检查通过

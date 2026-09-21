@@ -1,0 +1,16 @@
+{
+  "name": "P3.1 run-tests after managed-agent retirement + guyin-deploy",
+  "command": "node tests/run-tests.js",
+  "cwd": ".",
+  "exit_code": 0,
+  "source": "P3.1 worktree（6 受管部署件＋2 canonical agent 归档 legacy/agents-v0.8 后从新模板删除；新增 scripts/guyin-deploy.js；setup SKILL v0.9.0；模板 AGENTS/README 改单模型自由执笔；根 README/doc-budget 同步）",
+  "result": "630 pass / 0 fail / 0 skip（较 P2.3 的 631：删除 8 条旧 E3-1/Fw-03/v3-C2 受管 agent 断言＋6 条模板存在断言，新增 23 条：E3 退役断言 17 条含模板反向检查；T25 9 条：非交互安装/零 agent/幂等合并/短篇真实 append+revision；T26 5 条：预览分类/批准混自定义 exit2/备份 MANIFEST/重复迁移幂等；T27 8 条：账本丢失续跑不重复备份/drift status/哈希不符 exit4/confirm-source 重核）",
+  "log": "arena/p3-1-run-tests.log",
+  "notes_wired": [
+    "guyin-deploy.js install：模板树部署（hook/command replace、settings 走 merge 脚本、其余 create-if-absent、AGENTS 书名替换、.guyin-deployed 0.9.0 标记），反向自检模板无 agents",
+    "preview/retire：legacy 归档 sha256 识别受管 vs custom_same_name(hash_mismatch) vs unknown；只删显式批准受管，备份 .guyin/upgrade-backup/<UTC>/＋MANIFEST.txt，空目录不留壳",
+    "进度账本 .guyin/upgrade-progress.json 带 source_hash；源码哈希不符 exit4，须重 preview 并 --confirm-source；drift_returns 以现场扫描为准，不信账本假完成",
+    "setup SKILL 删除模型提取/回填/执行层自检（Fw-03）与必须细纲前置；恢复顺序：recover 清在途→台账体检→agent 退役",
+    "canonical skills/guyin-write/agents/ 目录删除，不留空壳；活书同名文件迁移只走预览-批准"
+  ]
+}

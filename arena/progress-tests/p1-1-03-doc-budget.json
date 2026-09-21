@@ -1,0 +1,9 @@
+{
+  "name": "P1.1 doc-budget",
+  "command": "node scripts/check-doc-budget.js",
+  "cwd": ".",
+  "exit_code": 0,
+  "source": "P1.1 worktree",
+  "result": "全条目 ok；写章热路径重定义为当前会话单文件 SKILL 5158/5300（旧 10951/10970 含编排层+beat 下发，随真实退役下调）；执行层 beat 路径删除；卡片预算随按需化下调；agents 条目标记待 P3.1 退役",
+  "log": "arena/p1-1-doc-budget.log"
+}

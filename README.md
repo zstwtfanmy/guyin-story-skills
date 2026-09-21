@@ -41,9 +41,9 @@ mkdir D:\books\我的书; cd D:\books\我的书
 opencode    # 或 claude / codex
 ```
 
-> 说「准备写书」（或 /guyin-setup）→ 部署项目模板（三端执行层部署件 + 硬护栏 hook + 台账（灵感/豁免/待审） + 作者性；幂等，不覆盖已有内容）→ 按报告配低模型 → 新开会话 → 说「开书」。
+> 说「准备写书」（或 /guyin-setup）→ 部署项目模板（硬护栏 hook + 台账（灵感/豁免/待审） + 可选作者性素材；单模型自由执笔，无执行层 agent；幂等，不覆盖已有内容）→ 新开会话 → 说「开书」。
 
-> **OpenCode 本体与两个坑**：未装时 `npm install -g opencode-ai`（或 `scoop install opencode`），首次用 `opencode auth login` 配 provider（编排层强模型 + 执行层 DeepSeek）。坑 1：npm 全局装完命令不识别，用 `npm config get prefix` 查路径并确认其在 PATH；坑 2：进项目后**不要跑 `/init`**——模板已自带路由版 AGENTS.md，`/init` 会覆盖它。
+> **OpenCode 本体与两个坑**：未装时 `npm install -g opencode-ai`（或 `scoop install opencode`），首次用 `opencode auth login` 配你自己要用的 provider/模型（框架不替你选模型）。坑 1：npm 全局装完命令不识别，用 `npm config get prefix` 查路径并确认其在 PATH；坑 2：进项目后**不要跑 `/init`**——模板已自带路由版 AGENTS.md，`/init` 会覆盖它。
 
 ### 方式二：克隆手动装
 
@@ -54,30 +54,22 @@ Copy-Item -Recurse D:\guyin-skills\skills\guyin-setup\templates\long\* .    # �
 Copy-Item -Recurse D:\guyin-skills\skills\guyin-* .\.opencode\skills\       # OpenCode；Codex 改 .\.codex\skills\，Claude Code 改 $HOME\.claude\skills\
 ```
 
-### 第三步：执行层低模型（编排/执行分离的关键）
+### 第三步：执行模型（单模型自由执笔）
 
-编辑项目内对应部署件的 model 字段（三份都已随模板就位）：
-
-| 端 | 部署件 | model 写法 |
-|----|--------|-----------|
-| OpenCode | `.opencode/agents/guyin-beat-writer.md` | `model: deepseek/deepseek-chat`（provider/model-id） |
-| Claude Code | `.claude/agents/guyin-beat-writer.md` | `model: <低模型>` |
-| Codex | `.codex/agents/guyin-beat-writer.toml` | 视当前版本支持情况启用 `model =` 字段；不支持时执行层随主会话模型运行（solo 档），AGENTS.md 已内置降级约定 |
-
-Codex 的 custom agent 新开会话后生效。无 subagent 环境自动降级 solo 模式（guyin-write 会先声明）。
+新分发**不含** writer/checker 执行层 agent，也不需要配置任何低模型字段：读前文、定走向、写完整章、全文回看都由当前会话一个创作主体完成。写作卡只是按需辅助，没有默认下发或逐 beat 验收。你自配的其他 subagent 与模型设置框架一概不动。
 
 ### 第四步：开书
 
-新开会话（让 custom agent 与 hook 注册生效）后，在项目根对 AI 说「开书」（或 `$guyin-write` / `/guyin-write`）→ Phase A/B/C **停在细纲交付**；Phase B 会按 [作者性引导协议](skills/guyin-write/references/作者性引导.md) 逐件口述定四件（不在场则默认档运行、写作中持续提示）→ 说「写第 1 章」进入写章循环。
+新开会话（让 hook 注册生效）后，在项目根对 AI 说「开书」（或 `$guyin-write` / `/guyin-write`）→ 无完整细纲也可先试写（试写只产隔离候选、停在 ready）；作者性素材可永久缺省，文风走书级 profile（开书 input 冻结 ID/版本）→ 说「写第 1 章」产出候选，回看与章检通过后显式授权发布。
 
 ### 升级旧项目（技能更新 ≠ 旧项目生效）
 
 框架更新后，对已部署的书重跑一次 `/guyin-setup`：
 
-1. **先出差异再动手**——报告将刷新的部署件、将保留的用户内容、检测到的自定义项（来源不明不盲目 replace）；
-2. **保护 model / provider / 路由**——三端 agent 的生效 model 行与 settings 自定义键提取后回填，旧部署件备份到项目 `.guyin/upgrade-backup/{日期}/`；
+1. **先出差异再动手**——guyin-deploy.js 只刷新白名单部署件（hook/command）与合并 settings，来源不明文件不盲目 replace；
+2. **受管 agent 预览-批准退役**——旧版分发的 guyin-beat-writer/guyin-checker 经字节核对列为受管，备份到项目 `.guyin/upgrade-backup/{日期}/` 后才删；同名自定义/来源不明文件一律保留；退役进度带 source_hash，中断后源码已变须重新预览核对，不假报完成；
 3. **schema/台账给「待升级清单」**——如 13 列旧读者信号表（E1：14 列＋验收检查点节）、缺待审台账、落后的 _tracking-state；只报告与给步骤，不自动重写用户台账，不靠双套规则长期并存；
-4. 报告写明**实际加载路径**（全局 skills / 项目 `.agents`·`.claude` / 手动复制）、guyin_version、三端 model 实测值或「等同 solo」、未测宿主。新协议要点：写章产物先隔离在 `.guyin/work/{run_id}/`，publish 是唯一正式发布通道（D2）；新书默认前三章后停验收检查点，来源限用户验收/独立读者（E1）。
+4. 报告写明**实际加载路径**（全局 skills / 项目 `.agents`·`.claude` / 手动复制）、guyin_version、受管 agent 退役结果、未测宿主。新协议要点：写章产物先隔离在 `.guyin/work/{run_id}/`，publish 是唯一正式发布通道（D2）；新书默认前三章后停验收检查点，来源限用户验收/独立读者（E1）。
 
 > 仓库根的 `.agents/`、`.claude/`（安装器在本仓误跑的产物，已 gitignore）不是分发渠道；以 `skills/` 与 setup 模板为准，镜像目录不保证最新。
 
@@ -118,7 +110,7 @@ docs/            设计文档（01 需求框架 / 02 落地计划 / 03 资产盘
 - **四卡体系**：写作卡 / 自检卡 / 发散卡 / 改写卡——每卡 <500 token，内嵌约束与范文，卡尾复述禁令；
 - **范文教学**：范文切片取代 32 张参数化腔调卡；上一章结尾 300 字原文贴卡保声线连续；
 - **写-读-改回路**：beat 化写作 + 是非题自检 + 段落级定向改写（分级控成本），取代一次成稿；
-- **豁免机制**：checker 报警永不自动删，五测试审判，每卷 ≤2 处——神来之笔是世界自生长的生殖道；
+- **豁免机制**：章检报警永不自动删，五测试审判，每卷 ≤2 处——神来之笔是世界自生长的生殖道；
 - **铁律**：气卡永不下发任务卡；哲学词汇零进卡片，只以卡片结构在场（范文=观，禁令=斋，细纲=合，对照例=显）。
 
 ### 读者分层（哲学如何进系统）
@@ -157,7 +149,7 @@ docs/            设计文档（01 需求框架 / 02 落地计划 / 03 资产盘
 | 魂档案 / 类型魂谱 | 作者私有跨书资产 / 类型公共资产；经纬相乘为本书之魂 |
 | 气 | 魂在本书的投影（魂×世界=气）。不可造只可养；活在选择器、细纲底色、豁免第四票，永不下发任务卡 |
 | 气卡 / 气句 | 气的操作化身：气句一句 + 底色（暖/冷/涩）+ 收放；开书口述生成，每 N 卷复述刷新 |
-| 豁免 | 神来之笔的生殖道：checker 永不自动删，五测试审判，设定迁就之，每卷 ≤2 处 |
+| 豁免 | 神来之笔的生殖道：章检永不自动删，五测试审判，设定迁就之，每卷 ≤2 处 |
 | 十年测试 | 剥离时代性元素后复测细节留存；剩下的含量，就是魂的含量 |
 | Craft / Muse | 匠人模式（默认，确定性执行）/ 灵感模式（机械判据自动升档） |
 | 灵感台账 / 豁免台账 | 细纲外新元素的登记收编 / 世界自生长的年轮 |

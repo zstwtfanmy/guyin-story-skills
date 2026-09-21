@@ -1,0 +1,68 @@
+{
+  "book_title": "未命名书稿",
+  "chapter_summaries": {
+    "1": "陆争用扦样三招当众验出盖面劣米，赵九成暂退，留下三日封仓之约。",
+    "2": "陆争串联恒裕德昌联保拒签，夜遇黑棍；老魏盯出赵九成因炭行私囤和籴米。",
+    "3": "三家借点闸公开扦验，赵九成熟日内按市价补足好米，万盛无损收束和籴。"
+  },
+  "characters": {
+    "陆争": {
+      "abilities_resources": [],
+      "goal": "满师、接养母进城",
+      "identity": "万盛粮行学徒",
+      "knowledge": [
+        "记得养母咳症等钱抓药",
+        "知道赵九成漂没赔补的期限"
+      ],
+      "location": "临渠官仓",
+      "open_threads": [
+        "查清东家迟归的原因",
+        "提防赵九成报复"
+      ],
+      "relationships": [],
+      "state": "招牌保住但满师文书被二掌柜悬起"
+    }
+  },
+  "context": {
+    "active_character_names": [
+      "陆争"
+    ],
+    "continuity_risks": [],
+    "long_term_constraints": [],
+    "next_chapter_commitments": [
+      "查清东家迟归的原因",
+      "提防赵九成报复",
+      "追炭行霉米最终去向"
+    ],
+    "position": {
+      "scene": "临渠官仓",
+      "story_time": "九月廿一",
+      "volume": "第一卷",
+      "volume_start_chapter": 1
+    },
+    "recent_chapters": [
+      {
+        "chapter": 1,
+        "summary": "陆争用扦样三招当众验出盖面劣米，赵九成暂退，留下三日封仓之约。"
+      },
+      {
+        "chapter": 2,
+        "summary": "陆争串联恒裕德昌联保拒签，夜遇黑棍；老魏盯出赵九成因炭行私囤和籴米。"
+      },
+      {
+        "chapter": 3,
+        "summary": "三家借点闸公开扦验，赵九成熟日内按市价补足好米，万盛无损收束和籴。"
+      }
+    ]
+  },
+  "evidence": {},
+  "foreshadow": {},
+  "geo": {},
+  "imported_through_chapter": 0,
+  "last_committed_chapter": 3,
+  "scenes": {},
+  "schema_version": 7,
+  "state_revision": 3,
+  "timeline": {},
+  "verdicts": {}
+}

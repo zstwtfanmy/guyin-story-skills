@@ -1,0 +1,28 @@
+{
+  "book_title": "试写",
+  "chapter_summaries": {},
+  "characters": {},
+  "context": {
+    "active_character_names": [],
+    "continuity_risks": [],
+    "long_term_constraints": [],
+    "next_chapter_commitments": [],
+    "position": {
+      "scene": "修表铺",
+      "story_time": "首日清晨",
+      "volume": "第一卷",
+      "volume_start_chapter": 1
+    },
+    "recent_chapters": []
+  },
+  "evidence": {},
+  "foreshadow": {},
+  "geo": {},
+  "imported_through_chapter": 0,
+  "last_committed_chapter": 0,
+  "scenes": {},
+  "schema_version": 7,
+  "state_revision": 0,
+  "timeline": {},
+  "verdicts": {}
+}

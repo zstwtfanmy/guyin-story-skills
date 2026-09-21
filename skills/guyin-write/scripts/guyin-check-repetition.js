@@ -179,7 +179,7 @@ const DOMAINS = [
   { name: '建筑', keys: ['墙', '门', '窗', '梁', '檐', '井', '牢', '塔', '桥', '阶'] },
 ];
 
-const options = { json: false, commit: false, recoverLibrary: false, underLock: false, project: null, targets: [], failOn: 'block', domainStale: DOMAIN_STALE_DEFAULT, unit: null };
+const options = { json: false, commit: false, recoverLibrary: false, underLock: false, prepublish: false, project: null, targets: [], failOn: 'block', domainStale: DOMAIN_STALE_DEFAULT, unit: null };
 
 for (let i = 2; i < process.argv.length; i += 1) {
   const arg = process.argv[i];
@@ -187,6 +187,10 @@ for (let i = 2; i < process.argv.length; i += 1) {
     options.json = true;
   } else if (arg === '--commit') {
     options.commit = true;
+  } else if (arg === '--prepublish') {
+    // v4（§6.2）：ready 前对候选做只读复读检查——指纹欠账是“发布后未固化”的门，
+    // 候选尚未发布，欠账在此天然存在；该门仍由发布器指纹步骤负责，不在 ready 链拦。
+    options.prepublish = true;
   } else if (arg === '--recover-library') {
     options.recoverLibrary = true;
   } else if (arg === '--under-lock') {
@@ -1012,7 +1016,7 @@ if (options.recoverLibrary) {
 // 「章检先于提交」的直觉加 off-by-one 容差；库 ≥ 受检——如回炉重检旧章——不报）。
 // --commit 模式不查（commit 本身就是补齐动作）。存量欠账项目首跑必红是设计行为（D10）：
 // 白银案录现状指纹库到 ch61、正文到 ch63，下次章检首跑即报，须先 --commit 补登 62/63。
-if (!options.commit && scannedChapters.length > 0 && libraryPath) {
+if (!options.commit && !options.prepublish && scannedChapters.length > 0 && libraryPath) {
   const targetMax = Math.max(...scannedChapters);
   const libraryMax = library.entries.reduce((acc, e) => Math.max(acc, e.chapter), 0);
   if (libraryMax < targetMax) {

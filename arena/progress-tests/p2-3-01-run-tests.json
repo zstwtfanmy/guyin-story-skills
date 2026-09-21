@@ -1,0 +1,17 @@
+{
+  "name": "P2.3 run-tests after publication contract v2 + preview + before/after recovery",
+  "command": "node tests/run-tests.js",
+  "cwd": ".",
+  "exit_code": 0,
+  "source": "P2.3 worktree（guyin-tracking-commit.py：preview 纯内存预演/v2 author_input+candidate_checks/3072 告警/staged 字节/tracking_plan before·after/recover 第三态阻断/暂停 JSON 改 stdout；candidate-context 接线；夹具修正）",
+  "result": "631 pass / 0 fail / 0 skip（较 P2.2 的 607 新增 24 条：T19-T24/T28-T32 全部；paused exit3 JSON 走 stdout；recover 在 tracking_committed 重跑 before/after 核验阻断外部改动；ch2 事务快照只含变动角色、ch2 独立文本避免跨章查重误伤）",
+  "log": "arena/p2-3-run-tests.log",
+  "notes_wired": [
+    "preview 命令：合法 v2 清单纯内存预演 next_revision，空快照/缺字段/错 revision 拒绝且零写入",
+    "publish v2：prepared 不信任手写证据，重跑候选检查链；journal schema_version=2 带 tracking_plan（before/after/staged_path），staged 字节落 R/publication/artifacts/",
+    "同 run 重入幂等；篡改证据 exit2；逐章记录超 3072 告警但事实完整（V001-V012）",
+    "PublishPaused 信号 JSON 改走 stdout（exit 3 不变）",
+    "_drive_publication 在 tracking_committed/fingerprint_committed 阶段也经 _commit_tracking 已完成分支：state/视图 digest＋tracking_plan before·after 第三态核验，不重 append、不静默回滚",
+    "revision 指纹只更新本章，ch2 条数不受影响"
+  ]
+}

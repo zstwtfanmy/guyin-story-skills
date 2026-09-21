@@ -1,0 +1,57 @@
+{
+  "book_title": "未命名书稿",
+  "chapter_summaries": {
+    "1": "陈默以盐促沉、秫秸裹泥、铁锅倾浆三招助周满仓灌浆堵住跌窝，拆棚顶料获罪被留。"
+  },
+  "characters": {
+    "陈默": {
+      "abilities_resources": [],
+      "goal": "在河工营活下去并查清物料亏空",
+      "identity": "河工营贴书（前世水利工程师）",
+      "knowledge": [
+        "知道物料册子实数四成亏空",
+        "知道周满仓灌浆古法可用"
+      ],
+      "location": "阳武黄河北堤",
+      "open_threads": [
+        "三日后洪峰再上堤堵口",
+        "暗查秫秸册子四成亏空"
+      ],
+      "relationships": [],
+      "state": "戴罪留堤，获河老与县丞注目"
+    }
+  },
+  "context": {
+    "active_character_names": [
+      "陈默"
+    ],
+    "continuity_risks": [],
+    "long_term_constraints": [],
+    "next_chapter_commitments": [
+      "三日后洪峰再上堤堵口",
+      "暗查秫秸册子四成亏空"
+    ],
+    "position": {
+      "scene": "阳武黄河北堤",
+      "story_time": "承平十一年九月十九夜",
+      "volume": "第一卷",
+      "volume_start_chapter": 1
+    },
+    "recent_chapters": [
+      {
+        "chapter": 1,
+        "summary": "陈默以盐促沉、秫秸裹泥、铁锅倾浆三招助周满仓灌浆堵住跌窝，拆棚顶料获罪被留。"
+      }
+    ]
+  },
+  "evidence": {},
+  "foreshadow": {},
+  "geo": {},
+  "imported_through_chapter": 0,
+  "last_committed_chapter": 1,
+  "scenes": {},
+  "schema_version": 7,
+  "state_revision": 1,
+  "timeline": {},
+  "verdicts": {}
+}

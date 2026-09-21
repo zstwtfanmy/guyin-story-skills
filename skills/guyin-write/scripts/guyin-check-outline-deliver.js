@@ -30,7 +30,101 @@
 
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 const handling = require('./lib/guyin-handling');
+const candidateContext = require('./lib/guyin-candidate-context');
+
+const TERM_MIN = 2;     // 术语最短字数（单字不是术语）
+const TERM_MAX = 10;    // 超过视为解析残渣，静默丢弃
+const SIG_MIN = 6;      // 签名句最短长度
+const stripWs = (s) => s.replace(/\s/g, '');
+
+// ---- 显式模式（任务书 §6.1/§6.2：--project/--chapter/--boundary/--outline 对候选）----
+function runExplicitDeliver() {
+  let ctx;
+  try {
+    ctx = candidateContext.resolveContext(process.argv.slice(2));
+  } catch (e) {
+    console.error(e.code === 'CTX_INPUT' ? `输入错误：${e.message}` : String(e));
+    process.exit(2);
+  }
+  const asJson = ctx.flags.has('--json');
+  const failOpt = [...ctx.flags].find((f) => f.startsWith('--fail-on='));
+  const failOn = failOpt ? handling.parseFailOn(failOpt.slice('--fail-on='.length)) : 'block';
+  const findings = [];
+  const push = (type, severity, message, excerpt) => findings.push({
+    file: ctx.candidateRel, line: 1, column: 1, type, severity, handling: severity, message,
+    excerpt: excerpt || undefined,
+  });
+  const candidateRaw = fs.readFileSync(ctx.candidateAbs, 'utf8');
+  const candidateText = candidateRaw.replace(/\r\n/g, '\n');
+  const locks = (ctx.boundary && Array.isArray(ctx.boundary.locks)) ? ctx.boundary.locks : [];
+
+  // exact 锁：逐字落地，只统一换行，不洗标点/空白（§4.2/§6.2）。
+  for (const lock of locks.filter((l) => l && l.kind === 'exact')) {
+    const want = String(lock.text || '').replace(/\r\n/g, '\n');
+    if (want && !candidateText.includes(want)) {
+      push('candidate-exact-lock-missing', 'hard',
+        `exact 锁未逐字落地：「${String(lock.text).slice(0, 30)}」（只统一文件换行；补写或由用户改锁）`,
+        String(lock.text).slice(0, 40));
+    }
+  }
+  // semantic 锁：只交人工全文核对，脚本不冒充判定。
+  for (const lock of locks.filter((l) => l && l.kind === 'semantic')) {
+    push('candidate-semantic-lock-review', 'verify',
+      `semantic 锁待人工全文核对（换说法合法、含义变了不合法）：「${String(lock.text || '').slice(0, 40)}」`,
+      String(lock.text || '').slice(0, 40));
+  }
+
+  // 真实细纲（--outline）：显式给了才查；术语可在叙述或对白清楚引入，不再强制对白首现。
+  let outlineChecked = false;
+  if (ctx.outlineAbs) {
+    outlineChecked = true;
+    const lines = fs.readFileSync(ctx.outlineAbs, 'utf8').split(/\r?\n/);
+    const termsLine = lines.find((l) => l.includes('术语锚点'));
+    if (termsLine) {
+      for (const term of extractTerms(termsLine)) {
+        if (!candidateText.includes(term)) {
+          push('outline-term-missing', 'advisory',
+            `细纲声明的新术语「${term}」未在候选出现；可在叙述或对白中清楚引入`, term);
+        }
+      }
+    }
+    for (const a of extractAnchors(lines)) {
+      if (!candidateText.replace(/\s/g, '').includes(a)) {
+        push('outline-anchor-missing', 'advisory',
+          `复沓锚句未落地：「${a.slice(0, 30)}」未逐字出现`, a.slice(0, 40));
+      }
+    }
+  }
+
+  const hasLocks = locks.some((l) => l.kind === 'exact' || l.kind === 'semantic');
+  const status = findings.some((f) => f.severity === 'hard') ? 'fail'
+    : findings.some((f) => f.severity === 'verify') ? 'findings'
+    : (outlineChecked || hasLocks) ? 'pass' : 'not_applicable';
+  const report = {
+    status,
+    script: 'guyin-check-outline-deliver.js',
+    script_sha256: candidateContext.sha256File(__filename),
+    target: { chapter: ctx.chapter, unit: ctx.unit, candidate: ctx.candidateRel,
+      candidate_sha256: ctx.candidateHash },
+    files_scanned: ctx.filesScanned,
+    target_files: [ctx.candidateRel],
+    reference_files: ctx.referenceFiles.map((f) => f.rel),
+    outline: ctx.outlineRel || null,
+    findings,
+  };
+  if (asJson) process.stdout.write(`${JSON.stringify(report, null, 2)}\n`);
+  else {
+    for (const f of findings) console.log(`${f.file}: [${handling.label(f)}] ${f.type}: ${f.message}`);
+    console.log(`outline-deliver(explicit): ${status}`);
+  }
+  // hard/verify 默认阻断（semantic 是“待人工核对”，须经全文回看消费）；editorial audit 另算。
+  process.exit(handling.gateTripped(findings, failOn) ? 1 : 0);
+}
+
+if (process.argv.slice(2).includes('--project')) runExplicitDeliver();
+
 
 const USAGE = `Usage: node guyin-check-outline-deliver.js [--json] [--fail-on=block|hard|all] <正文文件|正文目录>...
 
@@ -90,9 +184,6 @@ for (let i = 2; i < process.argv.length; i += 1) {
 }
 
 if (options.inputs.length === 0) die('No prose file or directory provided');
-
-const TERM_MIN = 2;     // 术语最短字数（单字不是术语）
-const TERM_MAX = 10;    // 超过视为解析残渣，静默丢弃
 
 function chapterNumberOf(base) {
   const m = /^第0*(\d+)章.*\.md$/.exec(base);
@@ -208,12 +299,7 @@ function extractTerms(line) {
   return terms;
 }
 
-// ---- R1/K2 签名句供给 ----
-
-const SIG_MIN = 6; // 签名句最短长度（含标点）——短于 6 字的句子通用性太强，跨章匹配全是噪音
-
-// 去空白正文（锚句/引语一字不差判定用：正文排版空白不算差异）。
-const stripWs = (s) => s.replace(/\s/g, '');
+// ---- R1/K2 签名句供给（SIG_MIN/stripWs 常量见文件顶部）----
 
 // 「复沓锚句」行 → 锚句数组（R1 落地检查 + K2 签名句登记——四组化后签名句仅此来源）。
 // 支持两种形态：引号式（「原话」/“原话”嵌在行内）与落点式（点N：原话；点N：原话——按

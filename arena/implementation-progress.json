@@ -1,0 +1,1509 @@
+{
+  "spec_version": "v4",
+  "source_baseline": "1830b0e",
+  "head_at_start": "1655383",
+  "completed_steps": [
+    "P0",
+    "P1.1",
+    "P1.2",
+    "P2.1",
+    "P2.2",
+    "P2.3",
+    "P3.1"
+  ],
+  "current_step": "P3.2",
+  "changed_files": [
+    {
+      "path": "README.md",
+      "sha256": "b179cb321d0bde09d29b404c38bbef4dcc9f5e80a2108e90902cc063c825499c"
+    },
+    {
+      "path": "arena/baseline-contracts.log",
+      "sha256": "774aa2acba19ae05f392680a8e28bbe4adcbff0f42286a0ad479fa8392bd7c82"
+    },
+    {
+      "path": "arena/baseline-doc-budget.log",
+      "sha256": "a30c10fdda515b47cb9937deeb55cbe5a4c7937ae061900454feadb02fbef7d0"
+    },
+    {
+      "path": "arena/baseline-run-tests.log",
+      "sha256": "946d8236ee8c705d499d8248bcd2e7cc9e51ef4e3246ea5bc96a4df012fda456"
+    },
+    {
+      "path": "arena/build-fixtures.js",
+      "sha256": "a9d64d3ae12db5c9bfadc0139fabceee0a370a5127b7a58b27227fc95efbff59"
+    },
+    {
+      "path": "arena/exp-p3-2/A-direct/A-历史穿越-第一章.md",
+      "sha256": "713ba044836334e39c833f3b5df23cedb6b8e02f62654f8d95ddaf739a8e020c"
+    },
+    {
+      "path": "arena/exp-p3-2/A-direct/A-爽文-第一章.md",
+      "sha256": "73f7025f50ea17da32b3bcd015321cee3a8e73a9c601ea520ace35596956dd69"
+    },
+    {
+      "path": "arena/exp-p3-2/README.md",
+      "sha256": "c9d1c91f9a7c1b42244963fd47b7b6d802a23e92fd42aa8cab2005942b8a9dff"
+    },
+    {
+      "path": "arena/exp-p3-2/_authoring/c-lichuanyi-ch1.md",
+      "sha256": "e921798903d5a3c1b166cf190495c2bf92876836b6f762cc798ee283d5f4d373"
+    },
+    {
+      "path": "arena/exp-p3-2/_authoring/c-shuangwen-ch1.md",
+      "sha256": "f0191f9c228dbf2acacdf367836b8285cf5d9455a56c4e12a02c29b72cde5db2"
+    },
+    {
+      "path": "arena/exp-p3-2/_authoring/c-shuangwen-ch2-part1-halft.md",
+      "sha256": "ad823332c30c48343a4239cdbcb72a09d1c6a4f0e6df01e3e70051482bae111f"
+    },
+    {
+      "path": "arena/exp-p3-2/_authoring/c-shuangwen-ch2.md",
+      "sha256": "1e30d6dc07f7a23f4169abac11ceb1e40d3c640297ddfeeee45ec0617f8616bc"
+    },
+    {
+      "path": "arena/exp-p3-2/_authoring/c-shuangwen-ch3.md",
+      "sha256": "55c434ae79f9e4f43a5344bfec0b9a34ed34a0c6d60ae5e422ab11d46110f194"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-历史穿越-阳武河工/.claude/hooks/guyin-hook.js",
+      "sha256": "042a4aba264edcf8bee436c29bbd6460ab1d290acf0246be6690b0064b867d7a"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-历史穿越-阳武河工/.claude/settings.json",
+      "sha256": "09494174c3cfd6d5211489ac3b18cab0a0bfd937e78a88e964974d84353810df"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-历史穿越-阳武河工/.guyin-deployed",
+      "sha256": "072db5804bade2faf964ec816748a6328161926fb6e8048607767f9cdef1efeb"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-历史穿越-阳武河工/.guyin/work/exp-ch1/author-session.json",
+      "sha256": "d12d053a9b56e087c4afba2bcc05e2e9e14c94194d77a38b88ab13aa92484c39"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-历史穿越-阳武河工/.guyin/work/exp-ch1/check-evidence.json",
+      "sha256": "17f1941c924183109eec4ddce186510577f32eb44e158351ad9d8865bfe9213b"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-历史穿越-阳武河工/.guyin/work/exp-ch1/checks.md",
+      "sha256": "6eea01619a8e175b8b9407654910f8a56daae7f99316dfaac253ed9dfc47ab49"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-历史穿越-阳武河工/.guyin/work/exp-ch1/cp.json",
+      "sha256": "a7b8c638f39889663de8ef92b3957b429c3019da610fb7114e0593388491d2fa"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-历史穿越-阳武河工/.guyin/work/exp-ch1/drafts/v0001.md",
+      "sha256": "e921798903d5a3c1b166cf190495c2bf92876836b6f762cc798ee283d5f4d373"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-历史穿越-阳武河工/.guyin/work/exp-ch1/input.json",
+      "sha256": "3da304bafb94ab0a1e204804d75e18364c89e9b9f1657bd0c12c02974bcc13b3"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-历史穿越-阳武河工/.guyin/work/exp-ch1/publication/artifacts/上下文.md",
+      "sha256": "2107b59b501eec8da125e4ebb496c9a404723ce598ba2d169f45b420ee021e31"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-历史穿越-阳武河工/.guyin/work/exp-ch1/publication/artifacts/事件定性资产.md",
+      "sha256": "5525d93132227d8e023ba3139432d4a9d5c0b8684a962007bcc99bc17beeced6"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-历史穿越-阳武河工/.guyin/work/exp-ch1/publication/artifacts/伏笔.md",
+      "sha256": "d3216dd10c5ec9fe1c3da3c70f4a5879d9f558432ed0f20ffae32f35f596c3c8"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-历史穿越-阳武河工/.guyin/work/exp-ch1/publication/artifacts/地理台账.md",
+      "sha256": "e4ef4a0ca2e989bd3dff0e4b7d6d309954d2d55e8fe8f5b71699906590501616"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-历史穿越-阳武河工/.guyin/work/exp-ch1/publication/artifacts/场景台账.md",
+      "sha256": "21ca9bf9dd069fc4dce416f727231fb5e884d18cb5ad4f81de41e7ff51587ed0"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-历史穿越-阳武河工/.guyin/work/exp-ch1/publication/artifacts/时间线__作者真相.md",
+      "sha256": "98eee7c23766e12c4ac5076689db76bf04d9bd73fbfb0c0c0ddabb0dc649e5cd"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-历史穿越-阳武河工/.guyin/work/exp-ch1/publication/artifacts/时间线__读者已知.md",
+      "sha256": "a73d4f057772fd9d4601756bf2218df047eb138ab7e419057969f1b1e47f366e"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-历史穿越-阳武河工/.guyin/work/exp-ch1/publication/artifacts/物证台账.md",
+      "sha256": "b5dacd9f24577c002ad268f88b5d4521edf2a50291a96e6e18607cd86b02b8dc"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-历史穿越-阳武河工/.guyin/work/exp-ch1/publication/artifacts/章节金字塔.md",
+      "sha256": "69e825ea2221dfdac3bdf20f86332f93e961850b21101d7da37bd278216ae2a1"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-历史穿越-阳武河工/.guyin/work/exp-ch1/publication/artifacts/角色状态__陈默.md",
+      "sha256": "f24c015bffde326bc2d9d6a5e2e9773edd9d036ce03b335d70193c8e913b08c4"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-历史穿越-阳武河工/.guyin/work/exp-ch1/publication/artifacts/追踪___tracking-state.json",
+      "sha256": "39b14d5b854da787996f8107463f4b9684305b940653b70deb06d0a976b935cd"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-历史穿越-阳武河工/.guyin/work/exp-ch1/publication/artifacts/追踪__逐章记录__第001章.md",
+      "sha256": "e09137c736d268006bd767e57ba41071990018af3bcefe6c7422bacc696108b0"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-历史穿越-阳武河工/.guyin/work/exp-ch1/publish.json",
+      "sha256": "f89ec05625dfcda6f1dd8857852590fc16b45f225363fd0934fbd25be0128e45"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-历史穿越-阳武河工/.guyin/work/exp-ch1/review.md",
+      "sha256": "8f47f745425ed437641a96fe76ebce9a7de5b2cdffbabb2c9ea0f1562a5dd703"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-历史穿越-阳武河工/.guyin/work/exp-ch1/transaction.json",
+      "sha256": "a147fc5220b77823d6435c68135268d519c69738711a2f522025746230e10cf6"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-历史穿越-阳武河工/.opencode/commands/guyin.md",
+      "sha256": "1c2974f1b7bcedabf7a7e7a65c74375cf371cfd373b6e06cee416db28922cff2"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-历史穿越-阳武河工/AGENTS.md",
+      "sha256": "76cb8d47ce357748cdb3e6c72b0a25a818e2137e5d47900d8a2103041ad99083"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-历史穿越-阳武河工/README.md",
+      "sha256": "6463c60f1796a34b13130afad5665ba4a28985fec597581c048bb54ba8c4d22b"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-历史穿越-阳武河工/作者性/偏执点.md",
+      "sha256": "743d156d470902852575496d2295c5704536608a3754cb1d445f99b56a07d258"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-历史穿越-阳武河工/作者性/参考-气质谱系.md",
+      "sha256": "410048d0638ce3e9556bf75b915b19a5efc7f9d54cb05b8e4b705db72de0e41c"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-历史穿越-阳武河工/作者性/口述定稿单.md",
+      "sha256": "f05234dadc68338413fed95b4a6d28f6b189b711aace0dd5f3ec7ad46cd68938"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-历史穿越-阳武河工/作者性/指纹.md",
+      "sha256": "44cb366c79162aab37e25e7922ff9e3f157f5061c3b3f84840f0f32766351d3d"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-历史穿越-阳武河工/作者性/气卡.md",
+      "sha256": "eddc30a777b502f8c0fc6e07fb2a26c966b628e613bddc3adcb781e60e6ce3c4"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-历史穿越-阳武河工/作者性/粒度配置.md",
+      "sha256": "ce2fe76933ca91d4f2d9fa53f1d0bfa9a41562c8054570cef0bc5f6c1db04683"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-历史穿越-阳武河工/作者性/纪律冲突台账.md",
+      "sha256": "e1e5ca1a23c91e6eb0e53dab3196da3dd38d5e287b9a3f7b839cda8d77de4155"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-历史穿越-阳武河工/作者性/语言纪律.md",
+      "sha256": "7bd453a105d381d18c35176b8f1ac38b9b5564cf7a3aad066b9a169c972df9c6"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-历史穿越-阳武河工/作者性/魂档案.md",
+      "sha256": "c6226337f729249bc0a66a16cd6708d099855c58d30b1a8cda39848a9a4c2c3c"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-历史穿越-阳武河工/大纲/README.md",
+      "sha256": "f9ba4bffb2b71ff34f2ed094b65a4a65e6bca4081021ad9fe46f06b5f80fceb1"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-历史穿越-阳武河工/大纲/执行层一页纸.md",
+      "sha256": "b6590f0f8c8f785def67f8b7b1f364f49e6337b82cdc6867ec9fe09f2bd58291"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-历史穿越-阳武河工/大纲/批次公约.md",
+      "sha256": "48392aca6adbc68661823083b2531b11d2b77ef00e2532c01f72defaee2f3dd3"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-历史穿越-阳武河工/大纲/魂谱对表.md",
+      "sha256": "eca7c70f17828be13855c4459019285a7754ff5e5730d05abded7c59a38a1756"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-历史穿越-阳武河工/正文/README.md",
+      "sha256": "4c05ada059642db1f4978ea5bd74d3b43e06b7239fb3a6dc2a44853a6ee1b702"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-历史穿越-阳武河工/正文/第001章_册子上的洞.md",
+      "sha256": "e921798903d5a3c1b166cf190495c2bf92876836b6f762cc798ee283d5f4d373"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-历史穿越-阳武河工/灵感池/README.md",
+      "sha256": "316e666f54bdf0042052f88343f8f2ed69234d73b888abd740cb5ed0a2a74bf8"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-历史穿越-阳武河工/设定/世界观/README.md",
+      "sha256": "86fc0dca4f9aac14c3ad9397a064b6911d1c228063dfc12119957e62acc47ea0"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-历史穿越-阳武河工/设定/角色/README.md",
+      "sha256": "c710b28a4a27a3e3988bdcc1dd178013d8bdc1eefaba7af34e42d72a7c4bbbd7"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-历史穿越-阳武河工/设定/题材定位.md",
+      "sha256": "a4fb30885504f71c9795c36e46871cb9543830974eaca5924d83cd1c94e527f1"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-历史穿越-阳武河工/追踪/_publication.json",
+      "sha256": "378bdb73d72ec11cd864d5f4e7504d1a6f5126d47e8fe47b3caf8416e186e329"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-历史穿越-阳武河工/追踪/_tracking-state.json",
+      "sha256": "39b14d5b854da787996f8107463f4b9684305b940653b70deb06d0a976b935cd"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-历史穿越-阳武河工/追踪/上下文.md",
+      "sha256": "2107b59b501eec8da125e4ebb496c9a404723ce598ba2d169f45b420ee021e31"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-历史穿越-阳武河工/追踪/事件定性资产.md",
+      "sha256": "5525d93132227d8e023ba3139432d4a9d5c0b8684a962007bcc99bc17beeced6"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-历史穿越-阳武河工/追踪/伏笔.md",
+      "sha256": "d3216dd10c5ec9fe1c3da3c70f4a5879d9f558432ed0f20ffae32f35f596c3c8"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-历史穿越-阳武河工/追踪/地理台账.md",
+      "sha256": "e4ef4a0ca2e989bd3dff0e4b7d6d309954d2d55e8fe8f5b71699906590501616"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-历史穿越-阳武河工/追踪/场景台账.md",
+      "sha256": "21ca9bf9dd069fc4dce416f727231fb5e884d18cb5ad4f81de41e7ff51587ed0"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-历史穿越-阳武河工/追踪/复沓锚句.md",
+      "sha256": "67c2b8417840d179bf8c91ad3c54448c5879d027a81958f0592832f566f1d878"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-历史穿越-阳武河工/追踪/契约对账矩阵.md",
+      "sha256": "03f41a6679292b6c52708346f07c31ab24a5f174531d278b262e7b385a5cae6c"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-历史穿越-阳武河工/追踪/待审台账.md",
+      "sha256": "91d66e946967021c2b9c6d79d8c88d7de079f161a98483be795b4674472ac1b3"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-历史穿越-阳武河工/追踪/意象台账.md",
+      "sha256": "cb07d2b248f4a10a442f81481c32189dac3f88668945ca18772d0f38df5d5810"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-历史穿越-阳武河工/追踪/时间线/README.md",
+      "sha256": "7ccce10f2b4bd8cdbafa8069c612b68447dcf027d0f691101548dcee214f9da0"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-历史穿越-阳武河工/追踪/时间线/作者真相.md",
+      "sha256": "98eee7c23766e12c4ac5076689db76bf04d9bd73fbfb0c0c0ddabb0dc649e5cd"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-历史穿越-阳武河工/追踪/时间线/读者已知.md",
+      "sha256": "a73d4f057772fd9d4601756bf2218df047eb138ab7e419057969f1b1e47f366e"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-历史穿越-阳武河工/追踪/段落指纹库.json",
+      "sha256": "a080a4e422d2c9f3f99f4892db1b744fddd964cb6c67ce6f201ce25dbf36f06f"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-历史穿越-阳武河工/追踪/灵感台账.md",
+      "sha256": "1b1babde083e9fd9de3ae63f8b3616abd714d31ba895b9f161ee7e765a0662d0"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-历史穿越-阳武河工/追踪/物证台账.md",
+      "sha256": "b5dacd9f24577c002ad268f88b5d4521edf2a50291a96e6e18607cd86b02b8dc"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-历史穿越-阳武河工/追踪/短语黑名单.md",
+      "sha256": "ccd552132c337295ee78a13f752406b0fe294e3371380107b497c909048079eb"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-历史穿越-阳武河工/追踪/章节金字塔.md",
+      "sha256": "69e825ea2221dfdac3bdf20f86332f93e961850b21101d7da37bd278216ae2a1"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-历史穿越-阳武河工/追踪/角色状态/陈默.md",
+      "sha256": "f24c015bffde326bc2d9d6a5e2e9773edd9d036ce03b335d70193c8e913b08c4"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-历史穿越-阳武河工/追踪/读者信号.md",
+      "sha256": "dd958f8d299ae3218471180b102d9aa514d8b00f006f2f7799097c1f1fa57463"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-历史穿越-阳武河工/追踪/豁免台账.md",
+      "sha256": "4ba97ba2d3974d70acf4feefb65feff06b27c0e487afeeb2973724bb293ea79b"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-历史穿越-阳武河工/追踪/逐章记录/第001章.md",
+      "sha256": "e09137c736d268006bd767e57ba41071990018af3bcefe6c7422bacc696108b0"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-爽文-临渠粮事/.claude/hooks/guyin-hook.js",
+      "sha256": "042a4aba264edcf8bee436c29bbd6460ab1d290acf0246be6690b0064b867d7a"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-爽文-临渠粮事/.claude/settings.json",
+      "sha256": "09494174c3cfd6d5211489ac3b18cab0a0bfd937e78a88e964974d84353810df"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-爽文-临渠粮事/.guyin-deployed",
+      "sha256": "82e1658fd826856eb5446841f43508918e84eade8149964cbc6dc449c0a820d0"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-爽文-临渠粮事/.guyin/work/exp-ch1/author-session.json",
+      "sha256": "d77b6f915896806e99534840169a59912b9eeb57a9eef554b99177e4cbd957be"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-爽文-临渠粮事/.guyin/work/exp-ch1/check-evidence.json",
+      "sha256": "6210925058e7b3f815932293c6e35f6c6146dd3c11708c20e6a965b6aa64b49e"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-爽文-临渠粮事/.guyin/work/exp-ch1/checks.md",
+      "sha256": "12a12798c4d2240f95c84fcd246d6b80afce569f4567629cfcdd59b1b3722fa6"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-爽文-临渠粮事/.guyin/work/exp-ch1/cp.json",
+      "sha256": "a7b8c638f39889663de8ef92b3957b429c3019da610fb7114e0593388491d2fa"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-爽文-临渠粮事/.guyin/work/exp-ch1/drafts/v0001.md",
+      "sha256": "f0191f9c228dbf2acacdf367836b8285cf5d9455a56c4e12a02c29b72cde5db2"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-爽文-临渠粮事/.guyin/work/exp-ch1/input.json",
+      "sha256": "f9ba2f0aeade591e0818b103879ce421f97fb07ac115d6f70d3298f7e5d3e7af"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-爽文-临渠粮事/.guyin/work/exp-ch1/publication/artifacts/上下文.md",
+      "sha256": "d650b067f326ec2a638d09247905a275af74be9fcffa85c85c400822e782d357"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-爽文-临渠粮事/.guyin/work/exp-ch1/publication/artifacts/事件定性资产.md",
+      "sha256": "5525d93132227d8e023ba3139432d4a9d5c0b8684a962007bcc99bc17beeced6"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-爽文-临渠粮事/.guyin/work/exp-ch1/publication/artifacts/伏笔.md",
+      "sha256": "d3216dd10c5ec9fe1c3da3c70f4a5879d9f558432ed0f20ffae32f35f596c3c8"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-爽文-临渠粮事/.guyin/work/exp-ch1/publication/artifacts/地理台账.md",
+      "sha256": "e4ef4a0ca2e989bd3dff0e4b7d6d309954d2d55e8fe8f5b71699906590501616"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-爽文-临渠粮事/.guyin/work/exp-ch1/publication/artifacts/场景台账.md",
+      "sha256": "21ca9bf9dd069fc4dce416f727231fb5e884d18cb5ad4f81de41e7ff51587ed0"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-爽文-临渠粮事/.guyin/work/exp-ch1/publication/artifacts/时间线__作者真相.md",
+      "sha256": "98eee7c23766e12c4ac5076689db76bf04d9bd73fbfb0c0c0ddabb0dc649e5cd"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-爽文-临渠粮事/.guyin/work/exp-ch1/publication/artifacts/时间线__读者已知.md",
+      "sha256": "a73d4f057772fd9d4601756bf2218df047eb138ab7e419057969f1b1e47f366e"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-爽文-临渠粮事/.guyin/work/exp-ch1/publication/artifacts/物证台账.md",
+      "sha256": "b5dacd9f24577c002ad268f88b5d4521edf2a50291a96e6e18607cd86b02b8dc"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-爽文-临渠粮事/.guyin/work/exp-ch1/publication/artifacts/章节金字塔.md",
+      "sha256": "1ea5e3fc25aa9f3d179d063d05f11eccb9d25ce9c156ee2bda0a71edb954e37c"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-爽文-临渠粮事/.guyin/work/exp-ch1/publication/artifacts/角色状态__陆争.md",
+      "sha256": "61860c29dd5354ab65b62817fdb4f010fd5f5f8c9a86a0c19e56fea015034b5a"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-爽文-临渠粮事/.guyin/work/exp-ch1/publication/artifacts/追踪___tracking-state.json",
+      "sha256": "4df95843ef96aa96a9cfffea66f03c5e6c1839106fee04296a1dddfb622ceda6"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-爽文-临渠粮事/.guyin/work/exp-ch1/publication/artifacts/追踪__逐章记录__第001章.md",
+      "sha256": "85f99cc192bcaf6617f00f714e530f212c990b4ca31b43a03b9d90bea5798c70"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-爽文-临渠粮事/.guyin/work/exp-ch1/publish.json",
+      "sha256": "8a5d61e036b99579a0de19aeff8d25967e256696cd8886e2fa28d928ecf7e2bf"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-爽文-临渠粮事/.guyin/work/exp-ch1/review.md",
+      "sha256": "eed1d17bfb7fa4759b43696ef2c8c631dbbb5cbc1b88a7b968ec7f0a50605693"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-爽文-临渠粮事/.guyin/work/exp-ch1/transaction.json",
+      "sha256": "15d215d84db589f10dd48a954e8e674dd7e3e9433e317c2d0eb8aa9703abdb49"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-爽文-临渠粮事/.guyin/work/exp-ch2/author-session.json",
+      "sha256": "7d6d8070e235230a9a19001796614cb0620bf0b3f4767bf60345e4348768d8f2"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-爽文-临渠粮事/.guyin/work/exp-ch2/check-evidence.json",
+      "sha256": "4d9e012615fe9db5049cdf9e280080fb48a80f006c920abbafee81ffb59e1bc3"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-爽文-临渠粮事/.guyin/work/exp-ch2/checks.md",
+      "sha256": "c509d9ef23e0f6a72fa57113e5a9ee182506f620bac1ae884cb3466c4bbc4524"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-爽文-临渠粮事/.guyin/work/exp-ch2/cp.json",
+      "sha256": "a7b8c638f39889663de8ef92b3957b429c3019da610fb7114e0593388491d2fa"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-爽文-临渠粮事/.guyin/work/exp-ch2/drafts/v0001.md",
+      "sha256": "ad823332c30c48343a4239cdbcb72a09d1c6a4f0e6df01e3e70051482bae111f"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-爽文-临渠粮事/.guyin/work/exp-ch2/drafts/v0002.md",
+      "sha256": "1e30d6dc07f7a23f4169abac11ceb1e40d3c640297ddfeeee45ec0617f8616bc"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-爽文-临渠粮事/.guyin/work/exp-ch2/input.json",
+      "sha256": "76adec4faa9326b3d3d28420e808042da9e65464b240ffb2ca4cb72317e224d6"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-爽文-临渠粮事/.guyin/work/exp-ch2/input.v0002.json",
+      "sha256": "65c4fd734f849f8e2f05bf4f06501c73d22d0fba19c176e66335e27421d8239f"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-爽文-临渠粮事/.guyin/work/exp-ch2/publication/artifacts/上下文.md",
+      "sha256": "9109a07ec435d0036e42571d95a217b8bce00e5251a3a275b8b0be154832abec"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-爽文-临渠粮事/.guyin/work/exp-ch2/publication/artifacts/事件定性资产.md",
+      "sha256": "53af878e9174d03dbe0cbf01f3abd7fe39615bfc523ddf2dce3e0f248b25075e"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-爽文-临渠粮事/.guyin/work/exp-ch2/publication/artifacts/伏笔.md",
+      "sha256": "d5d1f0c76a7ad7af10dd14f70e55e0f9512354ea150a897a0eb303cbfaa6b237"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-爽文-临渠粮事/.guyin/work/exp-ch2/publication/artifacts/地理台账.md",
+      "sha256": "463d873aad44cae3e60b5cc66273785ffc3c5bd7417b675f9af408485a55fe17"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-爽文-临渠粮事/.guyin/work/exp-ch2/publication/artifacts/场景台账.md",
+      "sha256": "0a66a528038d21ff403ce2860e05d2364b7c9d98788576e3b76e77a29443c900"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-爽文-临渠粮事/.guyin/work/exp-ch2/publication/artifacts/时间线__作者真相.md",
+      "sha256": "29844a18944b94472ce2c184a5981800eede25fffc2ed50bd57e65d09128eea9"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-爽文-临渠粮事/.guyin/work/exp-ch2/publication/artifacts/时间线__读者已知.md",
+      "sha256": "28215bcf4d8562e9a12c02f1fb4a5ca705fe2b68d9c91eb677adfe327d4d2a8e"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-爽文-临渠粮事/.guyin/work/exp-ch2/publication/artifacts/物证台账.md",
+      "sha256": "a1a714b792849e7c40fc47f10d91b480c5d6c5796c21706b49df498c1731e3f2"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-爽文-临渠粮事/.guyin/work/exp-ch2/publication/artifacts/章节金字塔.md",
+      "sha256": "fe7f02ba93e6dda5ce8d52905f29c18e597bea630e8df7168b07c489ecf75c28"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-爽文-临渠粮事/.guyin/work/exp-ch2/publication/artifacts/角色状态__陆争.md",
+      "sha256": "719d6cce42d033af39771ae899f54bc8b8cc7fa7dfe9ba2dceddf11434a632fa"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-爽文-临渠粮事/.guyin/work/exp-ch2/publication/artifacts/追踪___tracking-state.json",
+      "sha256": "8d678bb2107874af410784fce873810a2eea84a98ec7b29207ebe4af7cdbdb97"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-爽文-临渠粮事/.guyin/work/exp-ch2/publication/artifacts/追踪__逐章记录__第002章.md",
+      "sha256": "6f5d522753bccf5da310c7c72c5da8478be3d349b4d0c3f4968a9f11d0f6c8cb"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-爽文-临渠粮事/.guyin/work/exp-ch2/publish.json",
+      "sha256": "d24d37b4077f94de5f70d0e7051841647b7d76abc6fa0e42bb9b1a8fb4adc000"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-爽文-临渠粮事/.guyin/work/exp-ch2/review.md",
+      "sha256": "c7bcd7e60884493f7847634e369424e64ce7f8604be8c1def59227de3713fd8c"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-爽文-临渠粮事/.guyin/work/exp-ch2/transaction.json",
+      "sha256": "4c66557279c35741310994909dd7a78cb25a0775f120f1f5c91877e0dfee9e15"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-爽文-临渠粮事/.guyin/work/exp-ch3/author-session.json",
+      "sha256": "7e1df9ace1f02ac56aa599412d4b606940acfddabefbd9f5de3df5f39b0d1684"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-爽文-临渠粮事/.guyin/work/exp-ch3/check-evidence.json",
+      "sha256": "af3dc6b547a0e1191cd3eea9a2fb7b18d1a2dbda50c3d725b8d9a4a3fe6c370a"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-爽文-临渠粮事/.guyin/work/exp-ch3/checks.md",
+      "sha256": "10469d9a35f6dcc9f6b0754b933cf888b734b1b54fe9319088b29c53cd8c36f3"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-爽文-临渠粮事/.guyin/work/exp-ch3/cp.json",
+      "sha256": "a7b8c638f39889663de8ef92b3957b429c3019da610fb7114e0593388491d2fa"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-爽文-临渠粮事/.guyin/work/exp-ch3/drafts/v0001.md",
+      "sha256": "55c434ae79f9e4f43a5344bfec0b9a34ed34a0c6d60ae5e422ab11d46110f194"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-爽文-临渠粮事/.guyin/work/exp-ch3/input.json",
+      "sha256": "16612a2824bbaf751926aab82eb0fe6aadabd5ca0cbaca9bb05d10d822f09190"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-爽文-临渠粮事/.guyin/work/exp-ch3/publication/artifacts/上下文.md",
+      "sha256": "e35b4e55a56b44439011c752e90fce007d496fb74826e6d618cc41de75175434"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-爽文-临渠粮事/.guyin/work/exp-ch3/publication/artifacts/事件定性资产.md",
+      "sha256": "98f7242724f48b14e791e2e7639d32f2a3658a7296df230a79c778a8866dabaa"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-爽文-临渠粮事/.guyin/work/exp-ch3/publication/artifacts/伏笔.md",
+      "sha256": "19fffdb660ae03fa2cca48948bfb7b6f3cd9d12725f8367331b5a8475a794a78"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-爽文-临渠粮事/.guyin/work/exp-ch3/publication/artifacts/地理台账.md",
+      "sha256": "96e8cd1e5fe28dc1f7259bccb12e695e8d067ddff145ae88080d40497b33b213"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-爽文-临渠粮事/.guyin/work/exp-ch3/publication/artifacts/场景台账.md",
+      "sha256": "d0c1b071a005de3600810f9ffd04fe61fbf88a12f67ba0690482e72fab42f353"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-爽文-临渠粮事/.guyin/work/exp-ch3/publication/artifacts/时间线__作者真相.md",
+      "sha256": "f4e65cf445c06d4086bcc3bb061af8f96e2083c5c8bb366511ee596d1a086bac"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-爽文-临渠粮事/.guyin/work/exp-ch3/publication/artifacts/时间线__读者已知.md",
+      "sha256": "00a6eacb0f70fc700f67b2c5274b87ee92729c30a126e133a895abf4235e1a6d"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-爽文-临渠粮事/.guyin/work/exp-ch3/publication/artifacts/物证台账.md",
+      "sha256": "5917322d249a76eeb4f48d65ab9a5ce892d701f4f1f70bc56c3f59af656afbee"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-爽文-临渠粮事/.guyin/work/exp-ch3/publication/artifacts/章节金字塔.md",
+      "sha256": "052305ed0d6dfdb71ce0915c9889465feca8242c539607a008286b8c888ee619"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-爽文-临渠粮事/.guyin/work/exp-ch3/publication/artifacts/角色状态__陆争.md",
+      "sha256": "5460bb286c0ef8ca5d22ed2ae0a45bb08a1946a6a7708bfc5db19668ffc7b5dd"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-爽文-临渠粮事/.guyin/work/exp-ch3/publication/artifacts/追踪___tracking-state.json",
+      "sha256": "5db87784b1943ad440e5b362e440db4c591e9955f615e065a7a8710f000b7647"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-爽文-临渠粮事/.guyin/work/exp-ch3/publication/artifacts/追踪__逐章记录__第003章.md",
+      "sha256": "ec8e3ac269f22395281df067ec31a1d0227a5cd1fb2b60ae507c4c70655bfd2c"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-爽文-临渠粮事/.guyin/work/exp-ch3/publish.json",
+      "sha256": "5f18861b24ead778053cfe6a663f779b6c2ce1f6bab433f08ccd8da86123fe1b"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-爽文-临渠粮事/.guyin/work/exp-ch3/review.md",
+      "sha256": "2576dce974d1aca6c57430f953c744928eb6bbcc3220c7ee2859f8b14da75d05"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-爽文-临渠粮事/.guyin/work/exp-ch3/transaction.json",
+      "sha256": "b2c67a259a90575c82e43ee8809cdcad0b5b75bb45b9d9c8d5a8287202fad16d"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-爽文-临渠粮事/.opencode/commands/guyin.md",
+      "sha256": "1c2974f1b7bcedabf7a7e7a65c74375cf371cfd373b6e06cee416db28922cff2"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-爽文-临渠粮事/AGENTS.md",
+      "sha256": "390fd8ea10909f02315c68a1624cef101e1d808164e4a8f08a9ed0b3113b0b90"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-爽文-临渠粮事/README.md",
+      "sha256": "6463c60f1796a34b13130afad5665ba4a28985fec597581c048bb54ba8c4d22b"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-爽文-临渠粮事/作者性/偏执点.md",
+      "sha256": "743d156d470902852575496d2295c5704536608a3754cb1d445f99b56a07d258"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-爽文-临渠粮事/作者性/参考-气质谱系.md",
+      "sha256": "410048d0638ce3e9556bf75b915b19a5efc7f9d54cb05b8e4b705db72de0e41c"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-爽文-临渠粮事/作者性/口述定稿单.md",
+      "sha256": "f05234dadc68338413fed95b4a6d28f6b189b711aace0dd5f3ec7ad46cd68938"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-爽文-临渠粮事/作者性/指纹.md",
+      "sha256": "44cb366c79162aab37e25e7922ff9e3f157f5061c3b3f84840f0f32766351d3d"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-爽文-临渠粮事/作者性/气卡.md",
+      "sha256": "eddc30a777b502f8c0fc6e07fb2a26c966b628e613bddc3adcb781e60e6ce3c4"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-爽文-临渠粮事/作者性/粒度配置.md",
+      "sha256": "ce2fe76933ca91d4f2d9fa53f1d0bfa9a41562c8054570cef0bc5f6c1db04683"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-爽文-临渠粮事/作者性/纪律冲突台账.md",
+      "sha256": "e1e5ca1a23c91e6eb0e53dab3196da3dd38d5e287b9a3f7b839cda8d77de4155"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-爽文-临渠粮事/作者性/语言纪律.md",
+      "sha256": "7bd453a105d381d18c35176b8f1ac38b9b5564cf7a3aad066b9a169c972df9c6"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-爽文-临渠粮事/作者性/魂档案.md",
+      "sha256": "c6226337f729249bc0a66a16cd6708d099855c58d30b1a8cda39848a9a4c2c3c"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-爽文-临渠粮事/大纲/README.md",
+      "sha256": "f9ba4bffb2b71ff34f2ed094b65a4a65e6bca4081021ad9fe46f06b5f80fceb1"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-爽文-临渠粮事/大纲/执行层一页纸.md",
+      "sha256": "b6590f0f8c8f785def67f8b7b1f364f49e6337b82cdc6867ec9fe09f2bd58291"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-爽文-临渠粮事/大纲/批次公约.md",
+      "sha256": "48392aca6adbc68661823083b2531b11d2b77ef00e2532c01f72defaee2f3dd3"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-爽文-临渠粮事/大纲/魂谱对表.md",
+      "sha256": "eca7c70f17828be13855c4459019285a7754ff5e5730d05abded7c59a38a1756"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-爽文-临渠粮事/正文/README.md",
+      "sha256": "4c05ada059642db1f4978ea5bd74d3b43e06b7239fb3a6dc2a44853a6ee1b702"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-爽文-临渠粮事/正文/第001章_八钱银子的米.md",
+      "sha256": "f0191f9c228dbf2acacdf367836b8285cf5d9455a56c4e12a02c29b72cde5db2"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-爽文-临渠粮事/正文/第002章_绳头.md",
+      "sha256": "1e30d6dc07f7a23f4169abac11ceb1e40d3c640297ddfeeee45ec0617f8616bc"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-爽文-临渠粮事/正文/第003章_点闸日.md",
+      "sha256": "55c434ae79f9e4f43a5344bfec0b9a34ed34a0c6d60ae5e422ab11d46110f194"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-爽文-临渠粮事/灵感池/README.md",
+      "sha256": "316e666f54bdf0042052f88343f8f2ed69234d73b888abd740cb5ed0a2a74bf8"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-爽文-临渠粮事/设定/世界观/README.md",
+      "sha256": "86fc0dca4f9aac14c3ad9397a064b6911d1c228063dfc12119957e62acc47ea0"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-爽文-临渠粮事/设定/角色/README.md",
+      "sha256": "c710b28a4a27a3e3988bdcc1dd178013d8bdc1eefaba7af34e42d72a7c4bbbd7"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-爽文-临渠粮事/设定/题材定位.md",
+      "sha256": "a4fb30885504f71c9795c36e46871cb9543830974eaca5924d83cd1c94e527f1"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-爽文-临渠粮事/追踪/_publication.json",
+      "sha256": "8b6f80be1bc1ee4c3882dfbbc2a6923b1a4d79f8da221891f303da2fdf99d9eb"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-爽文-临渠粮事/追踪/_tracking-state.json",
+      "sha256": "5db87784b1943ad440e5b362e440db4c591e9955f615e065a7a8710f000b7647"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-爽文-临渠粮事/追踪/上下文.md",
+      "sha256": "e35b4e55a56b44439011c752e90fce007d496fb74826e6d618cc41de75175434"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-爽文-临渠粮事/追踪/事件定性资产.md",
+      "sha256": "98f7242724f48b14e791e2e7639d32f2a3658a7296df230a79c778a8866dabaa"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-爽文-临渠粮事/追踪/伏笔.md",
+      "sha256": "19fffdb660ae03fa2cca48948bfb7b6f3cd9d12725f8367331b5a8475a794a78"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-爽文-临渠粮事/追踪/地理台账.md",
+      "sha256": "96e8cd1e5fe28dc1f7259bccb12e695e8d067ddff145ae88080d40497b33b213"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-爽文-临渠粮事/追踪/场景台账.md",
+      "sha256": "d0c1b071a005de3600810f9ffd04fe61fbf88a12f67ba0690482e72fab42f353"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-爽文-临渠粮事/追踪/复沓锚句.md",
+      "sha256": "67c2b8417840d179bf8c91ad3c54448c5879d027a81958f0592832f566f1d878"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-爽文-临渠粮事/追踪/契约对账矩阵.md",
+      "sha256": "03f41a6679292b6c52708346f07c31ab24a5f174531d278b262e7b385a5cae6c"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-爽文-临渠粮事/追踪/待审台账.md",
+      "sha256": "91d66e946967021c2b9c6d79d8c88d7de079f161a98483be795b4674472ac1b3"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-爽文-临渠粮事/追踪/意象台账.md",
+      "sha256": "a8f6a450b797a2eb7d5f3c9f08a13ff472f585a47b5d18147ac75b9cf3c5589f"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-爽文-临渠粮事/追踪/时间线/README.md",
+      "sha256": "7ccce10f2b4bd8cdbafa8069c612b68447dcf027d0f691101548dcee214f9da0"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-爽文-临渠粮事/追踪/时间线/作者真相.md",
+      "sha256": "f4e65cf445c06d4086bcc3bb061af8f96e2083c5c8bb366511ee596d1a086bac"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-爽文-临渠粮事/追踪/时间线/读者已知.md",
+      "sha256": "00a6eacb0f70fc700f67b2c5274b87ee92729c30a126e133a895abf4235e1a6d"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-爽文-临渠粮事/追踪/段落指纹库.json",
+      "sha256": "e7806377b40c69b091254bbae39ea0e995ae74e0e1e3213ba5419b4de8d1ea5a"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-爽文-临渠粮事/追踪/灵感台账.md",
+      "sha256": "1b1babde083e9fd9de3ae63f8b3616abd714d31ba895b9f161ee7e765a0662d0"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-爽文-临渠粮事/追踪/物证台账.md",
+      "sha256": "5917322d249a76eeb4f48d65ab9a5ce892d701f4f1f70bc56c3f59af656afbee"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-爽文-临渠粮事/追踪/短语黑名单.md",
+      "sha256": "ccd552132c337295ee78a13f752406b0fe294e3371380107b497c909048079eb"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-爽文-临渠粮事/追踪/章节金字塔.md",
+      "sha256": "052305ed0d6dfdb71ce0915c9889465feca8242c539607a008286b8c888ee619"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-爽文-临渠粮事/追踪/角色状态/陆争.md",
+      "sha256": "5460bb286c0ef8ca5d22ed2ae0a45bb08a1946a6a7708bfc5db19668ffc7b5dd"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-爽文-临渠粮事/追踪/读者信号.md",
+      "sha256": "dd958f8d299ae3218471180b102d9aa514d8b00f006f2f7799097c1f1fa57463"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-爽文-临渠粮事/追踪/豁免台账.md",
+      "sha256": "4ba97ba2d3974d70acf4feefb65feff06b27c0e487afeeb2973724bb293ea79b"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-爽文-临渠粮事/追踪/逐章记录/第001章.md",
+      "sha256": "85f99cc192bcaf6617f00f714e530f212c990b4ca31b43a03b9d90bea5798c70"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-爽文-临渠粮事/追踪/逐章记录/第002章.md",
+      "sha256": "6f5d522753bccf5da310c7c72c5da8478be3d349b4d0c3f4968a9f11d0f6c8cb"
+    },
+    {
+      "path": "arena/exp-p3-2/books/c-爽文-临渠粮事/追踪/逐章记录/第003章.md",
+      "sha256": "ec8e3ac269f22395281df067ec31a1d0227a5cd1fb2b60ae507c4c70655bfd2c"
+    },
+    {
+      "path": "arena/exp-p3-2/run-experiment.js",
+      "sha256": "f88a327b9423de4e7c07176d3efce52ed528d0b5e1c5b30f35da171140af2eed"
+    },
+    {
+      "path": "arena/exp-p3-2/shared/facts-lichuanyi.md",
+      "sha256": "7dd1c773013ea92be51896a37023789635de7092fcc5d26c8494de7701c794cd"
+    },
+    {
+      "path": "arena/exp-p3-2/shared/facts-shuangwen.md",
+      "sha256": "d191c3d8612c47103294572164f457cf9a43f12fbd6c4c5db77874aa8d5d6275"
+    },
+    {
+      "path": "arena/exp-p3-2/阅读样本/C条件-爽文-第三章.md",
+      "sha256": "55c434ae79f9e4f43a5344bfec0b9a34ed34a0c6d60ae5e422ab11d46110f194"
+    },
+    {
+      "path": "arena/exp-p3-2/阅读样本/C条件-爽文-第二章（中断续写）.md",
+      "sha256": "1e30d6dc07f7a23f4169abac11ceb1e40d3c640297ddfeeee45ec0617f8616bc"
+    },
+    {
+      "path": "arena/exp-p3-2/阅读样本/_mapping-读后拆封.json",
+      "sha256": "d70f8cc4a3b321c46c66c3895cd9aafa911ab898ba6911069759bab31bf69517"
+    },
+    {
+      "path": "arena/exp-p3-2/阅读样本/样本一-爽文-第一章.md",
+      "sha256": "73f7025f50ea17da32b3bcd015321cee3a8e73a9c601ea520ace35596956dd69"
+    },
+    {
+      "path": "arena/exp-p3-2/阅读样本/样本三-历史穿越-第一章.md",
+      "sha256": "e921798903d5a3c1b166cf190495c2bf92876836b6f762cc798ee283d5f4d373"
+    },
+    {
+      "path": "arena/exp-p3-2/阅读样本/样本二-爽文-第一章.md",
+      "sha256": "f0191f9c228dbf2acacdf367836b8285cf5d9455a56c4e12a02c29b72cde5db2"
+    },
+    {
+      "path": "arena/exp-p3-2/阅读样本/样本四-历史穿越-第一章.md",
+      "sha256": "713ba044836334e39c833f3b5df23cedb6b8e02f62654f8d95ddaf739a8e020c"
+    },
+    {
+      "path": "arena/exp-p3-2/阅读样本/阅读问题表-请填原话.md",
+      "sha256": "f6f7a7a74812791bc70519f666ae9e1acf51549c27c3d99d640e818e5d16cb34"
+    },
+    {
+      "path": "arena/fixtures/long/book/追踪/_tracking-state.json",
+      "sha256": "599a7f8604c87e4bdd1df70b511e838ed4da53acd2bae31b7d1f64cbd3109b5d"
+    },
+    {
+      "path": "arena/fixtures/long/book/追踪/上下文.md",
+      "sha256": "273a07f087084ffae43698f648293055d8fa80312e1ee79e9bf706dec8408e11"
+    },
+    {
+      "path": "arena/fixtures/long/book/追踪/事件定性资产.md",
+      "sha256": "efcd338bc48be0ffefb238f7641265c76bde513ea61bec963f304867d5333f48"
+    },
+    {
+      "path": "arena/fixtures/long/book/追踪/伏笔.md",
+      "sha256": "01c81a06852a8c7931a61cc5cb2df171a63c27334355426344a43d047f94be46"
+    },
+    {
+      "path": "arena/fixtures/long/book/追踪/地理台账.md",
+      "sha256": "23b608de84f6ef71c36994a327c4a9c4bdbf880659c6857b05f7d41d0bc950a5"
+    },
+    {
+      "path": "arena/fixtures/long/book/追踪/场景台账.md",
+      "sha256": "201aeb956b1786992ae81f00ed9da6dfd45a308e3fd9d790e7c79709b78d1de0"
+    },
+    {
+      "path": "arena/fixtures/long/book/追踪/待审台账.md",
+      "sha256": "91d66e946967021c2b9c6d79d8c88d7de079f161a98483be795b4674472ac1b3"
+    },
+    {
+      "path": "arena/fixtures/long/book/追踪/时间线/作者真相.md",
+      "sha256": "5145a58134f0c5919b37211836451bca33d17948c3ff0e87fbdb8729f5b15931"
+    },
+    {
+      "path": "arena/fixtures/long/book/追踪/时间线/读者已知.md",
+      "sha256": "26b7622029e61652fc8fc208f833b6551f9c1493c6de7e0d3631639d59f80d5e"
+    },
+    {
+      "path": "arena/fixtures/long/book/追踪/物证台账.md",
+      "sha256": "2dd9dba3ac14486678a13dd25829ba690ac8662463b2568b667f7ea49b815694"
+    },
+    {
+      "path": "arena/fixtures/long/book/追踪/章节金字塔.md",
+      "sha256": "1b676fa9a48bf74d78d5ffb01a5ccee0e522538f01b3bde257f332ad92349bf7"
+    },
+    {
+      "path": "arena/fixtures/long/init.input.json",
+      "sha256": "d270752d0ea7b7075df5832a0a2b5921eb0fb9aaa1bbe83406b6bfdb01e49704"
+    },
+    {
+      "path": "arena/fixtures/long/input.trial-001.json",
+      "sha256": "8b577115a3ff03552d633be9a652c60119890820167b0aae0410876be33a651b"
+    },
+    {
+      "path": "arena/fixtures/short/book/追踪/_tracking-state.json",
+      "sha256": "e1e88057d369c6fce53213d5b9462ccab67aa9c2e8f1c4680bc2cb82dc0ace35"
+    },
+    {
+      "path": "arena/fixtures/short/book/追踪/上下文.md",
+      "sha256": "65a124c4618fb6c1ca244ac67f9529b632bc9f47e8060eebb5b7f928c50d9d60"
+    },
+    {
+      "path": "arena/fixtures/short/book/追踪/事件定性资产.md",
+      "sha256": "efcd338bc48be0ffefb238f7641265c76bde513ea61bec963f304867d5333f48"
+    },
+    {
+      "path": "arena/fixtures/short/book/追踪/伏笔.md",
+      "sha256": "01c81a06852a8c7931a61cc5cb2df171a63c27334355426344a43d047f94be46"
+    },
+    {
+      "path": "arena/fixtures/short/book/追踪/地理台账.md",
+      "sha256": "23b608de84f6ef71c36994a327c4a9c4bdbf880659c6857b05f7d41d0bc950a5"
+    },
+    {
+      "path": "arena/fixtures/short/book/追踪/场景台账.md",
+      "sha256": "201aeb956b1786992ae81f00ed9da6dfd45a308e3fd9d790e7c79709b78d1de0"
+    },
+    {
+      "path": "arena/fixtures/short/book/追踪/待审台账.md",
+      "sha256": "91d66e946967021c2b9c6d79d8c88d7de079f161a98483be795b4674472ac1b3"
+    },
+    {
+      "path": "arena/fixtures/short/book/追踪/时间线/作者真相.md",
+      "sha256": "5145a58134f0c5919b37211836451bca33d17948c3ff0e87fbdb8729f5b15931"
+    },
+    {
+      "path": "arena/fixtures/short/book/追踪/时间线/读者已知.md",
+      "sha256": "26b7622029e61652fc8fc208f833b6551f9c1493c6de7e0d3631639d59f80d5e"
+    },
+    {
+      "path": "arena/fixtures/short/book/追踪/物证台账.md",
+      "sha256": "2dd9dba3ac14486678a13dd25829ba690ac8662463b2568b667f7ea49b815694"
+    },
+    {
+      "path": "arena/fixtures/short/book/追踪/章节金字塔.md",
+      "sha256": "5d89243cb1eb0facc70356451fa8c14dee0d198d858f4b0cca608dc64d4d556b"
+    },
+    {
+      "path": "arena/fixtures/short/init.input.json",
+      "sha256": "f4db888120825a8d569185df338c792568922d22078cef74f9eb13cd8921754c"
+    },
+    {
+      "path": "arena/p1-1-contracts.log",
+      "sha256": "12612af2c990f751c0b322687f44a897e193397936e3ef24275071ff478f0706"
+    },
+    {
+      "path": "arena/p1-1-doc-budget.log",
+      "sha256": "a80b3826e78acef219027e80dc0288ffdd119953787c0ecec7b8efe21d0c308b"
+    },
+    {
+      "path": "arena/p1-1-run-tests.log",
+      "sha256": "f34cf63501a563babddfa12cfb035a9baa4d665619ccde3dffa1cdf743e6c53c"
+    },
+    {
+      "path": "arena/p1-2-contracts.log",
+      "sha256": "12612af2c990f751c0b322687f44a897e193397936e3ef24275071ff478f0706"
+    },
+    {
+      "path": "arena/p1-2-doc-budget.log",
+      "sha256": "d146bf381dfa4a0e2352bb6ad6e4c4b31b3870121d52e5d1b9698783731464b1"
+    },
+    {
+      "path": "arena/p1-2-run-tests.log",
+      "sha256": "719f6e7e1ec91958627b4ea99eb5cba2b3cc40ee4b746c4ca89effb2a2f6abce"
+    },
+    {
+      "path": "arena/p2-1-run-tests.log",
+      "sha256": "ff3a05aab5df38b8fe3b10e9e2231d2fe8c68969e3f7b3b79635717bf6ce647e"
+    },
+    {
+      "path": "arena/p2-2-run-tests.log",
+      "sha256": "0a399900072f94368e5f4a8881738d36db896f30ba772e6598c81fbc54ace5fd"
+    },
+    {
+      "path": "arena/p2-3-dbg.log",
+      "sha256": "0fa035c5a16c540964ebfbf597fed5224cc3eaffff47bc7bf5d87265f579d94f"
+    },
+    {
+      "path": "arena/p2-3-run-tests.log",
+      "sha256": "0fa035c5a16c540964ebfbf597fed5224cc3eaffff47bc7bf5d87265f579d94f"
+    },
+    {
+      "path": "arena/p2-3-smoke.log",
+      "sha256": "0a399900072f94368e5f4a8881738d36db896f30ba772e6598c81fbc54ace5fd"
+    },
+    {
+      "path": "arena/p3-1-budget.log",
+      "sha256": "3fb79eaf57be447843435f4febccf8daed46e99d9348e9b271a5f4a6c295ba0d"
+    },
+    {
+      "path": "arena/p3-1-contracts.log",
+      "sha256": "8dbb0899dbb83c3f5a7be9c0b6843bd0fd82c87479f365bcf22b3d647e340363"
+    },
+    {
+      "path": "arena/p3-1-run-tests.log",
+      "sha256": "7b39d935ceb38904383b27be2c8b65258371dba809190b2cd3f2037544210439"
+    },
+    {
+      "path": "arena/p3-2-regression.log",
+      "sha256": "7b39d935ceb38904383b27be2c8b65258371dba809190b2cd3f2037544210439"
+    },
+    {
+      "path": "arena/progress-tests/p0-01-run-tests.json",
+      "sha256": "84b39e2b616559bcc6265365aadda9a4fc0fb5f48497982bdbf00bf8947dfbc0"
+    },
+    {
+      "path": "arena/progress-tests/p0-02-contracts.json",
+      "sha256": "09a64a012aa7e47f4a3e620110ae2b2b0748e58a86175806bf1ad701ad437780"
+    },
+    {
+      "path": "arena/progress-tests/p0-03-doc-budget.json",
+      "sha256": "eec073f8f26c5eacadf3694d54a59f12bf3a2378e2955f5fa36d949260ae356a"
+    },
+    {
+      "path": "arena/progress-tests/p0-04-fixtures.json",
+      "sha256": "b29e5bec5cf24d1769f595ec10e272c93e03e391e700769d8dfcf6d2b2c9653e"
+    },
+    {
+      "path": "arena/progress-tests/p1-1-01-run-tests.json",
+      "sha256": "348903e4a5e129a5cf4a11ec083ca6cf565ccf4ae19fc472b9b009e60bd9f104"
+    },
+    {
+      "path": "arena/progress-tests/p1-1-02-contracts.json",
+      "sha256": "73d91df161e34178e5bc76feb423bcc2b1538f686e5e2f81e1974aaa07e6c5ff"
+    },
+    {
+      "path": "arena/progress-tests/p1-1-03-doc-budget.json",
+      "sha256": "12188e27c7e039b9c5578b50fa51e5b33990f728bf6d4e34a5c2f827dbef1523"
+    },
+    {
+      "path": "arena/progress-tests/p1-2-01-run-tests.json",
+      "sha256": "2bda35c217b914a1f49ce182f55b5dae8a054027e4a0108c46a6acd8c5bafc13"
+    },
+    {
+      "path": "arena/progress-tests/p1-2-02-contracts-budget.json",
+      "sha256": "48d8c5827ffc5622533fe0a4e241cdc5ff4dbde21627e13d92df2f45703b3704"
+    },
+    {
+      "path": "arena/progress-tests/p2-1-01-run-tests.json",
+      "sha256": "a0ae4a38972d9df0b703be63a6f317d1de32a5743000e66aa7a95fdaedc6e8a8"
+    },
+    {
+      "path": "arena/progress-tests/p2-2-01-run-tests.json",
+      "sha256": "d7598a042d2a839c120a42052014fa9c660659f7c7b9f031f0600112bbab8abc"
+    },
+    {
+      "path": "arena/progress-tests/p2-3-01-run-tests.json",
+      "sha256": "c9425cc396d51d11188914473eb98ba1608b7ac42db7fef87d818f78f39afc3c"
+    },
+    {
+      "path": "arena/progress-tests/p3-1-01-run-tests.json",
+      "sha256": "8bf57316e621bd70b4f374924b2dd87ab16d105d42309353dabe4d525e407ce7"
+    },
+    {
+      "path": "arena/progress-tests/p3-2-01-creation-evidence.json",
+      "sha256": "df8868818e6c7f11be5ba4a4a8e641321c18c87c4b5b06e6750a2eade43972b2"
+    },
+    {
+      "path": "arena/update-progress.js",
+      "sha256": "9ba1bb33ab5a50d1441ec8dfde4e4d0d2f25c3758a7d26ce1d7ea912825470a2"
+    },
+    {
+      "path": "scripts/doc-budget.json",
+      "sha256": "3d8ef7558e44b53f9037ec84d880eb987f33444f63ce5cb58836b9e9903fc506"
+    },
+    {
+      "path": "skills/guyin-setup/SKILL.md",
+      "sha256": "a6b1e7af752023bbc90ba3576e8d67d75cecc0be94b274cdfe1e29cc97f0075e"
+    },
+    {
+      "path": "skills/guyin-setup/legacy/agents-v0.8/canonical/guyin-beat-writer.md",
+      "sha256": "36a2ecd89be872b614be29c3610a00308bac65c4920c23e700b6f86cabc916c0"
+    },
+    {
+      "path": "skills/guyin-setup/legacy/agents-v0.8/canonical/guyin-checker.md",
+      "sha256": "de146df362e1348e70f2969a2432dc60ad4700596262212f943b934b5875cd36"
+    },
+    {
+      "path": "skills/guyin-setup/legacy/agents-v0.8/claude/guyin-beat-writer.md",
+      "sha256": "154ff940bcf4c584d4c143f7f2d94504b753879064939169e3f51134d07c08ea"
+    },
+    {
+      "path": "skills/guyin-setup/legacy/agents-v0.8/claude/guyin-checker.md",
+      "sha256": "3a0d29cea6554a3210a7e17411606a31e263592a89bd7a175fec9601e38a8d62"
+    },
+    {
+      "path": "skills/guyin-setup/legacy/agents-v0.8/codex/guyin-beat-writer.toml",
+      "sha256": "27282f8e3ee4e0d137789ebd22ed469ae181dd04e03d70f73e5dd13963fbe8cf"
+    },
+    {
+      "path": "skills/guyin-setup/legacy/agents-v0.8/codex/guyin-checker.toml",
+      "sha256": "e74da3f9edb645b6ad30e43da71a90367980b1e3864719c3cd027c85ccd6b7c0"
+    },
+    {
+      "path": "skills/guyin-setup/legacy/agents-v0.8/opencode/guyin-beat-writer.md",
+      "sha256": "023bd86e24e3b7efd23b9fb6c1c97f45974194e4e05c2500919c53b6eb79eff6"
+    },
+    {
+      "path": "skills/guyin-setup/legacy/agents-v0.8/opencode/guyin-checker.md",
+      "sha256": "168796328996cdc02a65ca3c18e14724a3c3ea2c496dbfe6f6e43d771a92a785"
+    },
+    {
+      "path": "skills/guyin-setup/scripts/guyin-deploy.js",
+      "sha256": "97f6ef4e299f52526fb4f419bc4c429375b22329c82728c14fe07c59aff10244"
+    },
+    {
+      "path": "skills/guyin-setup/templates/long/.claude/agents/guyin-beat-writer.md",
+      "sha256": null,
+      "note": "deleted"
+    },
+    {
+      "path": "skills/guyin-setup/templates/long/.claude/agents/guyin-checker.md",
+      "sha256": null,
+      "note": "deleted"
+    },
+    {
+      "path": "skills/guyin-setup/templates/long/.codex/agents/guyin-beat-writer.toml",
+      "sha256": null,
+      "note": "deleted"
+    },
+    {
+      "path": "skills/guyin-setup/templates/long/.codex/agents/guyin-checker.toml",
+      "sha256": null,
+      "note": "deleted"
+    },
+    {
+      "path": "skills/guyin-setup/templates/long/.opencode/agents/guyin-beat-writer.md",
+      "sha256": null,
+      "note": "deleted"
+    },
+    {
+      "path": "skills/guyin-setup/templates/long/.opencode/agents/guyin-checker.md",
+      "sha256": null,
+      "note": "deleted"
+    },
+    {
+      "path": "skills/guyin-setup/templates/long/AGENTS.md",
+      "sha256": "bae8a9f7187852c7916ff4fec8eba2f2ac670a9965ba967f8738493b188c805a"
+    },
+    {
+      "path": "skills/guyin-setup/templates/long/README.md",
+      "sha256": "6463c60f1796a34b13130afad5665ba4a28985fec597581c048bb54ba8c4d22b"
+    },
+    {
+      "path": "skills/guyin-setup/templates/long/作者性/偏执点.md",
+      "sha256": "743d156d470902852575496d2295c5704536608a3754cb1d445f99b56a07d258"
+    },
+    {
+      "path": "skills/guyin-setup/templates/long/作者性/参考-气质谱系.md",
+      "sha256": "410048d0638ce3e9556bf75b915b19a5efc7f9d54cb05b8e4b705db72de0e41c"
+    },
+    {
+      "path": "skills/guyin-setup/templates/long/作者性/口述定稿单.md",
+      "sha256": "f05234dadc68338413fed95b4a6d28f6b189b711aace0dd5f3ec7ad46cd68938"
+    },
+    {
+      "path": "skills/guyin-setup/templates/long/作者性/指纹.md",
+      "sha256": "44cb366c79162aab37e25e7922ff9e3f157f5061c3b3f84840f0f32766351d3d"
+    },
+    {
+      "path": "skills/guyin-setup/templates/long/作者性/气卡.md",
+      "sha256": "eddc30a777b502f8c0fc6e07fb2a26c966b628e613bddc3adcb781e60e6ce3c4"
+    },
+    {
+      "path": "skills/guyin-setup/templates/long/作者性/魂档案.md",
+      "sha256": "c6226337f729249bc0a66a16cd6708d099855c58d30b1a8cda39848a9a4c2c3c"
+    },
+    {
+      "path": "skills/guyin-setup/templates/long/大纲/README.md",
+      "sha256": "f9ba4bffb2b71ff34f2ed094b65a4a65e6bca4081021ad9fe46f06b5f80fceb1"
+    },
+    {
+      "path": "skills/guyin-setup/templates/long/大纲/执行层一页纸.md",
+      "sha256": "b6590f0f8c8f785def67f8b7b1f364f49e6337b82cdc6867ec9fe09f2bd58291"
+    },
+    {
+      "path": "skills/guyin-setup/templates/long/大纲/批次公约.md",
+      "sha256": "48392aca6adbc68661823083b2531b11d2b77ef00e2532c01f72defaee2f3dd3"
+    },
+    {
+      "path": "skills/guyin-setup/templates/long/设定/题材定位.md",
+      "sha256": "a4fb30885504f71c9795c36e46871cb9543830974eaca5924d83cd1c94e527f1"
+    },
+    {
+      "path": "skills/guyin-setup/templates/long/追踪/豁免台账.md",
+      "sha256": "4ba97ba2d3974d70acf4feefb65feff06b27c0e487afeeb2973724bb293ea79b"
+    },
+    {
+      "path": "skills/guyin-short-write/SKILL.md",
+      "sha256": "bfbdaff7c75ad4668ff80232cd4eea4dcf2f4f603e8776c445b6b143551c4702"
+    },
+    {
+      "path": "skills/guyin-short-write/references/consult/cross-book-recall.md",
+      "sha256": "fcf96997813448fd4b38e8642396a8fcaf5d396d50c17889ee7fbdd9ed0e53fc"
+    },
+    {
+      "path": "skills/guyin-story/SKILL.md",
+      "sha256": "91085a25f2f34219705e9b4833f688d6e274a06fd0bf542573148bf70484fac4"
+    },
+    {
+      "path": "skills/guyin-write/SKILL.md",
+      "sha256": "9a7635af2c62017ec277a0356f9ee8bd8f4fb44d663f445ebf6fac040f2f10e8"
+    },
+    {
+      "path": "skills/guyin-write/agents/guyin-beat-writer.md",
+      "sha256": null,
+      "note": "deleted"
+    },
+    {
+      "path": "skills/guyin-write/agents/guyin-checker.md",
+      "sha256": null,
+      "note": "deleted"
+    },
+    {
+      "path": "skills/guyin-write/cards/README.md",
+      "sha256": "b984c45899136b65e5413f9cc85d145f502ac44049f1dbfe89d2cb9dfc46cf3f"
+    },
+    {
+      "path": "skills/guyin-write/cards/写作卡.md",
+      "sha256": "be7589e4f082e4aaed6e48a086d40987a7f520c438da46aadab6a968ba7ef254"
+    },
+    {
+      "path": "skills/guyin-write/cards/分诊卡.md",
+      "sha256": "c084978ea0a5ee098f7c7ee2654c5a3cb4968e3530f968b3f9719b727d152ce6"
+    },
+    {
+      "path": "skills/guyin-write/cards/发散卡.md",
+      "sha256": "6d2914d2aea126743ad0665ec7956f618a62fe34cc1e9805358760a81ef5e8cd"
+    },
+    {
+      "path": "skills/guyin-write/cards/摘要卡.md",
+      "sha256": "201b5b0c0f893de513f91044e43c9c90c772dbd66b71719960557a23646092ac"
+    },
+    {
+      "path": "skills/guyin-write/cards/改写卡.md",
+      "sha256": "c2a0f8e15bba5bd530fbe3623e1874c0d946daf18d5cad93a7c29cc42fe1b909"
+    },
+    {
+      "path": "skills/guyin-write/cards/自检卡.md",
+      "sha256": "f26f26b31fdd181d260214117f28d0c9e1b2b1533751f369ec0149b0261d2d2e"
+    },
+    {
+      "path": "skills/guyin-write/references/consult/INDEX.md",
+      "sha256": "070952d05091cad1d2c9e7d3d1f3b875a539e6bdc0402a21a132118a41368891"
+    },
+    {
+      "path": "skills/guyin-write/references/consult/cross-book-recall.md",
+      "sha256": "fcf96997813448fd4b38e8642396a8fcaf5d396d50c17889ee7fbdd9ed0e53fc"
+    },
+    {
+      "path": "skills/guyin-write/references/consult/style-genre-modules.md",
+      "sha256": "d348ee781589c3d31324d10a9126dd0acc617abfea9fbb65de1873edf6c86040"
+    },
+    {
+      "path": "skills/guyin-write/references/exemplars/README.md",
+      "sha256": "fca1725b59ea41aabbe581848cd93a09b3e3cc675bd153e26629ed24ebad02ec"
+    },
+    {
+      "path": "skills/guyin-write/references/作者性引导.md",
+      "sha256": "f996923de6cdf12d472231a7c93290fbe87d8fad82c9d86cf4e77beff46d32f5"
+    },
+    {
+      "path": "skills/guyin-write/references/候选隔离协议.md",
+      "sha256": "f2bfccefc7b45f20e96c266db406021eebdf0fee9a0b6365e2afe55d4d24a191"
+    },
+    {
+      "path": "skills/guyin-write/references/细纲协议.md",
+      "sha256": "2928f23947b518f8a013c50987cdaec715ee9c7ba9d39b52b67426102251ad3f"
+    },
+    {
+      "path": "skills/guyin-write/references/默认叙事风格.md",
+      "sha256": "162c3b8675a02fcb2c54565c56a2bd04bdd7920dccc01a22e283a12848344682"
+    },
+    {
+      "path": "skills/guyin-write/scripts/guyin-author-session.py",
+      "sha256": "8e6d2e04e34348824bfa23ea08c4e5dbfef467f1c8104102ec8897c44aeada5a"
+    },
+    {
+      "path": "skills/guyin-write/scripts/guyin-check-authority-leak.js",
+      "sha256": "1c7be67da5bb442604b9fc56be78886165b3dbfcfa1b4a8a1ee194659609adc9"
+    },
+    {
+      "path": "skills/guyin-write/scripts/guyin-check-beat.js",
+      "sha256": "c89e5e839032ca7f652318b81e8628f786ac27b1c82deba3cca25053f4b871f6"
+    },
+    {
+      "path": "skills/guyin-write/scripts/guyin-check-foreshadow-id.js",
+      "sha256": "14df12ea555c604aeb560973f4c77f83a70fc81096790d9b4f2d9fdaba48646f"
+    },
+    {
+      "path": "skills/guyin-write/scripts/guyin-check-outline-deliver.js",
+      "sha256": "ab29c85a5951097e5f5ccc9942e1f5d721fd217f3805f5ab4d0af39c6af99508"
+    },
+    {
+      "path": "skills/guyin-write/scripts/guyin-check-repetition.js",
+      "sha256": "358b23e9dc4ee3553df8e13bda8813dce59cf180cc11892963ea42c4890ba00b"
+    },
+    {
+      "path": "skills/guyin-write/scripts/guyin-tracking-commit.py",
+      "sha256": "8ba9f22ae524641f42653c99057d2fcd7e0eb847dcff269d08ff737c2a9fe761"
+    },
+    {
+      "path": "skills/guyin-write/scripts/lib/guyin-candidate-context.js",
+      "sha256": "1a3d4576d40e607a59b55846011c50784822f0ac18f20207d81339344e711b1b"
+    },
+    {
+      "path": "tests/run-tests.js",
+      "sha256": "25f5818f1c03d9017e4f11534b6683866cd81434b8bd4a5c95fad889cf237131"
+    }
+  ],
+  "tests": [
+    {
+      "name": "P0 baseline run-tests",
+      "command": "node tests/run-tests.js",
+      "cwd": ".",
+      "exit_code": 0,
+      "source": "1830b0e (worktree clean at start; HEAD=1655383 docs-only)",
+      "result": "499 pass / 0 fail / 0 skip",
+      "log": "arena/baseline-run-tests.log",
+      "record_file": "arena/progress-tests/p0-01-run-tests.json"
+    },
+    {
+      "name": "P0 baseline skill contracts",
+      "command": "node scripts/check-skill-contracts.js",
+      "cwd": ".",
+      "exit_code": 0,
+      "source": "1830b0e",
+      "result": "9 skills ok",
+      "log": "arena/baseline-contracts.log",
+      "record_file": "arena/progress-tests/p0-02-contracts.json"
+    },
+    {
+      "name": "P0 baseline doc-budget",
+      "command": "node scripts/check-doc-budget.js",
+      "cwd": ".",
+      "exit_code": 0,
+      "source": "1830b0e",
+      "result": "hot path 10951/10970 (margin 19)",
+      "log": "arena/baseline-doc-budget.log",
+      "record_file": "arena/progress-tests/p0-03-doc-budget.json"
+    },
+    {
+      "name": "P0 arena synthetic fixtures",
+      "command": "node arena/build-fixtures.js --json",
+      "cwd": ".",
+      "exit_code": 0,
+      "source": "1830b0e",
+      "result": "long/short books: init exit0, check exit0, state_revision=0; long state 599a7f86…, short state e1e88057…",
+      "record_file": "arena/progress-tests/p0-04-fixtures.json"
+    },
+    {
+      "name": "P1.1 run-tests after route rewrite",
+      "command": "node tests/run-tests.js",
+      "cwd": ".",
+      "exit_code": 0,
+      "source": "P1.1 worktree (write/story/short-write SKILL + 细纲协议 + cards + beat.js + doc-budget + tests)",
+      "result": "511 pass / 0 fail / 0 skip（基线 499；新增 12：T01-T04 共 12 条断言；C3 旧 3 条替换为新 3 条；beat semanticReview 1 条改写）",
+      "log": "arena/p1-1-run-tests.log",
+      "record_file": "arena/progress-tests/p1-1-01-run-tests.json"
+    },
+    {
+      "name": "P1.1 skill contracts",
+      "command": "node scripts/check-skill-contracts.js",
+      "cwd": ".",
+      "exit_code": 0,
+      "source": "P1.1 worktree",
+      "result": "9 skills ok（write 91 行 / story 47 行 / short-write 55 行，均 ≤150）",
+      "log": "arena/p1-1-contracts.log",
+      "record_file": "arena/progress-tests/p1-1-02-contracts.json"
+    },
+    {
+      "name": "P1.1 doc-budget",
+      "command": "node scripts/check-doc-budget.js",
+      "cwd": ".",
+      "exit_code": 0,
+      "source": "P1.1 worktree",
+      "result": "全条目 ok；写章热路径重定义为当前会话单文件 SKILL 5158/5300（旧 10951/10970 含编排层+beat 下发，随真实退役下调）；执行层 beat 路径删除；卡片预算随按需化下调；agents 条目标记待 P3.1 退役",
+      "log": "arena/p1-1-doc-budget.log",
+      "record_file": "arena/progress-tests/p1-1-03-doc-budget.json"
+    },
+    {
+      "name": "P1.2 run-tests after profile single-source",
+      "command": "node tests/run-tests.js",
+      "cwd": ".",
+      "exit_code": 0,
+      "source": "P1.2 worktree",
+      "result": "528 pass / 0 fail / 0 skip（较 P1.1 的 511 新增 17 条 T05-T07 断言：机读路由 15 例+规则顺序、11 profile 定义段、冻结/W-B 边界/书级入口/谱系可选/无配额/exemplars 取消强制等）",
+      "log": "arena/p1-2-run-tests.log",
+      "record_file": "arena/progress-tests/p1-2-01-run-tests.json"
+    },
+    {
+      "name": "P1.2 contracts + doc-budget",
+      "command": "node scripts/check-skill-contracts.js; node scripts/check-doc-budget.js",
+      "cwd": ".",
+      "exit_code": 0,
+      "source": "P1.2 worktree",
+      "result": "契约 9 ok；预算全 ok，新增 默认叙事风格.md 条目 7477/7700，写章热路径 12635/13000（profile 保守按全文件称重，实际仅加载所选段）",
+      "logs": [
+        "arena/p1-2-contracts.log",
+        "arena/p1-2-doc-budget.log"
+      ],
+      "record_file": "arena/progress-tests/p1-2-02-contracts-budget.json"
+    },
+    {
+      "name": "P2.1 run-tests after author-session",
+      "command": "node tests/run-tests.js",
+      "cwd": ".",
+      "exit_code": 0,
+      "source": "P2.1 worktree（新增 scripts/guyin-author-session.py，约 900 行）",
+      "result": "571 pass / 0 fail / 0 skip（较 P1.2 的 528 新增 43 条：input v1 校验 11 个负例＋run_id；T08 半章/compact/接写；T09 孤立稿；T10 ready 后候选/输入被改 blocked；T11 多 run/损坏 repair/拒修；T33 后补授权/换稿失效/目标变化新 run；T12 真实 publish rev1 后状态对账/published 终态）",
+      "log": "arena/p2-1-run-tests.log",
+      "session_verification_note": "author-session start/checkpoint/status/repair 均在 TMP 合成书根用真实 python 进程执行；T12 经 tracking-commit publish 真提交后用 session 对账，不重 append。生成行为（续写自然度）仍属会话验证项",
+      "record_file": "arena/progress-tests/p2-1-01-run-tests.json"
+    },
+    {
+      "name": "P2.2 run-tests after candidate-context + evidence chain",
+      "command": "node tests/run-tests.js",
+      "cwd": ".",
+      "exit_code": 0,
+      "source": "P2.2 worktree",
+      "result": "607 pass / 0 fail / 0 skip（较 P2.1 的 571 新增 36 条 T13-T18/T34：候选解析一致/显式章号/越界；exact 逐字/semantic 人工/not_applicable/坏细纲；空作者性/生活素材/工序指令/forbidden/allowed_reuse；只读哈希一致/叙述术语；证据汇总非零扫描+手填/过期/零扫描/换稿拒绝；foreshadow 显式候选+事务新增/悬空/损坏细纲）",
+      "log": "arena/p2-2-run-tests.log",
+      "notes_wired": [
+        "新增 scripts/lib/guyin-candidate-context.js（解析 CLI + --gather 证据汇总 + --validate-evidence 校验）",
+        "outline-deliver/authority-leak/foreshadow-id 增加显式候选模式（legacy 目录模式保留）",
+        "repetition 增加 --prepublish（ready 前不挂指纹欠账门，欠账仍由发布器指纹步骤守）",
+        "outline-copy 显式 --outline 接线未做：无细纲流程按 SKILL 记不适用，legacy 目录模式不变（列为后续可增强项，不影响 T13-T18/T34 断言）"
+      ],
+      "record_file": "arena/progress-tests/p2-2-01-run-tests.json"
+    },
+    {
+      "name": "P2.3 run-tests after publication contract v2 + preview + before/after recovery",
+      "command": "node tests/run-tests.js",
+      "cwd": ".",
+      "exit_code": 0,
+      "source": "P2.3 worktree（guyin-tracking-commit.py：preview 纯内存预演/v2 author_input+candidate_checks/3072 告警/staged 字节/tracking_plan before·after/recover 第三态阻断/暂停 JSON 改 stdout；candidate-context 接线；夹具修正）",
+      "result": "631 pass / 0 fail / 0 skip（较 P2.2 的 607 新增 24 条：T19-T24/T28-T32 全部；paused exit3 JSON 走 stdout；recover 在 tracking_committed 重跑 before/after 核验阻断外部改动；ch2 事务快照只含变动角色、ch2 独立文本避免跨章查重误伤）",
+      "log": "arena/p2-3-run-tests.log",
+      "notes_wired": [
+        "preview 命令：合法 v2 清单纯内存预演 next_revision，空快照/缺字段/错 revision 拒绝且零写入",
+        "publish v2：prepared 不信任手写证据，重跑候选检查链；journal schema_version=2 带 tracking_plan（before/after/staged_path），staged 字节落 R/publication/artifacts/",
+        "同 run 重入幂等；篡改证据 exit2；逐章记录超 3072 告警但事实完整（V001-V012）",
+        "PublishPaused 信号 JSON 改走 stdout（exit 3 不变）",
+        "_drive_publication 在 tracking_committed/fingerprint_committed 阶段也经 _commit_tracking 已完成分支：state/视图 digest＋tracking_plan before·after 第三态核验，不重 append、不静默回滚",
+        "revision 指纹只更新本章，ch2 条数不受影响"
+      ],
+      "record_file": "arena/progress-tests/p2-3-01-run-tests.json"
+    },
+    {
+      "name": "P3.1 run-tests after managed-agent retirement + guyin-deploy",
+      "command": "node tests/run-tests.js",
+      "cwd": ".",
+      "exit_code": 0,
+      "source": "P3.1 worktree（6 受管部署件＋2 canonical agent 归档 legacy/agents-v0.8 后从新模板删除；新增 scripts/guyin-deploy.js；setup SKILL v0.9.0；模板 AGENTS/README 改单模型自由执笔；根 README/doc-budget 同步）",
+      "result": "630 pass / 0 fail / 0 skip（较 P2.3 的 631：删除 8 条旧 E3-1/Fw-03/v3-C2 受管 agent 断言＋6 条模板存在断言，新增 23 条：E3 退役断言 17 条含模板反向检查；T25 9 条：非交互安装/零 agent/幂等合并/短篇真实 append+revision；T26 5 条：预览分类/批准混自定义 exit2/备份 MANIFEST/重复迁移幂等；T27 8 条：账本丢失续跑不重复备份/drift status/哈希不符 exit4/confirm-source 重核）",
+      "log": "arena/p3-1-run-tests.log",
+      "notes_wired": [
+        "guyin-deploy.js install：模板树部署（hook/command replace、settings 走 merge 脚本、其余 create-if-absent、AGENTS 书名替换、.guyin-deployed 0.9.0 标记），反向自检模板无 agents",
+        "preview/retire：legacy 归档 sha256 识别受管 vs custom_same_name(hash_mismatch) vs unknown；只删显式批准受管，备份 .guyin/upgrade-backup/<UTC>/＋MANIFEST.txt，空目录不留壳",
+        "进度账本 .guyin/upgrade-progress.json 带 source_hash；源码哈希不符 exit4，须重 preview 并 --confirm-source；drift_returns 以现场扫描为准，不信账本假完成",
+        "setup SKILL 删除模型提取/回填/执行层自检（Fw-03）与必须细纲前置；恢复顺序：recover 清在途→台账体检→agent 退役",
+        "canonical skills/guyin-write/agents/ 目录删除，不留空壳；活书同名文件迁移只走预览-批准"
+      ],
+      "record_file": "arena/progress-tests/p3-1-01-run-tests.json"
+    },
+    {
+      "name": "P3.2 §10 真实创作实验（A/C 首章＋C 三章单元＋中断续写）",
+      "command": "node arena/exp-p3-2/run-experiment.js phase1|phase2|phase3（跨三个独立进程）; node tests/run-tests.js",
+      "cwd": ".",
+      "exit_code": 0,
+      "source": "P3.2 实验场 arena/exp-p3-2（2026-09-21）",
+      "result": "工程证据齐备：A 直写 2 篇（爽文/历史穿越 ch1）；C 真实书根 2 本经 deploy→author-session→候选检查链→publish v2 发布：爽文 ch1-3 rev=1..3（state_revision=3，段落指纹 14/16/15），历史穿越 ch1 rev=1；ch2 跨进程中断半稿 v0001(complete=false)→新进程恢复 v0002 全稿＋input 修订重授→发布 rev2，v0001 字节比对未动；ch3 被 integrity hard 叠字拦截一次，作者改句重发；匿名样本一–四＋阅读问题表导出；全量回归 630/0/0",
+      "log": "arena/p3-2-regression.log",
+      "artifacts": [
+        "arena/exp-p3-2/README.md",
+        "arena/exp-p3-2/shared/facts-shuangwen.md",
+        "arena/exp-p3-2/shared/facts-lichuanyi.md",
+        "arena/exp-p3-2/A-direct/A-爽文-第一章.md",
+        "arena/exp-p3-2/A-direct/A-历史穿越-第一章.md",
+        "arena/exp-p3-2/阅读样本/（样本一–四盲读版＋C 续写两章＋mapping＋阅读问题表）",
+        "arena/exp-p3-2/books/c-爽文-临渠粮事/（rev3 已发布书根）",
+        "arena/exp-p3-2/books/c-历史穿越-阳武河工/（rev1 已发布书根）"
+      ],
+      "pending_acceptance": "真实读者（用户/独立读者）盲读反馈未回收——按 §10.2『没有真实阅读反馈，工程可签收，创作效果仍待验收』，P3.2 仅工程签收；C 是否更好读无证据，禁止外推",
+      "known_limits": [
+        "A/C 同会话同模型产出，非严格独立新会话双盲，可在反馈前补做",
+        "中断为跨进程恢复（真实 author-session/compact 机制），非跨天自然中断，声线连续性待读者第9问确认"
+      ],
+      "record_file": "arena/progress-tests/p3-2-01-creation-evidence.json"
+    }
+  ],
+  "blockers": [],
+  "next_action": "P3.2 待用户/独立读者盲读 arena/exp-p3-2/阅读样本（样本一-四）并按阅读问题表回原话；反馈回收前创作效果不签收，禁止宣称全部闭环（§10.2/§10.3）",
+  "updated_at": "2026-09-21T01:35:24.051Z"
+}

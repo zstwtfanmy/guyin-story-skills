@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "run_id": "exp-ch3",
+  "input_path": ".guyin/work/exp-ch3/input.json",
+  "input_sha256": "16612a2824bbaf751926aab82eb0fe6aadabd5ca0cbaca9bb05d10d822f09190",
+  "phase": "published",
+  "baseline": {
+    "state_revision": 2,
+    "state": {
+      "path": "追踪/_tracking-state.json",
+      "sha256": "8d678bb2107874af410784fce873810a2eea84a98ec7b29207ebe4af7cdbdb97"
+    },
+    "prose": {
+      "dir": "正文",
+      "files": [
+        {
+          "path": "正文/README.md",
+          "sha256": "4c05ada059642db1f4978ea5bd74d3b43e06b7239fb3a6dc2a44853a6ee1b702"
+        },
+        {
+          "path": "正文/第001章_八钱银子的米.md",
+          "sha256": "f0191f9c228dbf2acacdf367836b8285cf5d9455a56c4e12a02c29b72cde5db2"
+        },
+        {
+          "path": "正文/第002章_绳头.md",
+          "sha256": "1e30d6dc07f7a23f4169abac11ceb1e40d3c640297ddfeeee45ec0617f8616bc"
+        }
+      ]
+    },
+    "sources": []
+  },
+  "draft": {
+    "path": ".guyin/work/exp-ch3/drafts/v0001.md",
+    "complete": true,
+    "sha256": "55c434ae79f9e4f43a5344bfec0b9a34ed34a0c6d60ae5e422ab11d46110f194"
+  },
+  "review": null,
+  "transaction": null,
+  "check_evidence": null,
+  "plan_patch": null,
+  "next_action": null
+}

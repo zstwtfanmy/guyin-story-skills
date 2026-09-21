@@ -1,0 +1,8 @@
+{
+  "name": "P0 arena synthetic fixtures",
+  "command": "node arena/build-fixtures.js --json",
+  "cwd": ".",
+  "exit_code": 0,
+  "source": "1830b0e",
+  "result": "long/short books: init exit0, check exit0, state_revision=0; long state 599a7f86…, short state e1e88057…"
+}

@@ -1,0 +1,9 @@
+{
+  "name": "P0 baseline run-tests",
+  "command": "node tests/run-tests.js",
+  "cwd": ".",
+  "exit_code": 0,
+  "source": "1830b0e (worktree clean at start; HEAD=1655383 docs-only)",
+  "result": "499 pass / 0 fail / 0 skip",
+  "log": "arena/baseline-run-tests.log"
+}

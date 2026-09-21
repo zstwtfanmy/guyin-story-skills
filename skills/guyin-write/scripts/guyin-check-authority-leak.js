@@ -79,7 +79,10 @@ for (let i = 2; i < process.argv.length; i += 1) {
   } else if (arg === '-h' || arg === '--help') {
     process.stdout.write(`${USAGE}\n`);
     process.exit(0);
-  } else if (arg.startsWith('-')) {
+  } else if (['--chapter', '--unit', '--boundary', '--outline', '--transaction', '--state', '--title'].includes(arg)) {
+    // v4 显式候选模式参数（由 lib/guyin-candidate-context 统一解析），legacy 模式忽略。
+    i += 1;
+  } else if (arg.startsWith('--')) {
     die(`Unknown option: ${arg}`);
   } else {
     options.inputs.push(arg);
@@ -239,6 +242,105 @@ function matchLine(lineNorm, source) {
 }
 
 // ---------- 主流程 ----------
+
+// ---- v4 显式候选模式（--project + --chapter；只扫候选，空作者性合法）----
+function runExplicitAuthority() {
+  const cc = require('./lib/guyin-candidate-context');
+  let ctx;
+  try {
+    ctx = cc.resolveContext(process.argv.slice(2));
+  } catch (e) {
+    console.error(e.code === 'CTX_INPUT' ? `输入错误：${e.message}` : String(e));
+    process.exit(2);
+  }
+  const candidateText = fs.readFileSync(ctx.candidateAbs, 'utf8');
+  const lines = candidateText.split(/\r?\n/);
+  const locks = (ctx.boundary && Array.isArray(ctx.boundary.locks)) ? ctx.boundary.locks : [];
+  const reuse = new Set(((ctx.boundary && Array.isArray(ctx.boundary.allowed_reuse))
+    ? ctx.boundary.allowed_reuse : []).filter((x) => typeof x === 'string' && x.trim()));
+  const findings = [];
+  const add = (type, severity, line, message, excerpt) => findings.push({
+    file: ctx.candidateRel, line, column: 1, type, severity, handling: severity, message,
+    excerpt: excerpt || undefined,
+  });
+  const lineReused = (line) => {
+    if (reuse.size === 0) return false;
+    for (const r of reuse) if (line.includes(r)) return true;
+    return false;
+  };
+
+  // 1) 作者性字面泄漏（文件可选：空/缺一律合法，不发空转 advisory）。
+  const qiPath = path.join(ctx.projectRootAbs, '作者性', '气卡.md');
+  const soulPath = path.join(ctx.projectRootAbs, '作者性', '魂档案.md');
+  const sources = [];
+  if (fs.existsSync(qiPath)) extractFromQiCard(fs.readFileSync(qiPath, 'utf8'), sources);
+  if (fs.existsSync(soulPath)) extractFromSoulArchive(fs.readFileSync(soulPath, 'utf8'), sources);
+  const reported = new Set();
+  lines.forEach((rawLine, idx) => {
+    const lineNorm = normalize(rawLine);
+    if (!lineNorm) return;
+    for (const source of sources) {
+      if (reported.has(source.where + '|' + source.text)) continue;
+      const hit = matchLine(lineNorm, source);
+      if (hit) {
+        reported.add(source.where + '|' + source.text);
+        add(hit.level === 'blocking' ? 'authority-leak' : 'authority-leak-suspect',
+          hit.level, idx + 1,
+          `作者性字面泄漏：${hit.kind}「${hit.hit}」（词源：${source.where}）；化用合法、照抄不合法。`,
+          hit.hit);
+      }
+    }
+  });
+
+  // 2) 工序指令漏进正文（与 degeneration META 同源；TIER1 hard、TIER2 verify）。
+  const TIER1 = /细纲|情节点|卷纲|功能标签|目标情绪|字数目标|章首钩子|章尾钩子|写作指令|任务卡|写作卡/;
+  const TIER2 = /第[一二三四五六七八九十百千万两0-9]+章|本章|这一章|上一章|下一章|上章|下章|前一章|后一章|前文|后文|伏笔|读者|任务描述/;
+  lines.forEach((rawLine, idx) => {
+    const trimmed = rawLine.trim();
+    if (!trimmed || lineReused(rawLine)) return;
+    if (/^#{1,6}\s/.test(trimmed)) return; // 章节标题行（第N章_标题）不是工序泄漏
+    let m = TIER1.exec(trimmed);
+    if (m) add('authority-process-instruction', 'hard', idx + 1,
+      `明确工序指令漏入正文：「${m[0]}」——创作工序语不能进人物世界。`, m[0]);
+    m = TIER2.exec(trimmed);
+    if (m) add('authority-process-instruction', 'verify', idx + 1,
+      `疑似工序词漏入正文：「${m[0]}」——若非故事内用法须改；故事内真实讨论创作除外。`, m[0]);
+  });
+
+  // 3) boundary.forbidden：明示不入文文本，字面出现即拦（allowed_reuse 可豁免）。
+  for (const lock of locks.filter((l) => l && l.kind === 'forbidden' && l.text)) {
+    const want = String(lock.text);
+    if (candidateText.includes(want) && ![...reuse].some((r) => want.includes(r))) {
+      const at = lines.findIndex((l) => l.includes(want));
+      add('authority-forbidden-text', 'hard', at >= 0 ? at + 1 : 1,
+        `boundary 明示不入文文本出现在候选：「${want.slice(0, 30)}」`, want.slice(0, 40));
+    }
+  }
+
+  const status = findings.some((f) => f.severity === 'hard') ? 'fail'
+    : findings.some((f) => f.severity === 'verify') ? 'findings' : 'pass';
+  const failOn = options.failOn;
+  const report = {
+    status,
+    script: 'guyin-check-authority-leak.js',
+    script_sha256: cc.sha256File(__filename),
+    target: { chapter: ctx.chapter, unit: ctx.unit, candidate: ctx.candidateRel,
+      candidate_sha256: ctx.candidateHash },
+    files_scanned: ctx.filesScanned,
+    target_files: [ctx.candidateRel],
+    reference_files: [],
+    authorship_optional: true,
+    findings,
+  };
+  if (options.json) process.stdout.write(`${JSON.stringify(report, null, 2)}\n`);
+  else {
+    for (const f of findings) console.log(`${f.file}:${f.line}: [${handling.label(f)}] ${f.type}: ${f.message}`);
+    console.log(`authority-leak(explicit): ${status}`);
+  }
+  process.exit(handling.gateTripped(findings, failOn) ? 1 : 0);
+}
+
+if (options.project && process.argv.includes('--chapter')) runExplicitAuthority();
 
 const allFindings = [];
 let failed = false;

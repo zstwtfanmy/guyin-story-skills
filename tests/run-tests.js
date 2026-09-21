@@ -623,11 +623,11 @@ console.log('== guyin-check-beat（P1 连续场景/整章确定性预检，语�
     && !report.findings.some((f) => f.type === 'dialogue-run'),
     `status=${r.status} types=${JSON.stringify(report && report.findings.map((f) => f.type))}`);
 
-  // summary 验证：语义审读归完整章审读（4a），编号题体系已废除（任务书 §2.3）
+  // summary 验证：语义审读归当前会话 drafted 全文回看（review.md），编号题体系已废除
   r = run('guyin-check-beat.js', ['--json', clean]);
   report = parseJson(r.stdout);
-  check('beat summary 指向完整章审读且无编号题残留', report
-    && report.summary.semanticReview === 'full-chapter-read (SKILL.md 4a)'
+  check('beat summary 指向 drafted 全文回看且无编号题残留', report
+    && report.summary.semanticReview === 'full-chapter-read (drafted review.md)'
     && !('modelRemaining' in report.summary),
     `summary=${JSON.stringify(report && report.summary)}`);
 }
@@ -3175,20 +3175,15 @@ console.log('== 06 整改黄金样本回归（H2/O2/O3/I1/I2） ==');
 }
 
 // ============================================================
-console.log('== guyin-setup 模板完整性（Phase 0 清单落成断言） ==');
+console.log('== guyin-setup 模板完整性（Phase 0 清单落成断言；P3.1 后无受管 agent） ==');
 {
-  const T = path.join(REPO, 'skills', 'guyin-setup', 'templates');
+  const SETUP_ROOT = path.join(REPO, 'skills', 'guyin-setup');
+  const T = path.join(SETUP_ROOT, 'templates');
   const required = [
     'long/AGENTS.md',
     'long/README.md',
     'long/.claude/settings.json',
     'long/.claude/hooks/guyin-hook.js',
-    'long/.claude/agents/guyin-beat-writer.md',
-    'long/.claude/agents/guyin-checker.md',
-    'long/.codex/agents/guyin-beat-writer.toml',
-    'long/.codex/agents/guyin-checker.toml',
-    'long/.opencode/agents/guyin-beat-writer.md',
-    'long/.opencode/agents/guyin-checker.md',
     'long/.opencode/commands/guyin.md',
     'long/作者性/气卡.md',
     'long/作者性/指纹.md',
@@ -3211,39 +3206,31 @@ console.log('== guyin-setup 模板完整性（Phase 0 清单落成断言） ==')
     check(`模板存在 ${rel}`, fs.existsSync(path.join(T, rel)));
   }
 
-  // Fw-03：部署件默认不得预置假 model（非注释行无 model 配置），且必须明示等同 solo 的去向——
-  // 占位 model 会让用户误以为编排/执行已分层，是 solo 路径失效的源头。
-  const agentEndpoints = [
-    ['long/.claude/agents/guyin-beat-writer.md', /^model\s*:/m],
-    ['long/.claude/agents/guyin-checker.md', /^model\s*:/m],
-    ['long/.opencode/agents/guyin-beat-writer.md', /^model\s*:/m],
-    ['long/.opencode/agents/guyin-checker.md', /^model\s*:/m],
-    ['long/.codex/agents/guyin-beat-writer.toml', /^model\s*=/m],
-    ['long/.codex/agents/guyin-checker.toml', /^model\s*=/m],
-  ];
-  for (const [rel, activeModelRe] of agentEndpoints) {
-    const content = fs.readFileSync(path.join(T, rel), 'utf8');
-    const active = content.split(/\r?\n/)
-      .filter((l) => !/^\s*#/.test(l))
-      .some((l) => activeModelRe.test(l));
-    check(`Fw-03 ${rel} 默认无生效 model 行（占位即假分层）`, !active, `命中生效 model 行`);
-    check(`Fw-03 ${rel} 明示 solo 去向`, /solo/.test(content), `文件缺 solo 说明`);
-  }
+  // P3.1：受管 writer/checker 从新分发退役——模板树反向检查，agents 目录一个都不许在
+  check('模板树无受管 agents/（beat-writer/checker 退役，防打包回流）',
+    ['long/.claude/agents', 'long/.opencode/agents', 'long/.codex/agents']
+      .every((d) => !fs.existsSync(path.join(T, d))));
+  check('部署器 guyin-deploy.js 与 legacy 受管归档就位',
+    fs.existsSync(path.join(SETUP_ROOT, 'scripts', 'guyin-deploy.js'))
+    && fs.existsSync(path.join(SETUP_ROOT, 'legacy/agents-v0.8/canonical/guyin-beat-writer.md'))
+    && fs.existsSync(path.join(SETUP_ROOT, 'legacy/agents-v0.8/codex/guyin-checker.toml')));
 
-  // v3-C2：solo 说明与 write 可选卡协议同步——陈旧「三硬动作（先组卡后填卡…）」与现行
-  // 「允许直写、卡可选」（Fw-08 反转后）冲突（任务书 §2.6）；五处同步后以断言锁住防回潮。
-  const soloSyncFiles = [
+  // Fw-03（P3.1 反转）：模板不得预置任何执行层 model 配置文件——新架构不分发执行层，
+  // 连「占位 model」都不存在；单模型去向写进 AGENTS.md 不变式。
+  check('Fw-03 模板全树无 agents 生效/注释 model 行（无执行层可配）',
+    !['long/.claude/agents', 'long/.opencode/agents', 'long/.codex/agents']
+      .some((d) => fs.existsSync(path.join(T, d))));
+  check('Fw-03 单模型去向写入 AGENTS.md 不变式（当前会话自由执笔）',
+    fs.readFileSync(path.join(T, 'long/AGENTS.md'), 'utf8').includes('单模型自由执笔'));
+
+  // v3-C2 防回潮：现行入口文件不得复活「三硬动作/先组卡后填卡」旧执行层纪律。
+  const staleCheckFiles = [
     'skills/guyin-setup/SKILL.md',
-    'skills/guyin-write/agents/guyin-beat-writer.md',
-    'long/.claude/agents/guyin-beat-writer.md',
-    'long/.opencode/agents/guyin-beat-writer.md',
-    'long/.codex/agents/guyin-beat-writer.toml',
+    'skills/guyin-write/SKILL.md',
   ];
-  for (const rel of soloSyncFiles) {
-    const full = rel.startsWith('long/') ? path.join(T, rel) : path.join(REPO, rel);
-    const content = fs.readFileSync(full, 'utf8');
-    check(`v3-C2 ${rel} 无陈旧 solo 三硬动作措辞`, !/三硬动作|先组卡后填卡|笔法嚼碎/.test(content), `含陈旧措辞`);
-    check(`v3-C2 ${rel} solo 三条与 write 协议同步`, /solo 三条/.test(content), `缺「solo 三条」现行措辞`);
+  for (const rel of staleCheckFiles) {
+    const content = fs.readFileSync(path.join(REPO, rel), 'utf8');
+    check(`v3-C2 ${rel} 无陈旧执行层三硬动作措辞`, !/三硬动作|先组卡后填卡|笔法嚼碎/.test(content), `含陈旧措辞`);
   }
 }
 
@@ -4160,17 +4147,21 @@ console.log('== Fw-09 批次 C：C1 页眉约定 / C2 伏笔编号门 / C3 切�
     /结论已被 vXX/.test(budgetSrc) && /第一行/.test(budgetSrc) && /仅存档/.test(budgetSrc),
     '缺页眉约定');
 
-  // C3：切口门接线三处（写指定章预检 ch004 起、建批硬前置、卷末附加）。
+  // C3（2026-09 创作优先整改）：私人切口债/气卡占位门已废除——作者性素材永久可缺省，
+  // 缺私人物料不拦写、不追讨；ch004 切口门、建批硬前置、卷末强刷三处接线必须消失。
   const writeSkill = fs.readFileSync(
     path.join(REPO, 'skills', 'guyin-write', 'SKILL.md'), 'utf8');
-  check('Fw-09 C3 写指定章预检含切口门（ch004 起二选一）',
-    /切口门（\*\*ch004 起\*\*：魂档案「私人切口」/.test(writeSkill)
-      && /立即补或显式延期至某卷末/.test(writeSkill),
-    '预检缺切口门');
-  check('Fw-09 C3 建批硬前置含私人切口定稿/显式延期',
-    /私人切口已定稿或持显式延期（Fw-09 C3）/.test(writeSkill), '建批前置缺');
-  check('Fw-09 C3 卷末附加含未定稿/延期到期主动询问',
-    /私人切口未定稿或延期到期者\*\*主动询问\*\*，二选一落字/.test(writeSkill), '卷末附加缺');
+  check('Fw-09 C3 write SKILL 无切口门/私人切口强制定稿/卷末强刷',
+    !/切口门|私人切口(已定稿|未定稿|延期到期)|立即补或显式延期至某卷末/.test(writeSkill),
+    '仍残留私人切口债接线');
+  check('Fw-09 C3 write SKILL 明示作者性素材可缺省、不拦写不追讨',
+    /始终可缺省/.test(writeSkill) && /不拦写/.test(writeSkill),
+    '缺作者性可缺省声明');
+  const storySkillC3 = fs.readFileSync(
+    path.join(REPO, 'skills', 'guyin-story', 'SKILL.md'), 'utf8');
+  check('Fw-09 C3 story 诊断不把作者性四件列为开写缺件',
+    /作者性素材.*可选/.test(storySkillC3) && !/缺作者性四件|默认档先写/.test(storySkillC3),
+    'story 仍把作者性当缺件');
 
   // C4：细纲协议术语准入三件套。
   const outlineProtocol = fs.readFileSync(
@@ -4486,82 +4477,75 @@ console.log('== E2 参考接口：拆文产物路径口径 ==');
 }
 
 // ============================================================
-// E3 部署同步：三端执行层部署件与框架模板必须跟 canonical 协议同源
-// （canonical agents 在 skills/guyin-write/agents/，部署件在 guyin-setup/templates/long/）
+// E3 部署同步（P3.1）：受管 writer/checker agent 从新分发退役，旧项目走预览-批准迁移
 // ============================================================
-console.log('== E3 部署同步（三端 agents / hook / 模板 / setup） ==');
+console.log('== E3 部署同步（agent 退役 / hook / 模板 / setup v0.9） ==');
 {
   const TLong = path.join(REPO, 'skills', 'guyin-setup', 'templates', 'long');
-  const agentFiles = {
-    checker: [
-      path.join(REPO, 'skills', 'guyin-write', 'agents', 'guyin-checker.md'),
-      path.join(TLong, '.claude', 'agents', 'guyin-checker.md'),
-      path.join(TLong, '.opencode', 'agents', 'guyin-checker.md'),
-      path.join(TLong, '.codex', 'agents', 'guyin-checker.toml'),
-    ],
-    beatWriter: [
-      path.join(REPO, 'skills', 'guyin-write', 'agents', 'guyin-beat-writer.md'),
-      path.join(TLong, '.claude', 'agents', 'guyin-beat-writer.md'),
-      path.join(TLong, '.opencode', 'agents', 'guyin-beat-writer.md'),
-      path.join(TLong, '.codex', 'agents', 'guyin-beat-writer.toml'),
-    ],
-  };
-  const checkerFresh = ['审读卡：先只读正文记录真实阅读反应', '分诊卡：单次判断'];
-  const checkerStale = ['自检卡：先抄原文相关句', '本次输出保持确定', '做是非题与三选一判断'];
-  for (const f of agentFiles.checker) {
-    const c = fs.readFileSync(f, 'utf8');
-    check(`E3-1 checker 同步 B2 审读卡协议：${path.relative(TLong, f).replace('..\\..\\..\\..\\', '')}`,
-      checkerFresh.every((s) => c.includes(s)) && !checkerStale.some((s) => c.includes(s)),
-      '缺新规则或残留旧措辞');
-  }
-  const beatFresh = ['不凑数、不注水、不"此处省略"', '正常正文与控制结果', '按人物此刻的处境写活'];
-  for (const f of agentFiles.beatWriter) {
-    const c = fs.readFileSync(f, 'utf8');
-    check(`E3-1 beat-writer 四份协议体同源（富规则版）：${path.basename(path.dirname(path.dirname(f)))}/${path.basename(f)}`,
-      beatFresh.every((s) => c.includes(s)));
-  }
-  // Fw-03 不得被同步破坏：模板部署件依旧零生效 model
-  for (const [rel, re] of [
-    ['.claude/agents/guyin-checker.md', /^model\s*:/m],
-    ['.opencode/agents/guyin-checker.md', /^model\s*:/m],
-    ['.codex/agents/guyin-checker.toml', /^model\s*=/m],
-  ]) {
-    const c = fs.readFileSync(path.join(TLong, rel), 'utf8');
-    const active = c.split(/\r?\n/).filter((l) => !/^\s*#/.test(l)).some((l) => re.test(l));
-    check(`E3-1 同步后 checker 仍无生效 model 行：${rel}`, !active);
-  }
+  const SETUP = path.join(REPO, 'skills', 'guyin-setup');
+
+  // E3-1 退役：新模板三端无 agents 目录；canonical agents 目录已撤
+  check('E3-1 新模板三端均无受管 agents/（beat-writer/checker 不从新分发）',
+    ['.claude/agents', '.opencode/agents', '.codex/agents']
+      .every((d) => !fs.existsSync(path.join(TLong, d))), '模板仍分发 agents');
+  check('E3-1 canonical skills/guyin-write/agents/ 已退役（不留空壳）',
+    !fs.existsSync(path.join(REPO, 'skills', 'guyin-write', 'agents')));
+  const legacyRel = [
+    'canonical/guyin-beat-writer.md', 'canonical/guyin-checker.md',
+    'claude/guyin-beat-writer.md', 'claude/guyin-checker.md',
+    'opencode/guyin-beat-writer.md', 'opencode/guyin-checker.md',
+    'codex/guyin-beat-writer.toml', 'codex/guyin-checker.toml',
+  ];
+  check('E3-1 legacy/agents-v0.8 归档保留 8 份受管字节（旧项目迁移识别依据）',
+    legacyRel.every((r) => fs.existsSync(path.join(SETUP, 'legacy', 'agents-v0.8', r))));
+  check('E3-1 guyin-deploy.js 部署/退役脚本就位',
+    fs.existsSync(path.join(SETUP, 'scripts', 'guyin-deploy.js')));
 
   // 模板 hook 含 D2 发布门
   const hookC = fs.readFileSync(path.join(TLong, '.claude', 'hooks', 'guyin-hook.js'), 'utf8');
   check('E3-2 模板 hook 含 D2 发布门（_publication 在途/损坏拦截）',
     /publicationBlocker/.test(hookC) && hookC.includes('_publication.json') && /D2/.test(hookC));
 
-  // 模板 AGENTS.md 不变式含 D2/E1
+  // 模板 AGENTS.md：单模型自由执笔＋不变式 D2/E1，无受管 agent 委派
   const agentsTpl = fs.readFileSync(path.join(TLong, 'AGENTS.md'), 'utf8');
+  check('E3-3 模板 AGENTS.md 单模型自由执笔（不委派 writer/checker、无 Fallback 菜单）',
+    agentsTpl.includes('单模型自由执笔')
+    && !/guyin-beat-writer|guyin-checker|Fallback: solo|编排\/执行分离/.test(agentsTpl));
   check('E3-3 模板 AGENTS.md 含隔离发布不变式（.guyin/work＋publish 唯一通道＋recover）',
     agentsTpl.includes('.guyin/work/{run_id}/') && agentsTpl.includes('publish')
     && agentsTpl.includes('recover'));
   check('E3-3 模板 AGENTS.md 含验收检查点不变式（用户/独立读者＋延期不静默豁免）',
     agentsTpl.includes('验收检查点') && agentsTpl.includes('用户验收/独立读者')
     && agentsTpl.includes('延期@第K章'));
+  check('E3-3 模板 AGENTS.md 取消「写正文前必须有细纲」前置（无细纲可试写）',
+    !/写正文前必须有细纲/.test(agentsTpl) && agentsTpl.includes('无完整细纲也可试写'));
 
   // 模板 README
   const readmeTpl = fs.readFileSync(path.join(TLong, 'README.md'), 'utf8');
   check('E3-3 模板 README：hook guard 行列发布门＋隔离发布段＋待审台账',
     /发布门/.test(readmeTpl) && readmeTpl.includes('candidate.md')
     && readmeTpl.includes('待审台账'));
+  check('E3-3 模板 README 执行模型段：单模型、无低模型配置表',
+    readmeTpl.includes('单模型自由执笔')
+    && !/执行层低模型|model: <低模型>|deepseek-chat/.test(readmeTpl));
 
-  // setup SKILL：版本、重部署保护、旧项目升级、Phase0 必检
-  const setupSkill = fs.readFileSync(path.join(REPO, 'skills', 'guyin-setup', 'SKILL.md'), 'utf8');
-  check('E3-4 setup v0.8.0：重部署保护（差异/model 回填/备份/不盲目 replace）',
-    /version:\s*0\.8\.0/.test(setupSkill) && setupSkill.includes('重部署保护')
-    && setupSkill.includes('回填') && setupSkill.includes('upgrade-backup')
-    && setupSkill.includes('不盲目 replace'));
+  // setup SKILL v0.9.0：机械部署、预览-批准退役、不碰模型、待升级清单、Phase0 必检
+  const setupSkill = fs.readFileSync(path.join(SETUP, 'SKILL.md'), 'utf8');
+  check('E3-4 setup v0.9.0：版本与机械部署入口',
+    /version:\s*0\.9\.0/.test(setupSkill) && setupSkill.includes('guyin-deploy.js install'));
+  check('E3-4 setup：受管退役预览-批准-备份链＋source_hash 重核',
+    ['preview', 'retire', '--approve', 'upgrade-backup', 'source_hash', '--confirm-source']
+      .every((s) => setupSkill.includes(s)));
+  check('E3-4 setup：自定义/来源不明同名文件保留、不盲目删',
+    setupSkill.includes('custom_same_name') && setupSkill.includes('永不自动删'));
+  check('E3-4 setup 删除模型提取/回填与执行层自检（无 Fw-03/低模型配置/model 实测值）',
+    !/Fw-03|执行层低模型|model 实测值|执行层就绪自检|回填/.test(setupSkill));
   check('E3-4 setup：旧项目升级给待升级清单不自动重写＋实际加载路径报告',
     setupSkill.includes('待升级清单') && setupSkill.includes('不自动重写用户台账')
     && setupSkill.includes('实际加载路径'));
-  check('E3-4 setup Phase 0 必检含 读者信号.md 与 待审台账.md',
-    setupSkill.includes('追踪/读者信号.md') && setupSkill.includes('追踪/待审台账.md'));
+  check('E3-4 setup Phase 0 必检含 读者信号.md 与 待审台账.md 且反向查 agents 污染',
+    setupSkill.includes('追踪/读者信号.md') && setupSkill.includes('追踪/待审台账.md')
+    && setupSkill.includes('反向检查'));
 }
 
 // ============================================================
@@ -4673,6 +4657,1243 @@ console.log('== F1-2 repetition --unit 运行时 ==');
 }
 
 // ============================================================
+// P1.1 创作优先整改 T01-T04（权限与入口；路径/停止点/字段自动断言，
+// 生成行为本身属真实会话验证——见任务书 §9.1 尾注，不以关键词计数冒充）
+// ============================================================
+console.log('== P1.1 T01-T04 权限与入口（单模型自主执笔） ==');
+{
+  const w = fs.readFileSync(path.join(REPO, 'skills', 'guyin-write', 'SKILL.md'), 'utf8');
+  const sw = fs.readFileSync(path.join(REPO, 'skills', 'guyin-short-write', 'SKILL.md'), 'utf8');
+  const story = fs.readFileSync(path.join(REPO, 'skills', 'guyin-story', 'SKILL.md'), 'utf8');
+  const op = fs.readFileSync(
+    path.join(REPO, 'skills', 'guyin-write', 'references', '细纲协议.md'), 'utf8');
+  const cardsReadme = fs.readFileSync(
+    path.join(REPO, 'skills', 'guyin-write', 'cards', 'README.md'), 'utf8');
+  const writeCard = fs.readFileSync(
+    path.join(REPO, 'skills', 'guyin-write', 'cards', '写作卡.md'), 'utf8');
+
+  // T01：无细纲、无作者性、明确试写 → 不被门拦（不补私人切口、不等新纲审批）。
+  check('T01 write SKILL 明示无完整细纲也可起笔、试写停 ready',
+    /无完整细纲也可起笔/.test(w) && /无发布授权停 ready/.test(w),
+    '缺无纲起笔/试写停止点');
+  check('T01 细纲协议：无细纲不造四组过门，检查记不适用',
+    /没有完整细纲也可以起笔/.test(op) && /不造一份四组细纲过门/.test(op)
+    && /不适用/.test(op), '细纲可选协议缺失');
+  check('T01 卡为按需辅助：无默认下发/配额/逐 beat 验收',
+    /不是默认流程/.test(cardsReadme) && /不向任何人下发/.test(cardsReadme)
+    && /没有 token 配额/.test(cardsReadme) && /没有逐 beat 验收/.test(cardsReadme),
+    '卡仍像默认管线');
+  check('T01 三入口无 writer/checker 委派与模式降级菜单（自指废止语不算）',
+    !/agents\/guyin-(beat-writer|checker)\.md|guyin-beat-writer（定义|降级 \*\*solo|Fallback: solo/.test(w)
+    && !/## 执行层调用协议/.test(w)
+    && !/agents\/guyin-(beat-writer|checker)\.md|降级 \*\*solo/.test(sw),
+    '仍存在受管 agent 委派或模式菜单');
+  check('T01 框架不选 model/provider、不默认 git 提交',
+    /框架不选 model\/provider/.test(w + story) && /不自动 git commit\/push/.test(w),
+    '缺模型中立/不自动提交');
+
+  // T02：只要求规划 → 只交规划，不生成/发布正文。
+  check('T02 只开书/只出纲交规划即停、不写正文',
+    /交规划即停，不写正文/.test(w) && /停在骨架交付，正文须显式点名/.test(sw),
+    '规划停止点缺失');
+  check('T02 裸调用/问状态只诊断不生成正文',
+    /报告下一步 \| 不生成正文/.test(w) && /不自动执行、不生成正文/.test(story),
+    '裸调用停止点缺失');
+
+  // T03：硬结果保持、旧场景可替换；前三组假说不得逼回旧草案。
+  check('T03 细纲前三组是工作假说、未锁定差异允许正文驱动',
+    /第一至三组是工作假说/.test(op) && /未锁定差异允许正文驱动/.test(op),
+    '假说协议缺失');
+  check('T03 第四组只收带来源硬锁、模型建议不偷升',
+    /每项必须有来源/.test(op) && /前三组的建议不偷升为硬锁/.test(op)
+    && /模型自己觉得「该保留」的东西进不了第四组/.test(op), '硬锁来源约束缺失');
+  check('T03 规划补丁发布后凭改纲授权回写、不篡改历史批准稿',
+    /plan-patch\.json/.test(op) && /篡改历史批准稿/.test(op)
+    && /仅准写正文的话不构成改纲授权/.test(w), '改纲授权边界缺失');
+
+  // T04：区分用户锁与模型建议；只对真实争议项请用户裁决。
+  check('T04 三种授权分开记录、试写/这个版本可以/继续 不自动扩权',
+    /三种授权分开记/.test(w) && /「试写」不含发布/.test(w)
+    && /「这个版本可以」不自动等于/.test(w) && /「继续」不补推发布授权/.test(w),
+    '授权三分缺失');
+  check('T04 锁必带来源、自己觉得该保留不生成用户硬锁（SKILL＋协议＋写作卡）',
+    /锁必带 source_id|每条能指到用户原话/.test(op + writeCard)
+    && /自己觉得「该保留」的东西不进锁/.test(writeCard),
+    '锁来源纪律缺失');
+}
+
+// ============================================================
+// P1.2 默认文风 T05-T07：机读路由表可解析、选择规则有序、全部 profile 有可加载定义。
+// ============================================================
+console.log('== P1.2 T05-T07 默认文风 profile 单一来源 ==');
+{
+  const styleRef = path.join(REPO, 'skills', 'guyin-write', 'references', '默认叙事风格.md');
+  const styleTxt = fs.readFileSync(styleRef, 'utf8');
+  const blockMatch = styleTxt.match(/```json\s*\n([\s\S]*?)\n```/);
+  check('T07 默认文风文件含可解析机读路由 JSON 块', !!blockMatch, '缺 json 代码块');
+  let route = null;
+  try { route = blockMatch ? JSON.parse(blockMatch[1]) : null; } catch (e) { route = null; }
+  check('T07 路由 JSON 语法合法', !!route, 'JSON.parse 失败');
+
+  const EXPECTED = {
+    'relationship-payoff': ['爽文', '都市异能', '重生逆袭'],
+    'historical-causal': ['历史穿越', '架空历史'],
+    'character-causal': [],
+    'resource-cultivation': ['仙侠', '凡人流'],
+    'adventure-growth': ['玄幻'],
+    'clue-revelation': ['悬疑', '推理'],
+    'systems-scifi': ['科幻'],
+    'professional-ensemble': ['竞技', '游戏'],
+    'relationship-society': ['古言', '世情'],
+    'intimacy-choice': ['现言', '都市情感', '恋爱'],
+    'pressure-team': ['无限流'],
+  };
+  if (route) {
+    check('T07 11 个 profile 全部登记且版本为 1、主题材非空（character-causal 除外）',
+      route.profiles.length === 11
+      && route.profiles.every((p) => EXPECTED[p.id] && p.version === 1
+        && (p.id === 'character-causal' || p.themes.length > 0)),
+      `profiles=${route.profiles.map((p) => p.id).join(',')}`);
+
+    // 按 ordered_rules 顺序模拟路由（rule 1 是用户指定，测试从规则 2 开始）。
+    const resolve = (text) => {
+      for (const r of route.ordered_rules) {
+        if (r.order <= 1) continue;
+        if (r.rule === 'history_main' && r.any.some((k) => text.includes(k))) return r.profile;
+        if (r.rule === 'explicit_theme') {
+          const key = Object.keys(r.map).find((k) => text.includes(k));
+          if (key) return r.map[key];
+        }
+        if (r.rule === 'explicit_shuangwen' && r.any.some((k) => text.includes(k))) return r.profile;
+        if (r.rule === 'chuanyue_device_only' && text.includes(r.device)) {
+          const key = Object.keys(r.disambig).find((k) => text.includes(k));
+          return key ? r.disambig[key] : r.ambiguous_default;
+        }
+        if (r.rule === 'unknown') return r.profile;
+      }
+      return null;
+    };
+    const t05 = [
+      ['爽文', 'relationship-payoff'],
+      ['一本历史穿越，主要写事业和群像', 'historical-causal'],
+      ['架空历史种田', 'historical-causal'],
+      ['穿越仙侠世界求长生', 'resource-cultivation'],
+      ['穿越恋爱文', 'intimacy-choice'],
+      ['玄幻冒险升级', 'adventure-growth'],
+      ['悬疑推理', 'clue-revelation'],
+      ['科幻星际', 'systems-scifi'],
+      ['电竞竞技职业', 'professional-ensemble'],
+      ['古言世情家庭', 'relationship-society'],
+      ['现言都市情感', 'intimacy-choice'],
+      ['无限流生存任务', 'pressure-team'],
+      ['', 'character-causal'],
+      ['就想写个故事，题材还没想好', 'character-causal'],
+      ['穿越', 'historical-causal'],
+    ];
+    const bad = t05.filter(([text, want]) => resolve(text) !== want)
+      .map(([text, want]) => `${text || '(空)'}=>${want} 实得 ${resolve(text)}`);
+    check('T05 路由：爽文/历史穿越/穿越仙侠/穿越恋爱/无题材/穿越暂定 等 15 例全部命中规定 profile',
+      bad.length === 0, bad.join('；'));
+
+    check('T05 “穿越”不自动等于历史（device 规则排在历史与显式题材之后）',
+      route.ordered_rules.find((r) => r.rule === 'chuanyue_device_only').order === 5
+      && route.ordered_rules.find((r) => r.rule === 'history_main').order === 2
+      && !!route.ordered_rules.find((r) => r.rule === 'chuanyue_device_only').ambiguous_notice,
+      '规则顺序或缺暂定告知');
+
+    // 每个 profile 必须有“可直接加载”的定义正文（### id / version 小节，且后面有实质文本）。
+    const missingDef = route.profiles.filter((p) => {
+      const re = new RegExp(`### ${p.id} / v${p.version}\\n+([\\s\\S]*?)(?=\\n### |\\n## |$)`);
+      const m = styleTxt.match(re);
+      return !m || m[1].replace(/\s/g, '').length < 60;
+    });
+    check('T07 每个 profile 都有 ≥60 非空字符的可加载定义段', missingDef.length === 0,
+      `缺定义：${missingDef.map((p) => p.id).join(',')}`);
+    check('T07 速查表 11 行齐全',
+      route.profiles.every((p) => new RegExp(`\\\`${p.id}\\\``).test(styleTxt)), '速查表缺行');
+  }
+
+  check('T07 加载边界：只加载所选单个 profile、不加载全表、参考书名不随章注入',
+    /只读所选的那一个 profile 定义/.test(styleTxt) && /不加载全表/.test(styleTxt)
+    && /不复制第二份默认规则|不复刻任何在世作家的独特表达/.test(styleTxt),
+    '加载边界声明缺失');
+  check('T07 对标研究未验证有标注口径、不伪造原文切片',
+    /对标研究未验证/.test(styleTxt) && /不伪造原文切片/.test(styleTxt),
+    '未验证标注缺失');
+
+  // T06：用户/书级优先；input 冻结；W 在 B 外不越界；库升级不换声线。
+  check('T06 选择规则第 1 条＝用户指定/书级 profile 优先',
+    !!route && route.ordered_rules[0].order === 1
+    && route.ordered_rules[0].rule === 'user_explicit_or_book_profile',
+    '规则 1 不是用户优先');
+  check('T06 profile 冻结进 run input（ID/版本/特征），库升级不换声线',
+    /冻结进 input/.test(styleTxt) && /不换声线/.test(styleTxt)
+    && /effective_features|profile_id.*profile_version|ID、版本与 effective_features/.test(styleTxt),
+    '冻结字段声明缺失');
+  check('T06 框架 W 在书根 B 外、profile 不加入书根 baseline',
+    /框架技能库 W 在书根 B 外/.test(styleTxt) && /profile 不加入书根 baseline/.test(styleTxt),
+    'W/B 越界声明缺失');
+  const dingwei = fs.readFileSync(
+    path.join(REPO, 'skills', 'guyin-setup', 'templates', 'long', '设定', '题材定位.md'), 'utf8');
+  check('T06 题材定位模板有 ## 叙事风格 书级入口（ID/版本/用户文风可选）',
+    /## 叙事风格/.test(dingwei) && /profile ID/.test(dingwei)
+    && /用户书级文风（可选，优先于 profile）/.test(dingwei),
+    '书级 profile 入口缺');
+  const qipu = fs.readFileSync(
+    path.join(REPO, 'skills', 'guyin-setup', 'templates', 'long', '作者性', '参考-气质谱系.md'), 'utf8');
+  check('T06 气质谱系降为可选补充＋指向 profile 单一来源，无三角合成强制默认',
+    /可选私人素材/.test(qipu) && /默认叙事风格\.md/.test(qipu)
+    && !/默认三角：汪曾祺/.test(qipu),
+    '仍残留三角合成默认');
+  const authorGuide = fs.readFileSync(
+    path.join(REPO, 'skills', 'guyin-write', 'references', '作者性引导.md'), 'utf8');
+  check('T06 作者性引导：无默认档/无句长闲笔硬配额/无回填期限',
+    /不设任何默认档/.test(authorGuide)
+    && !/每章 1 处 50-150 字|≤10 字|第 3 章后回填|默认档落盘/.test(authorGuide)
+    && /永久可空|永久没有默认值/.test(styleTxt + authorGuide + qipu),
+    '仍有默认档或硬配额');
+  const exemplarsReadme = fs.readFileSync(
+    path.join(REPO, 'skills', 'guyin-write', 'references', 'exemplars', 'README.md'), 'utf8');
+  check('T07 exemplars 取消首批细纲前必补真实切片、旧仿写库不默认注入',
+    !/首批细纲交付前补齐|开书 Phase B 采集一次/.test(exemplarsReadme)
+    && /不再默认注入/.test(exemplarsReadme),
+    '旧强制注入条款残留');
+  check('T06/T07 write/story SKILL 均指向 profile 单一来源且无作者名阻断',
+    /references\/默认叙事风格\.md/.test(fs.readFileSync(
+      path.join(REPO, 'skills', 'guyin-write', 'SKILL.md'), 'utf8'))
+    && /profile/.test(fs.readFileSync(
+      path.join(REPO, 'skills', 'guyin-story', 'SKILL.md'), 'utf8')),
+    'SKILL 未接 profile 来源');
+}
+
+// ============================================================
+// P2.1 author-session：run 输入校验、phase 机、稿件失效与中断恢复（T08-T12/T33，真实进程）
+// ============================================================
+console.log('== P2.1 author-session 写作 run 进度与恢复（T08-T12/T33） ==');
+{
+  const AS = path.join(S, 'guyin-author-session.py');
+  const PYSCRIPT = path.join(S, 'guyin-tracking-commit.py');
+  const crypto = require('crypto');
+  const cleanEnv = { ...process.env };
+  delete cleanEnv.GUYIN_PUBLISH_PAUSE_AFTER;
+  const parseAny = (r) => {
+    for (const text of [r.stdout, r.stderr]) {
+      const m = text && text.match(/\{[\s\S]*\}\s*$/);
+      if (m) { try { return JSON.parse(m[0]); } catch (e) { /* try next */ } }
+    }
+    return null;
+  };
+  const asRun = (book, args) => {
+    const r = spawnSync('python', [AS, ...args], {
+      encoding: 'utf8', cwd: REPO, env: cleanEnv,
+    });
+    return { status: r.status, out: parseAny(r), stdout: r.stdout, stderr: r.stderr };
+  };
+  const pyRun = (book, args) => {
+    const r = spawnSync('python', [PYSCRIPT, ...args], {
+      encoding: 'utf8', cwd: REPO, env: cleanEnv,
+    });
+    return { status: r.status, out: parseAny(r), stdout: r.stdout, stderr: r.stderr };
+  };
+  const LEDGER = [
+    '| 章号 | 来源 | 报警/发现 | 处置类别 | 正文版本 | 终态 | 决定依据 | 去向/备注 |',
+    '|---|---|---|---|---|---|---|---|',
+    '',
+  ].join('\n');
+  const INIT_DOC = {
+    schema_version: 1, book_title: '试写', last_chapter: 0,
+    context: {
+      position: { volume: '第一卷', volume_start_chapter: 1, story_time: '首日清晨',
+        scene: '修表铺' },
+      long_term_constraints: [], active_character_names: [], continuity_risks: [],
+    },
+  };
+  const h12 = (s) => crypto.createHash('sha256').update(Buffer.from(s, 'utf8')).digest('hex').slice(0, 12);
+
+  function newSessionBook(name) {
+    const book = path.join(TMP, name);
+    fs.mkdirSync(path.join(book, '追踪', '角色状态'), { recursive: true });
+    fs.mkdirSync(path.join(book, '正文'), { recursive: true });
+    fs.writeFileSync(path.join(book, '追踪', '待审台账.md'), LEDGER, 'utf8');
+    const initPath = path.join(TMP, `${name}.init.json`);
+    fs.writeFileSync(initPath, JSON.stringify(INIT_DOC), 'utf8');
+    const ir = pyRun(book, ['init', '--input', initPath, '--project', book]);
+    check(`P2.1 ${name} init exit0`, ir.status === 0, ir.stderr || ir.stdout);
+    return book;
+  }
+  function baseInput(over) {
+    return {
+      schema_version: 1,
+      target: { kind: 'long', chapter: 1, title: '守店', mode: 'append' },
+      authorization: {
+        write: { source_id: 'U1', quote: '请试写第一章，不发布。' },
+        selection: null, publish: null,
+      },
+      sources: [{ id: 'U1', kind: 'user',
+        text: '请试写第一章，不发布。修表学徒第一次独自守店，今晚须交还一只客表。师父外出，本章不能回来解围。' }],
+      facts: [
+        { text: '学徒第一次独自守店，师父外出。', source_id: 'U1' },
+        { text: '今晚须交还一只客表。', source_id: 'U1' },
+      ],
+      locks: [{ id: 'L1', kind: 'semantic', text: '本章师父不能回来解围。', source_id: 'U1' }],
+      allowed_reuse: [], outline: null,
+      style: { profile_id: 'relationship-payoff', profile_version: 1,
+        selection_basis: 'framework-default',
+        effective_features: ['能力经行动兑现', '配角保有自身打算'] },
+      wordcount: { min: 2500, max: 3500 }, ...over,
+    };
+  }
+  function setupRun(book, run, inputDoc) {
+    const ws = `.guyin/work/${run}`;
+    fs.mkdirSync(path.join(book, ws, 'drafts'), { recursive: true });
+    fs.writeFileSync(path.join(book, ws, 'input.json'), JSON.stringify(inputDoc, null, 2), 'utf8');
+    return ws;
+  }
+  function startRun(book, run, inputDoc) {
+    const ws = setupRun(book, run, inputDoc || baseInput());
+    return { ws, r: asRun(book, ['start', '--project', book, '--run', run, `--input`, `${ws}/input.json`]) };
+  }
+  function checkpoint(book, run, obj, name) {
+    const ws = `.guyin/work/${run}`;
+    const cpPath = path.join(book, ws, name || 'cp.json');
+    fs.writeFileSync(cpPath, JSON.stringify(obj), 'utf8');
+    return asRun(book, ['checkpoint', '--project', book, '--run', run, '--input', `${ws}/${path.basename(cpPath)}`]);
+  }
+  const DRAFT_V1 = `# 第001章 守店\n\n学徒把门板上了一半，风钻进来，烛火压得很低。柜上摆着那只客表，银壳子，表盘有道旧划痕。\n`;
+  const DRAFT_V2 = `${DRAFT_V1}\n伙计把两张送货单并在一起，压住掌柜伸过来的手。「您先别夸我。两张都签了，明早搬货的还是我。」掌柜看了眼相同的车号，收回了手。\n`;
+
+  // ---- 输入校验负例（错误输入 exit2，不能解释成“无锁”）----
+  const negBook = newSessionBook('p21neg');
+  const negCases = [
+    ['kind 非法', { target: { kind: 'poem', chapter: 1, title: 'x', mode: 'append' } }],
+    ['chapter=0', { target: { kind: 'long', chapter: 0, title: 'x', mode: 'append' } }],
+    ['title 越界', { target: { kind: 'long', chapter: 1, title: '../x', mode: 'append' } }],
+    ['来源重复', { sources: [
+      { id: 'U1', kind: 'user', text: '请试写第一章，不发布。' },
+      { id: 'U1', kind: 'user', text: '另一句' }] }],
+    ['锁来源不存在', { locks: [{ kind: 'exact', text: 'x', source_id: 'NOPE' }] }],
+    ['wordcount min>max', { wordcount: { min: 4000, max: 2000 } }],
+    ['file 来源越界', { sources: [
+      { id: 'U1', kind: 'user', text: '请试写第一章，不发布。' },
+      { id: 'F1', kind: 'file', path: '../../../etc/hosts' }] }],
+    ['publish quote 无法定位', { authorization: {
+      write: { source_id: 'U1', quote: '请试写第一章，不发布。' }, selection: null,
+      publish: { source_id: 'U1', quote: '用户根本没说过的话',
+        target: { chapter: 1, title: '守店', mode: 'append' },
+        scope: 'authorized-target', candidate_sha256: null } } }],
+    ['publish target 不一致', { authorization: {
+      write: { source_id: 'U1', quote: '请试写第一章，不发布。' }, selection: null,
+      publish: { source_id: 'U1', quote: '请试写第一章，不发布。',
+        target: { chapter: 2, title: '守店', mode: 'append' },
+        scope: 'authorized-target', candidate_sha256: null } } }],
+    ['selected-candidate 哈希长度错', { authorization: {
+      write: { source_id: 'U1', quote: '请试写第一章，不发布。' }, selection: null,
+      publish: { source_id: 'U1', quote: '请试写第一章，不发布。',
+        target: { chapter: 1, title: '守店', mode: 'append' },
+        scope: 'selected-candidate', candidate_sha256: 'abc' } } }],
+  ];
+  for (const [label, over] of negCases) {
+    const ws = setupRun(negBook, `neg-${negCases.findIndex((x) => x[1] === over)}`, baseInput(over));
+    const rr = asRun(negBook, ['start', '--project', negBook,
+      '--run', `neg-${negCases.findIndex((x) => x[1] === over)}`, '--input', `${ws}/input.json`]);
+    check(`P2.1 输入校验拒绝：${label}`, rr.status === 2 && rr.out && rr.out.error,
+      rr.stdout || rr.stderr);
+  }
+  const badId = startRun(negBook, 'bad/id');
+  check('P2.1 run_id 含斜杠拒绝（1-80 位规则）', badId.r.status === 2, badId.r.stdout);
+
+  // ---- T08：半章中断/compact，从真实末尾接写，不重写旧稿 ----
+  const book1 = newSessionBook('p21t08');
+  const s1 = startRun(book1, 'trial-001');
+  check('T08 合法 start exit0、phase=prepared、baseline rev=0',
+    s1.r.status === 0 && s1.r.out.phase === 'prepared'
+    && s1.r.out.baseline_state_revision === 0, s1.r.stderr || s1.r.stdout);
+  check('T08 同名 run 同输入 start 幂等不覆盖',
+    asRun(book1, ['start', '--project', book1, '--run', 'trial-001', '--input', `${s1.ws}/input.json`]).status === 0,
+    '幂等 start 失败');
+  fs.writeFileSync(path.join(book1, s1.ws, 'drafts', 'v0001.md'), DRAFT_V1, 'utf8');
+  let rcp = checkpoint(book1, 'trial-001', {
+    phase: 'drafting',
+    draft: { path: `${s1.ws}/drafts/v0001.md`, complete: false },
+    next_action: '顾客尚未答复，从真实末尾接写',
+  });
+  check('T08 半章 checkpoint drafting exit0', rcp.status === 0 && rcp.out.phase === 'drafting', rcp.stdout);
+  check('T08 complete=false 不能进 drafted',
+    checkpoint(book1, 'trial-001', {
+      phase: 'drafted',
+      draft: { path: `${s1.ws}/drafts/v0001.md`, complete: false } }).status === 2,
+    '半成品过门了');
+  let rst = asRun(book1, ['status', '--project', book1, '--run', 'trial-001']);
+  check('T08 compact 后 status 指向同稿同 run（resumable，含 next_action）',
+    rst.status === 0 && rst.out.status === 'resumable' && rst.out.phase === 'drafting'
+    && rst.out.draft.complete === false && /从真实末尾接写/.test(rst.out.next_action),
+    JSON.stringify(rst.out));
+  // 续写成新版本（旧 v0001 字节不动）
+  const v1Bytes = fs.readFileSync(path.join(book1, s1.ws, 'drafts', 'v0001.md'));
+  fs.writeFileSync(path.join(book1, s1.ws, 'drafts', 'v0002.md'), DRAFT_V2, 'utf8');
+  rcp = checkpoint(book1, 'trial-001', {
+    phase: 'drafted',
+    draft: { path: `${s1.ws}/drafts/v0002.md`, complete: true } });
+  check('T08 续稿 v0002 complete=true 进 drafted', rcp.status === 0 && rcp.out.phase === 'drafted', rcp.stdout);
+  check('T08 旧登记稿 v0001 字节未动（不重写已存文本）',
+    fs.readFileSync(path.join(book1, s1.ws, 'drafts', 'v0001.md')).equals(v1Bytes), 'v0001 被改写');
+
+  // ---- T09：新稿写成但 checkpoint 中断——孤立稿不自动当选 ----
+  fs.writeFileSync(path.join(book1, s1.ws, 'drafts', 'v0003.md'), DRAFT_V2 + '\n又多写了一夜。\n', 'utf8');
+  rst = asRun(book1, ['status', '--project', book1, '--run', 'trial-001']);
+  check('T09 checkpoint 前孤立新稿：status 列出但不自动选择，当前稿仍是 v0002',
+    rst.status === 0 && rst.out.orphan_drafts.length === 1
+    && /v0003/.test(rst.out.orphan_drafts[0]) && /v0002/.test(rst.out.draft.path)
+    && /孤立新稿/.test(rst.out.reasons.join('；')), JSON.stringify(rst.out, null, 1));
+
+  // 当前会话显式弃用 v0003（保留 v0002 为选定稿；弃用后该稿不得再被自动选中）
+  fs.rmSync(path.join(book1, s1.ws, 'drafts', 'v0003.md'));
+
+  // ---- reviewed/ready 证据绑定 + T10 改候选/改输入即 blocked ----
+  const candHash = crypto.createHash('sha256').update(Buffer.from(DRAFT_V2, 'utf8')).digest('hex');
+  fs.writeFileSync(path.join(book1, s1.ws, 'review.md'),
+    `# 回看\n候选 hash12=${h12(DRAFT_V2)}：能力经行动兑现，师父未回。\n`, 'utf8');
+  fs.writeFileSync(path.join(book1, s1.ws, 'transaction.json'), JSON.stringify({ delta: { result: 'x' } }), 'utf8');
+  fs.writeFileSync(path.join(book1, s1.ws, 'check-evidence.json'),
+    JSON.stringify({ candidate_sha256: candHash, checks: [] }), 'utf8');
+  check('T10 review 不绑当前稿 hash12 拒绝登记',
+    checkpoint(book1, 'trial-001', {
+      phase: 'reviewed',
+      review: `.guyin/work/trial-001/review.md` }).status === 0
+    ? checkpoint(book1, 'trial-001', {
+      phase: 'ready',
+      transaction: '.guyin/work/trial-001/transaction.json',
+      check_evidence: '.guyin/work/trial-001/check-evidence.json' }).status === 0
+    : false, '证据链过门失败');
+  rst = asRun(book1, ['status', '--project', book1, '--run', 'trial-001']);
+  check('T10 ready status ok', rst.status === 0 && rst.out.phase === 'ready' && rst.out.status === 'ok',
+    JSON.stringify(rst.out));
+  fs.appendFileSync(path.join(book1, s1.ws, 'drafts', 'v0002.md'), '掌柜突然笑了。\n', 'utf8');
+  rst = asRun(book1, ['status', '--project', book1, '--run', 'trial-001']);
+  check('T10 ready 后候选被改 → blocked',
+    rst.status === 2 && rst.out.status === 'blocked'
+    && /已登记稿件被外部修改/.test(rst.out.reasons.join('；')), JSON.stringify(rst.out.reasons));
+  fs.writeFileSync(path.join(book1, s1.ws, 'drafts', 'v0002.md'), DRAFT_V2, 'utf8');
+  fs.appendFileSync(path.join(book1, s1.ws, 'input.json'), '\n', 'utf8');
+  rst = asRun(book1, ['status', '--project', book1, '--run', 'trial-001']);
+  check('T10 input 被改 → blocked',
+    rst.status === 2 && /input 文件缺失或哈希/.test(rst.out.reasons.join('；')),
+    JSON.stringify(rst.out.reasons));
+
+  // ---- T11：多 run 指定/损坏重建/有效 session 拒修 ----
+  const book2 = newSessionBook('p21t11');
+  const s2a = startRun(book2, 'run-a');
+  check('T11 run-a start', s2a.r.status === 0, s2a.r.stdout);
+  const s2b = startRun(book2, 'run-b');
+  check('T11 run-b start', s2b.r.status === 0, s2b.r.stdout);
+  rst = asRun(book2, ['status', '--project', book2]);
+  check('T11 多个 run 不指定 --run 拒绝并列选择',
+    rst.status === 2 && /run-a/.test(rst.out.error) && /run-b/.test(rst.out.error), rst.stdout);
+  // 损坏 session：保留字节→重建为 drafting/complete=false
+  const sessA = path.join(book2, '.guyin', 'work', 'run-a', 'author-session.json');
+  fs.writeFileSync(sessA, '{这不是合法JSON', 'utf8');
+  rst = asRun(book2, ['status', '--project', book2, '--run', 'run-a']);
+  check('T11 session 损坏 status blocked 且提示 repair',
+    rst.status === 2 && /repair/.test(rst.out.next_action), rst.stdout);
+  fs.mkdirSync(path.join(book2, '.guyin', 'work', 'run-a', 'drafts'), { recursive: true });
+  fs.writeFileSync(path.join(book2, '.guyin', 'work', 'run-a', 'drafts', 'v0001.md'), DRAFT_V1, 'utf8');
+  let rr = asRun(book2, ['repair', '--project', book2, '--run', 'run-a']);
+  check('T11 repair 无 --draft：登记 drafting/complete=false、baseline=null、原文留存',
+    rr.status === 0 && rr.out.phase === 'drafting' && rr.out.baseline === null
+    && fs.readdirSync(path.join(book2, '.guyin', 'work', 'run-a')).some((n) => n.startsWith('session.corrupt-')),
+    rr.stdout || rr.stderr);
+  check('T11 对有效 session 再 repair 拒绝',
+    asRun(book2, ['repair', '--project', book2, '--run', 'run-a']).status === 2, '覆盖了有效 session');
+
+  // ---- T33：后补发布授权/selected-candidate 换稿失效/目标变化须新 run ----
+  const book3 = newSessionBook('p21t33');
+  const s3 = startRun(book3, 't33');
+  fs.writeFileSync(path.join(book3, s3.ws, 'drafts', 'v0001.md'), DRAFT_V2, 'utf8');
+  checkpoint(book3, 't33', { phase: 'drafting',
+    draft: { path: `${s3.ws}/drafts/v0001.md`, complete: true } });
+  fs.writeFileSync(path.join(book3, s3.ws, 'review.md'), `# 回看\n${h12(DRAFT_V2)}\n`, 'utf8');
+  fs.writeFileSync(path.join(book3, s3.ws, 'transaction.json'), JSON.stringify({ delta: { result: 'x' } }), 'utf8');
+  fs.writeFileSync(path.join(book3, s3.ws, 'check-evidence.json'),
+    JSON.stringify({ candidate_sha256: candHash }), 'utf8');
+  checkpoint(book3, 't33', { phase: 'reviewed', review: `${s3.ws}/review.md` });
+  checkpoint(book3, 't33', {
+    phase: 'ready', transaction: `${s3.ws}/transaction.json`,
+    check_evidence: `${s3.ws}/check-evidence.json` });
+  const U2 = '将我刚选定的守店版本写入正式正文。';
+  const t33Input = (pub) => baseInput({
+    sources: [
+      { id: 'U1', kind: 'user',
+        text: '请试写第一章，不发布。修表学徒第一次独自守店，今晚须交还一只客表。师父外出，本章不能回来解围。' },
+      { id: 'U2', kind: 'user', text: U2 },
+    ],
+    authorization: {
+      write: { source_id: 'U1', quote: '请试写第一章，不发布。' },
+      selection: { source_id: 'U2', quote: U2, candidate_sha256: pub.candidate },
+      publish: { source_id: 'U2', quote: U2,
+        target: { chapter: 1, title: '守店', mode: 'append' },
+        scope: pub.scope, candidate_sha256: pub.candidate },
+    },
+  });
+  const wrongHash = '0'.repeat(64);
+  fs.writeFileSync(path.join(book3, s3.ws, 'input.v0001.json'),
+    JSON.stringify(t33Input({ scope: 'selected-candidate', candidate: wrongHash })), 'utf8');
+  rr = checkpoint(book3, 't33', { phase: 'ready', input_path: `${s3.ws}/input.v0001.json` });
+  check('T33 selected-candidate 授权哈希≠当前候选 → 拒绝（换稿不复用授权）',
+    rr.status === 2, rr.stdout);
+  fs.writeFileSync(path.join(book3, s3.ws, 'input.v0002.json'),
+    JSON.stringify(t33Input({ scope: 'selected-candidate', candidate: candHash })), 'utf8');
+  rr = checkpoint(book3, 't33', { phase: 'ready', input_path: `${s3.ws}/input.v0002.json` });
+  check('T33 后补授权成功：指针切换、退回 drafted、四证据清空、旧 input 留存',
+    rr.status === 0 && rr.out.phase === 'drafted'
+    && fs.existsSync(path.join(book3, s3.ws, 'input.json')), rr.stdout);
+  let sessNow = JSON.parse(fs.readFileSync(path.join(book3, s3.ws, 'author-session.json'), 'utf8'));
+  check('T33 证据确已清空且 input 指针更新',
+    sessNow.review === null && sessNow.transaction === null && sessNow.check_evidence === null
+    && /input\.v0002\.json$/.test(sessNow.input_path), JSON.stringify(sessNow, null, 1));
+  const t33Changed = baseInput({ target: { kind: 'long', chapter: 2, title: '守店', mode: 'append' } });
+  fs.writeFileSync(path.join(book3, s3.ws, 'input.v0003.json'), JSON.stringify(t33Changed), 'utf8');
+  rr = checkpoint(book3, 't33', { phase: 'drafted', input_path: `${s3.ws}/input.v0003.json` });
+  check('T33 目标变化必须新开 run（不换输入强过门）', rr.status === 2 && /新开 run/.test(rr.out.error), rr.stdout);
+
+  // ---- T12：发布 complete 后 status 不认外部变化、不重提，可进 published ----
+  const book4 = newSessionBook('p21t12');
+  const s4 = startRun(book4, 't12run');
+  fs.writeFileSync(path.join(book4, s4.ws, 'drafts', 'v0001.md'),
+    `# 第001章 守店\n\n${DRAFT_V2}`, 'utf8');
+  const finalDraft = fs.readFileSync(path.join(book4, s4.ws, 'drafts', 'v0001.md'), 'utf8');
+  const finalHash = crypto.createHash('sha256').update(Buffer.from(finalDraft, 'utf8')).digest('hex');
+  checkpoint(book4, 't12run', { phase: 'drafting',
+    draft: { path: `${s4.ws}/drafts/v0001.md`, complete: true } });
+  const txT12 = {
+    schema_version: 1, mode: 'append', chapter: 1, chapter_title: '守店',
+    expected_state_revision: 0,
+    delta: {
+      result: '学徒独自完成交表，并约定明日向师父说明费用。',
+      character_changes: [{ name: '学徒', change: '独自交表，承担次日解释费用的责任。' }],
+      foreshadow_changes: [], timeline_events: [], verdict_changes: [],
+      evidence_changes: [], geo_changes: [], scene_changes: [],
+      constraints: [], next_chapter_commitments: ['次日向师父说明费用。'],
+      retired_context_items: [], retired_characters: [],
+    },
+    context: { position: { volume: '第一卷', volume_start_chapter: 1,
+      story_time: '首日傍晚', scene: '修表铺' },
+      long_term_constraints: [], active_character_names: ['学徒'], continuity_risks: [] },
+    character_snapshots: { 学徒: {
+      identity: '修表学徒', location: '修表铺', goal: '次日向师父说明费用',
+      state: '已独自交表，仍担心师父追问',
+      abilities_resources: [], relationships: ['尚未向师父说明'],
+      knowledge: ['知道自己已交表'], open_threads: ['次日解释费用'] } },
+  };
+  fs.writeFileSync(path.join(book4, s4.ws, 'transaction.json'), JSON.stringify(txT12), 'utf8');
+  fs.writeFileSync(path.join(book4, s4.ws, 'review.md'), `# 回看\n候选 ${h12(finalDraft)}\n`, 'utf8');
+  fs.writeFileSync(path.join(book4, s4.ws, 'checks.md'), `# 检查证据\n候选 ${h12(finalDraft)} 全链零阻断\n`, 'utf8');
+  fs.writeFileSync(path.join(book4, s4.ws, 'check-evidence.json'),
+    JSON.stringify({ candidate_sha256: finalHash, checks: [] }), 'utf8');
+  checkpoint(book4, 't12run', { phase: 'drafted' });
+  checkpoint(book4, 't12run', { phase: 'reviewed', review: `${s4.ws}/review.md` });
+  checkpoint(book4, 't12run', { phase: 'ready',
+    transaction: `${s4.ws}/transaction.json`, check_evidence: `${s4.ws}/check-evidence.json` });
+  const stateHashT12 = h12(fs.readFileSync(path.join(book4, '追踪', '_tracking-state.json')));
+  const proseFilesT12 = fs.readdirSync(path.join(book4, '正文')).filter((n) => !n.startsWith('.'));
+  const manifestT12 = {
+    schema_version: 1, run_id: 't12run',
+    expected_state_revision: 0,
+    target: { chapter: 1, title: '守店', mode: 'append' },
+    candidate: `.guyin/work/t12run/drafts/v0001.md`,
+    destination: '正文/第001章_守店.md',
+    transaction: `.guyin/work/t12run/transaction.json`,
+    baseline: [{ path: '追踪/_tracking-state.json', hash12: stateHashT12 },
+      { dir: '正文', files: proseFilesT12 }],
+    review: { mode: '当前会话全文回看', conclusion: '初读通过', evidence: [`.guyin/work/t12run/review.md`] },
+    check_evidence: [`.guyin/work/t12run/checks.md`],
+  };
+  fs.writeFileSync(path.join(book4, s4.ws, 'publish.json'), JSON.stringify(manifestT12), 'utf8');
+  const pr = pyRun(book4, ['publish', '--project', book4,
+    '--input', path.join(book4, '.guyin', 'work', 't12run', 'publish.json')]);
+  check('T12 真实发布 exit0、state rev1', pr.status === 0
+    && pr.out && pr.out.state_revision === 1, pr.stderr || pr.stdout);
+  rst = asRun(book4, ['status', '--project', book4, '--run', 't12run']);
+  check('T12 发布后 status 不把本 run 造成的 rev1/正文新增当外部改动',
+    rst.status === 0 && rst.out.phase === 'ready' && rst.out.reasons.length === 0
+    && rst.out.publication_stage === 'complete', JSON.stringify(rst.out, null, 1));
+  rr = checkpoint(book4, 't12run', { phase: 'published' });
+  check('T12 账本 complete 且目标稿一致才允许记 published', rr.status === 0, rr.stdout);
+  check('T12 published 后改稿/回退被拒、只许 plan_patch/next_action',
+    checkpoint(book4, 't12run', { phase: 'ready' }).status === 2
+    && checkpoint(book4, 't12run', { next_action: '等待改纲授权' }).status === 0,
+    'published 终态被突破');
+  check('T12 不重复提交：状态停在 rev1',
+    JSON.parse(fs.readFileSync(path.join(book4, '追踪', '_tracking-state.json'), 'utf8')).state_revision === 1,
+    'revision 又增加了');
+}
+
+// ============================================================
+// P2.2 候选显式上下文 / 目标检查 / 机器证据（T13-T18/T34）
+// ============================================================
+console.log('== P2.2 候选上下文与机器证据（T13-T18/T34） ==');
+{
+  const CC = path.join(S, 'lib', 'guyin-candidate-context.js');
+  const DELIVER = path.join(S, 'guyin-check-outline-deliver.js');
+  const LEAK = path.join(S, 'guyin-check-authority-leak.js');
+  const FID = path.join(S, 'guyin-check-foreshadow-id.js');
+  const PY = path.join(S, 'guyin-tracking-commit.py');
+  const crypto = require('crypto');
+  const ccRun = (book, args) => {
+    const r = spawnSync('node', [CC, ...args], { encoding: 'utf8', env: cleanEnvShared });
+    let out = null;
+    try { out = r.stdout.trim() ? JSON.parse(r.stdout) : null; } catch (e) { out = null; }
+    return { status: r.status, out, stdout: r.stdout, stderr: r.stderr };
+  };
+  const nodeRun = (script, args) => {
+    const r = spawnSync('node', [script, ...args], { encoding: 'utf8', env: cleanEnvShared });
+    let out = null;
+    for (const text of [r.stdout, r.stderr]) {
+      const m = text && text.match(/\{[\s\S]*\}\s*$/);
+      if (m) { try { out = JSON.parse(m[0]); break; } catch (e) { /* next */ } }
+    }
+    return { status: r.status, out, stdout: r.stdout, stderr: r.stderr };
+  };
+  const cleanEnvShared = { ...process.env };
+  delete cleanEnvShared.GUYIN_PUBLISH_PAUSE_AFTER;
+  const LEDGER_P = [
+    '| 章号 | 来源 | 报警/发现 | 处置类别 | 正文版本 | 终态 | 决定依据 | 去向/备注 |',
+    '|---|---|---|---|---|---|---|---|',
+    '',
+  ].join('\n');
+  function p22Book(name) {
+    const book = path.join(TMP, name);
+    fs.mkdirSync(path.join(book, '追踪', '角色状态'), { recursive: true });
+    fs.mkdirSync(path.join(book, '正文'), { recursive: true });
+    fs.writeFileSync(path.join(book, '追踪', '待审台账.md'), LEDGER_P, 'utf8');
+    const initPath = path.join(TMP, `${name}.init.json`);
+    fs.writeFileSync(initPath, JSON.stringify({
+      schema_version: 1, book_title: '试写', last_chapter: 0,
+      context: { position: { volume: '第一卷', volume_start_chapter: 1, story_time: '晨', scene: '铺' },
+        long_term_constraints: [], active_character_names: [], continuity_risks: [] },
+    }), 'utf8');
+    const r = spawnSync('python', [PY, 'init', '--input', initPath, '--project', book],
+      { encoding: 'utf8', env: cleanEnvShared });
+    check(`P2.2 ${name} init`, r.status === 0, r.stderr);
+    return book;
+  }
+  const boundaryDoc = (over) => ({
+    schema_version: 1,
+    target: { kind: 'long', chapter: 1, title: '守店', mode: 'append' },
+    authorization: { write: { source_id: 'U1', quote: '试写。' }, selection: null, publish: null },
+    sources: [{ id: 'U1', kind: 'user', text: '试写。' }],
+    facts: [], locks: [], allowed_reuse: [], outline: null,
+    style: { profile_id: 'relationship-payoff', profile_version: 1,
+      selection_basis: 'framework-default', effective_features: ['能力经行动兑现'] },
+    wordcount: { min: 2500, max: 6000 }, ...over,
+  });
+  function setupCandidate(book, run, text, name = 'v0001.md') {
+    const ws = `.guyin/work/${run}`;
+    fs.mkdirSync(path.join(book, ws, 'drafts'), { recursive: true });
+    fs.writeFileSync(path.join(book, ws, 'drafts', name), text, 'utf8');
+    fs.writeFileSync(path.join(book, ws, 'input.json'), JSON.stringify(boundaryDoc()), 'utf8');
+    return ws;
+  }
+  // 干净长候选：句句不同，规避复读/工程词/格式门（约 2800 字）。
+  const stems = ['他把油灯拨亮', '柜面上的铜铃轻轻响', '学徒低头核对单据', '掌柜捻着胡须盘算',
+    '门外的石板路泛着潮气', '后院的骡子打了个响鼻', '伙计用袖子擦净秤盘', '账房先生拨弄算盘珠',
+    '檐角积着昨夜的雨水', '猫蜷在粮袋旁边打盹'];
+  const tails = ['谁也没有多问一句', '事情就这么定了下来', '他心里盘算着轻重', '街坊各自忙着手里的活',
+    '天光一点点挪进门缝', '这笔账总要有人去结', '风带着咸腥气灌进来', '锅上的蒸汽顶开木盖',
+    '谁都明白这话的分量', '绳子在木桩上绕了两圈'];
+  const objs = ['铜尺', '蜡丸', '麻绳', '木匣', '陶碗', '银簪', '旧算盘', '粗瓷瓶', '竹签', '油纸伞',
+    '小板凳', '青瓷罐', '铁火盆', '布口袋', '磨刀石', '米升子', '陶罐', '门环', '水缸', '粮袋',
+    '风灯', '柜台布', '砚台', '毛笔', '账本', '铜钱串', '蓑衣', '草鞋', '斗笠', '鱼篓',
+    '柴刀', '木桶', '锅盖', '秤砣', '灯笼穗', '门板', '窗纸', '屋檐草', '石阶', '院角树',
+    '泥炉', '药罐', '针线匾', '顶针', '梭子', '纺车', '桑皮纸', '墨盒', '镇纸', '字帖',
+    '箫', '棋盘', '酒葫芦', '茶罐', '米糕屉', '竹筛', '铜铃锤', '牛缰绳', '马鞍', '货郎鼓'];
+  const verbsA = ['擦净', '摆正', '收起', '取来', '搁稳', '抖开', '卷起', '推开', '扣牢', '点亮', '灌满', '扎紧'];
+  const verbsB = ['换过两回手', '看了半晌', '称过分两', '量罢尺寸', '试了试松紧', '敲过三声',
+    '听着响动', '挡在风口', '翻个面儿', '压平折角', '缝住裂口', '擦干水迹'];
+  function longCandidate() {
+    const lines = [];
+    for (let n = 1; n <= 60; n += 1) {
+      const s = `${stems[n % stems.length]}，${tails[(n * 3) % tails.length]}，`
+        + `${verbsA[n % 12]}${objs[(n * 7) % objs.length]}，又替人${verbsB[(n + 5) % 12]}${objs[(n * 11 + 3) % objs.length]}，`
+        + `临末各自散开，没人再提方才那点动静。`;
+      lines.push(s);
+    }
+    return `# 第001章 守店\n\n${lines.join('\n')}\n`;
+  }
+
+  // ---- T13：统一候选上下文 ----
+  const b13 = p22Book('p22t13');
+  const wsA = setupCandidate(b13, 'r1', longCandidate());
+  // 深层草稿 + 正式风格文件名两个位置，同一内容、同一显式章号。
+  fs.mkdirSync(path.join(b13, '.guyin', 'work', 'r2'), { recursive: true });
+  fs.copyFileSync(path.join(b13, wsA, 'drafts', 'v0001.md'),
+    path.join(b13, '.guyin', 'work', 'r2', '第001章_守店.md'));
+  const rA = ccRun(b13, ['--project', b13, '--chapter', '1', path.join(b13, wsA, 'drafts', 'v0001.md')]);
+  const rB = ccRun(b13, ['--project', b13, '--chapter', '1',
+    path.join(b13, '.guyin', 'work', 'r2', '第001章_守店.md')]);
+  check('T13 深层草稿与普通文件名在显式 B/N 下解析一致（章号+候选哈希）',
+    rA.status === 0 && rB.status === 0 && rA.out.chapter === 1 && rB.out.chapter === 1
+    && rA.out.candidate.sha256 === rB.out.candidate.sha256, `${rA.status}/${rB.status}`);
+  check('T13 深层草稿不给 --chapter 必须拒绝（不靠目录/文件名猜）',
+    ccRun(b13, ['--project', b13, path.join(b13, wsA, 'drafts', 'v0001.md')]).status === 2, '被猜章了');
+  check('T13 错误章号(0)/不存在候选/路径越界 全部非零',
+    ccRun(b13, ['--project', b13, '--chapter', '0', path.join(b13, wsA, 'drafts', 'v0001.md')]).status === 2
+    && ccRun(b13, ['--project', b13, '--chapter', '1', path.join(b13, wsA, 'drafts', 'nope.md')]).status === 2
+    && ccRun(b13, ['--project', b13, '--chapter', '1', '../../../etc/hosts']).status === 2, '有误放');
+  // boundary 目标冲突
+  const r13conflict = ccRun(b13, ['--project', b13, '--chapter', '2', '--boundary', path.join(b13, wsA, 'input.json'),
+    path.join(b13, wsA, 'drafts', 'v0001.md')]);
+  check('T13 显式章号与 input.target 冲突拒绝', r13conflict.status === 2, r13conflict.stdout);
+
+  // ---- T14：outline-deliver exact/semantic/不适用/坏细纲 ----
+  const b14 = p22Book('p22t14');
+  const ws14 = setupCandidate(b14, 'r14', '学徒说：“今晚这只表，我亲手交。”月光落在柜台上。\n');
+  const cand14 = path.join(b14, ws14, 'drafts', 'v0001.md');
+  const b14doc = (locks) => boundaryDoc({ locks, target: { kind: 'long', chapter: 1, title: '守店', mode: 'append' } });
+  const b14Exact = path.join(b14, ws14, 'input-exact.json');
+  fs.writeFileSync(b14Exact, JSON.stringify(b14doc([
+    { id: 'E1', kind: 'exact', text: '我亲手交', source_id: 'U1' }])), 'utf8');
+  let rd = nodeRun(DELIVER, ['--json', '--project', b14, '--chapter', '1', '--boundary', b14Exact, cand14]);
+  check('T14 exact 锁逐字落地 → pass',
+    rd.status === 0 && rd.out.status === 'pass'
+    && !rd.out.findings.some((f) => f.type === 'candidate-exact-lock-missing'),
+    JSON.stringify(rd.out && rd.out.findings));
+  const b14Sem = path.join(b14, ws14, 'input-sem.json');
+  fs.writeFileSync(b14Sem, JSON.stringify(b14doc([
+    { id: 'S1', kind: 'semantic', text: '学徒完成交表', source_id: 'U1' }])), 'utf8');
+  rd = nodeRun(DELIVER, ['--json', '--project', b14, '--chapter', '1', '--boundary', b14Sem, cand14]);
+  check('T14 semantic 换说法只列人工核对（verify 待审，绝无正则自动 verified）',
+    rd.status === 1
+    && rd.out.findings.some((f) => f.type === 'candidate-semantic-lock-review' && f.handling === 'verify')
+    && !rd.out.findings.some((f) => f.type === 'candidate-semantic-lock-verified'),
+    JSON.stringify(rd.out && rd.out.findings));
+  const b14Miss = path.join(b14, ws14, 'input-miss.json');
+  fs.writeFileSync(b14Miss, JSON.stringify(b14doc([
+    { id: 'E2', kind: 'exact', text: '明天师父回来解围', source_id: 'U1' }])), 'utf8');
+  rd = nodeRun(DELIVER, ['--json', '--project', b14, '--chapter', '1', '--boundary', b14Miss, cand14]);
+  check('T14 exact 漏句机械失败（hard），exit 非零',
+    rd.status === 1 && rd.out.findings.some((f) => f.type === 'candidate-exact-lock-missing' && f.handling === 'hard'),
+    rd.stdout);
+  const b14None = path.join(b14, ws14, 'input-none.json');
+  fs.writeFileSync(b14None, JSON.stringify(b14doc([])), 'utf8');
+  rd = nodeRun(DELIVER, ['--json', '--project', b14, '--chapter', '1', '--boundary', b14None, cand14]);
+  check('T14 无细纲无锁＝not_applicable（不造四组过门、不零扫描冒充 pass）',
+    rd.status === 0 && rd.out.status === 'not_applicable'
+    && JSON.stringify(rd.out.files_scanned).includes('v0001.md'), rd.stdout);
+  check('T14 显式 --outline 不可读 exit2（不假通过）',
+    nodeRun(DELIVER, ['--json', '--project', b14, '--chapter', '1', '--outline',
+      path.join(b14, '大纲', '细纲_第999章.md'), cand14]).status === 2, '读不了竟 exit0');
+  // allowed_reuse 未使用不产生义务：b14None 中 allowed_reuse=[] 时无相关 finding
+  check('T14 allowed_reuse 未使用合法（零白名单零 finding）',
+    !rd.out.findings.some((f) => /reuse|照搬/.test(f.type)), '有白名单义务 finding');
+
+  // ---- T15/T16：authority-leak 空作者性/生活素材/工序指令/forbidden ----
+  const b15 = p22Book('p22t15');
+  const ws15 = setupCandidate(b15, 'r15', '');
+  const candLife = path.join(b15, ws15, 'life.md');
+  fs.writeFileSync(candLife, '早市的鱼摊冒着白汽，她挑了两条小的，又想起家里没了姜。\n', 'utf8');
+  const b15in = path.join(b15, ws15, 'input.json');
+  let rl = nodeRun(LEAK, ['--json', '--project', b15, '--chapter', '1', '--boundary', b15in, candLife]);
+  check('T15/T16 无作者性目录＋普通生活素材 → pass（空作者性合法、生活素材不自动 hard）',
+    rl.status === 0 && rl.out.status === 'pass' && rl.out.findings.length === 0, rl.stdout);
+  const candInstr = path.join(b15, ws15, 'instr.md');
+  fs.writeFileSync(candInstr, '她翻开细纲，发现本章的伏笔还没收，读者一定会着急。\n', 'utf8');
+  rl = nodeRun(LEAK, ['--json', '--project', b15, '--chapter', '1', '--boundary', b15in, candInstr]);
+  check('T15 真实工序指令（细纲/伏笔/读者/本章）必须报',
+    rl.out.findings.some((f) => f.type === 'authority-process-instruction'), rl.stdout);
+  const b15forb = path.join(b15, ws15, 'input-forb.json');
+  fs.writeFileSync(b15forb, JSON.stringify(boundaryDoc({
+    locks: [{ kind: 'forbidden', text: '独门暗器配方', source_id: 'U1' }] })), 'utf8');
+  const candForb = path.join(b15, ws15, 'forb.md');
+  fs.writeFileSync(candForb, '他从怀里掏出册子，上面写着独门暗器配方。\n', 'utf8');
+  rl = nodeRun(LEAK, ['--json', '--project', b15, '--chapter', '1', '--boundary', b15forb, candForb]);
+  check('T15 forbidden 文本字面入文 → hard',
+    rl.status === 1 && rl.out.findings.some((f) => f.type === 'authority-forbidden-text' && f.handling === 'hard'),
+    rl.stdout);
+  const b15reuse = path.join(b15, ws15, 'input-reuse.json');
+  fs.writeFileSync(b15reuse, JSON.stringify(boundaryDoc({
+    allowed_reuse: ['独门暗器配方'],
+    locks: [{ kind: 'forbidden', text: '独门暗器配方', source_id: 'U1' }] })), 'utf8');
+  rl = nodeRun(LEAK, ['--json', '--project', b15, '--chapter', '1', '--boundary', b15reuse, candForb]);
+  check('T15 allowed_reuse 白名单内照搬不被当泄漏（白名单不产生义务）',
+    rl.status === 0 && !rl.out.findings.some((f) => f.type === 'authority-forbidden-text'), rl.stdout);
+  // 带占位作者性模板的项目：空词源不发空转 hard
+  fs.mkdirSync(path.join(b15, '作者性'), { recursive: true });
+  fs.copyFileSync(path.join(REPO, 'skills', 'guyin-setup', 'templates', 'long', '作者性', '气卡.md'),
+    path.join(b15, '作者性', '气卡.md'));
+  rl = nodeRun(LEAK, ['--json', '--project', b15, '--chapter', '1', '--boundary', b15in, candLife]);
+  check('T16 占位作者性不产生空转拦截（私人素材缺省合法）',
+    rl.status === 0 && rl.out.findings.length === 0, rl.stdout);
+
+  // ---- T17：正常心理/长对白/破折号/叙述术语，检查只读，文本哈希前后一致 ----
+  const b17 = p22Book('p22t17');
+  const ws17 = setupCandidate(b17, 'r17', '');
+  const normalText = [
+    '# 第001章 夜谈',
+    '',
+    '他把银子推回去——这钱不能收，收了就说不清来路。她怔在原地，心里明白这话的分量，却一时找不到话接。',
+    '「你几时看出来的？」她问，声音很轻。「从你第一次替他圆谎开始。」他答完便低头去擦柜台，像这句话与自己无关。',
+    '勘合在灯下摊开，两个人对着那行小字看了很久，谁也没有先开口。',
+    '',
+  ].join('\n');
+  const cand17 = path.join(b17, ws17, 'normal.md');
+  fs.writeFileSync(cand17, normalText, 'utf8');
+  const before = crypto.createHash('sha256').update(fs.readFileSync(cand17)).digest('hex');
+  for (const scriptName of ['guyin-check-ai-patterns.js', 'guyin-check-beat.js', 'guyin-check-degeneration.js']) {
+    const rr1 = nodeRun(path.join(S, scriptName), ['--json', cand17]);
+    check(`T17 ${scriptName} 对正常文本零 hard/verify（exit0）`, rr1.status === 0, rr1.stdout);
+  }
+  const after = crypto.createHash('sha256').update(fs.readFileSync(cand17)).digest('hex');
+  check('T17 检查只读：候选哈希前后一致', before === after, '文本被改动');
+  // 叙述中引入术语合法（deliver 显式模式不再强制对白首现）
+  const b17out = path.join(b17, '大纲', '细纲_第001章_叙述术语.md');
+  fs.mkdirSync(path.join(b17, '大纲'), { recursive: true });
+  fs.writeFileSync(b17out, '#### 一、本章可能交付什么\n- 术语锚点：勘合\n', 'utf8');
+  rd = nodeRun(DELIVER, ['--json', '--project', b17, '--chapter', '1', '--outline', b17out,
+    '--boundary', path.join(b17, ws17, 'input.json'), cand17]);
+  check('T17 术语在叙述中清楚引入不报 unanchored',
+    rd.status === 0 && !rd.out.findings.some((f) => f.type === 'outline-term-unanchored'), rd.stdout);
+
+  // ---- T18：证据汇总器真实扫描 + 手填/过期/零扫描拒绝 ----
+  const b18 = p22Book('p22t18');
+  const clean = longCandidate();
+  const ws18 = setupCandidate(b18, 'r18', clean);
+  const cand18 = path.join(b18, ws18, 'drafts', 'v0001.md');
+  const evPath = path.join(b18, ws18, 'check-evidence.json');
+  let rg = ccRun(b18, ['--gather', '--project', b18, '--chapter', '1',
+    '--boundary', path.join(b18, ws18, 'input.json'), '--out', evPath, cand18]);
+  const REQUIRED_CHECKS = ['strip', 'integrity', 'beat', 'degeneration', 'ai-patterns', 'wordcount',
+    'outline-deliver', 'authority-leak', 'foreshadow-id', 'repetition'];
+  check('T18 汇总器真实跑链产出 pass 证据（10 个必需检查全在、非零扫描）',
+    rg.status === 0 && rg.out.status === 'pass' && fs.existsSync(evPath)
+    && REQUIRED_CHECKS.every((n) => rg.out.checks.some((c) => c.name === n && c.exit_code === 0
+      && c.files_scanned.length === 1 && c.script_sha256)),
+    JSON.stringify((rg.out && rg.out.checks || []).map((c) => `${c.name}:${c.status}`)));
+  let rv = ccRun(b18, ['--validate-evidence', evPath, '--project', b18, '--chapter', '1',
+    '--boundary', path.join(b18, ws18, 'input.json'), cand18]);
+  check('T18 真证据校验通过', rv.status === 0 && rv.out.ok === true, rv.stdout);
+  // 手填 hash 报告（缺必需检查）
+  const fakePath = path.join(b18, ws18, 'fake-evidence.json');
+  fs.writeFileSync(fakePath, JSON.stringify({ schema_version: 1, candidate_sha256: rg.out.candidate_sha256,
+    status: 'pass', checks: rg.out.checks.slice(0, 3) }), 'utf8');
+  rv = ccRun(b18, ['--validate-evidence', fakePath, '--project', b18, '--chapter', '1',
+    '--boundary', path.join(b18, ws18, 'input.json'), cand18]);
+  check('T18 缺必需检查的手写报告拒绝', rv.status === 2 && /缺必需检查/.test(rv.out.errors.join()), rv.stdout);
+  // 过期脚本哈希
+  const stale = JSON.parse(fs.readFileSync(evPath, 'utf8'));
+  stale.checks[0].script_sha256 = '0'.repeat(64);
+  const stalePath = path.join(b18, ws18, 'stale.json');
+  fs.writeFileSync(stalePath, JSON.stringify(stale), 'utf8');
+  rv = ccRun(b18, ['--validate-evidence', stalePath, '--project', b18, '--chapter', '1',
+    '--boundary', path.join(b18, ws18, 'input.json'), cand18]);
+  check('T18 脚本版本不符（过期证据）拒绝', rv.status === 2 && /过期/.test(rv.out.errors.join()), rv.stdout);
+  // 零扫描
+  const zero = JSON.parse(fs.readFileSync(evPath, 'utf8'));
+  zero.checks[1].files_scanned = [];
+  const zeroPath = path.join(b18, ws18, 'zero.json');
+  fs.writeFileSync(zeroPath, JSON.stringify(zero), 'utf8');
+  rv = ccRun(b18, ['--validate-evidence', zeroPath, '--project', b18, '--chapter', '1',
+    '--boundary', path.join(b18, ws18, 'input.json'), cand18]);
+  check('T18 零扫描证据拒绝', rv.status === 2 && /零扫描/.test(rv.out.errors.join()), rv.stdout);
+  // 候选改了 → 证据过期
+  fs.appendFileSync(cand18, '掌柜突然大笑三声。\n', 'utf8');
+  rv = ccRun(b18, ['--validate-evidence', evPath, '--project', b18, '--chapter', '1',
+    '--boundary', path.join(b18, ws18, 'input.json'), cand18]);
+  check('T18 候选变更后旧证据拒绝（过期）', rv.status === 2 && /候选不一致/.test(rv.out.errors.join()), rv.stdout);
+
+  // ---- T34：foreshadow-id 显式候选+事务 ----
+  const b34 = p22Book('p22t34');
+  fs.writeFileSync(path.join(b34, '追踪', '伏笔.md'),
+    '# 伏笔\n\n| ID | 内容 | 状态 | 章 |\n|---|---|---|---|\n| F001 | 旧约 | 已埋 | 1 |\n', 'utf8');
+  const ws34 = setupCandidate(b34, 'r34', '她想起 F001 那天的话，又把新刻的 F002 木牌揣进怀里。\n');
+  const cand34 = path.join(b34, ws34, 'drafts', 'v0001.md');
+  const tx34 = path.join(b34, ws34, 'tx.json');
+  fs.writeFileSync(tx34, JSON.stringify({
+    schema_version: 1, mode: 'append', chapter: 1, expected_state_revision: 0,
+    delta: { result: 'x', character_changes: [], foreshadow_changes: [
+      { id: 'F002', action: 'add', content: '木牌', updated_chapter: 1 }],
+      timeline_events: [], verdict_changes: [], evidence_changes: [], geo_changes: [],
+      scene_changes: [], constraints: [], next_chapter_commitments: [],
+      retired_context_items: [], retired_characters: [] },
+    context: { position: { volume: '第一卷', volume_start_chapter: 1, story_time: '夜', scene: '屋' },
+      long_term_constraints: [], active_character_names: [], continuity_risks: [] },
+  }), 'utf8');
+  let rf = nodeRun(FID, ['--json', '--project', b34, '--chapter', '1',
+    '--transaction', tx34, '--boundary', path.join(b34, ws34, 'input.json'), cand34]);
+  check('T34 候选+事务合法新增 F002、在册 F001 → 通过',
+    rf.status === 0 && rf.out.status === 'pass'
+    && rf.out.registered.includes('F001') && rf.out.new_in_transaction.includes('F002'), rf.stdout);
+  fs.writeFileSync(cand34, '她想起 F001，又摸出 F002，还有没人知道的 F009。\n', 'utf8');
+  rf = nodeRun(FID, ['--json', '--project', b34, '--chapter', '1',
+    '--transaction', tx34, '--boundary', path.join(b34, ws34, 'input.json'), cand34]);
+  check('T34 正文引用未登记 F009（空登记集同样要扫）→ verify',
+    rf.out.findings.some((f) => f.type === 'foreshadow-ref-unregistered' && /F009/.test(f.message)),
+    rf.stdout);
+  const txBad = JSON.parse(fs.readFileSync(tx34, 'utf8'));
+  txBad.delta.foreshadow_changes = [{ id: 'F008', action: 'add', content: 'x', updated_chapter: 1 }];
+  fs.writeFileSync(tx34, JSON.stringify(txBad), 'utf8');
+  rf = nodeRun(FID, ['--json', '--project', b34, '--chapter', '1',
+    '--transaction', tx34, '--boundary', path.join(b34, ws34, 'input.json'), cand34]);
+  check('T34 事务新增 F008 候选未出现 → hard；且 F009 仍报',
+    rf.out.findings.some((f) => f.type === 'foreshadow-new-id-not-in-candidate' && f.handling === 'hard')
+    && rf.out.findings.some((f) => /F009/.test(f.message)), rf.stdout);
+  check('T34 损坏/缺失显式细纲不允许 exit0',
+    nodeRun(FID, ['--json', '--project', b34, '--chapter', '1',
+      '--outline', path.join(b34, '大纲', '缺.md'), cand34]).status === 2, '缺细纲竟通过');
+}
+
+// ============================================================
+// P2.3 发布 v2 / preview 纯内存预演 / 超大渲染告警 / 修订与指纹 / 第三态阻断
+// ============================================================
+console.log('== P2.3 发布契约 v2、preview、before/after 恢复（T19-T24/T28-T32） ==');
+{
+  const PY3 = path.join(S, 'guyin-tracking-commit.py');
+  const CC3 = path.join(S, 'lib', 'guyin-candidate-context.js');
+  const crypto = require('crypto');
+  const env3 = { ...process.env };
+  delete env3.GUYIN_PUBLISH_PAUSE_AFTER;
+  const py3 = (book, args, env = env3) => {
+    const r = spawnSync('python', [PY3, ...args], { encoding: 'utf8', env });
+    let out = null;
+    for (const text of [r.stdout, r.stderr]) {
+      const m = text && text.match(/\{[\s\S]*\}\s*$/);
+      if (m) { try { out = JSON.parse(m[0]); break; } catch (e) { /* next */ } }
+    }
+    return { status: r.status, out, stdout: r.stdout, stderr: r.stderr };
+  };
+  const node3 = (args) => {
+    const r = spawnSync('node', args, { encoding: 'utf8', env: env3 });
+    let out = null;
+    try { out = r.stdout.trim() ? JSON.parse(r.stdout) : null; } catch (e) { out = null; }
+    return { status: r.status, out, stdout: r.stdout, stderr: r.stderr };
+  };
+  const LEDGER3 = '| 章号 | 来源 | 报警/发现 | 处置类别 | 正文版本 | 终态 | 决定依据 | 去向/备注 |\n|---|---|---|---|---|---|---|---|\n';
+  function book3(name) {
+    const b = path.join(TMP, name);
+    fs.mkdirSync(path.join(b, '追踪/角色状态'), { recursive: true });
+    fs.mkdirSync(path.join(b, '正文'), { recursive: true });
+    fs.writeFileSync(path.join(b, '追踪/待审台账.md'), LEDGER3);
+    const initPath = path.join(TMP, `${name}.init.json`);
+    fs.writeFileSync(initPath, JSON.stringify({
+      schema_version: 1, book_title: 'v2书', last_chapter: 0,
+      context: { position: { volume: '第一卷', volume_start_chapter: 1, story_time: '晨', scene: '铺' },
+        long_term_constraints: [], active_character_names: [], continuity_risks: [] },
+    }));
+    const r = py3(b, ['init', '--input', initPath, '--project', b]);
+    check(`P2.3 ${name} init`, r.status === 0, r.stderr);
+    return b;
+  }
+  const stems3 = ['他把油灯拨亮', '柜面上的铜铃轻轻响', '学徒低头核对单据', '掌柜捻着胡须盘算',
+    '门外的石板路泛着潮气', '后院的骡子打了个响鼻', '伙计用袖子擦净秤盘', '账房先生拨弄算盘珠',
+    '檐角积着昨夜的雨水', '猫蜷在粮袋旁边打盹'];
+  const tails3 = ['谁也没有多问一句', '事情就这么定了下来', '他心里盘算着轻重', '街坊各自忙着手里的活',
+    '天光一点点挪进门缝', '这笔账总要有人去结', '风带着咸腥气灌进来', '锅上的蒸汽顶开木盖',
+    '谁都明白这话的分量', '绳子在木桩上绕了两圈'];
+  const objs3 = ['铜尺', '蜡丸', '麻绳', '木匣', '陶碗', '银簪', '旧算盘', '粗瓷瓶', '竹签', '油纸伞',
+    '小板凳', '青瓷罐', '铁火盆', '布口袋', '磨刀石', '米升子', '陶罐', '门环', '水缸', '粮袋',
+    '风灯', '柜台布', '砚台', '毛笔', '账本', '铜钱串', '蓑衣', '草鞋', '斗笠', '鱼篓',
+    '柴刀', '木桶', '锅盖', '秤砣', '灯笼穗', '门板', '窗纸', '屋檐草', '石阶', '院角树',
+    '泥炉', '药罐', '针线匾', '顶针', '梭子', '纺车', '桑皮纸', '墨盒', '镇纸', '字帖',
+    '箫', '棋盘', '酒葫芦', '茶罐', '米糕屉', '竹筛', '铜铃锤', '牛缰绳', '马鞍', '货郎鼓'];
+  const verbsA3 = ['擦净', '摆正', '收起', '取来', '搁稳', '抖开', '卷起', '推开', '扣牢', '点亮', '灌满', '扎紧'];
+  const verbsB3 = ['换过两回手', '看了半晌', '称过分两', '量罢尺寸', '试了试松紧', '敲过三声',
+    '听着响动', '挡在风口', '翻个面儿', '压平折角', '缝住裂口', '擦干水迹'];
+  function cleanCandidate() {
+    const lines = [];
+    for (let n = 1; n <= 60; n += 1) {
+      lines.push(`${stems3[n % stems3.length]}，${tails3[(n * 3) % tails3.length]}，${verbsA3[n % 12]}${objs3[(n * 7) % objs3.length]}，又替人${verbsB3[(n + 5) % 12]}${objs3[(n * 11 + 3) % objs3.length]}，临末各自散开，没人再提方才那点动静。`);
+    }
+    return `# 第001章 守店\n\n${lines.join('\n')}\n`;
+  }
+  function authorizedInput(candidateBuf, { pub = true } = {}) {
+    const sha = crypto.createHash('sha256').update(candidateBuf).digest('hex');
+    return {
+      schema_version: 1,
+      target: { kind: 'long', chapter: 1, title: '守店', mode: 'append' },
+      authorization: {
+        write: { source_id: 'U1', quote: '试写并发布第一章。' },
+        selection: { source_id: 'U2', quote: '就发这一版，写入正文。', candidate_sha256: sha },
+        publish: pub ? {
+          source_id: 'U2', quote: '就发这一版，写入正文。', scope: 'selected-candidate',
+          candidate_sha256: sha,
+          target: { chapter: 1, title: '守店', mode: 'append' },
+        } : null,
+      },
+      sources: [
+        { id: 'U1', kind: 'user', text: '试写并发布第一章。' },
+        { id: 'U2', kind: 'user', text: '就发这一版，写入正文。' },
+      ],
+      facts: [], locks: [], allowed_reuse: [], outline: null,
+      style: { profile_id: 'relationship-payoff', profile_version: 1,
+        selection_basis: 'user-selected', effective_features: ['能力经行动兑现'] },
+      wordcount: { min: 2500, max: 9000 },
+    };
+  }
+  function tx1(over = {}) {
+    return Object.assign({
+      schema_version: 1, mode: 'append', chapter: 1, chapter_title: '守店', expected_state_revision: 0,
+      delta: {
+        result: '学徒独自把客表交回柜台，并约定明日向师父说明费用。',
+        character_changes: [{ name: '学徒', change: '独自交表，开始担事。' }],
+        foreshadow_changes: [], timeline_events: [], verdict_changes: [],
+        evidence_changes: [], geo_changes: [], scene_changes: [],
+        constraints: [], next_chapter_commitments: ['次日向师父说明费用。'],
+        retired_context_items: [], retired_characters: [],
+      },
+      context: { position: { volume: '第一卷', volume_start_chapter: 1, story_time: '首日傍晚', scene: '修表铺' },
+        long_term_constraints: [], active_character_names: ['学徒'], continuity_risks: [] },
+      character_snapshots: { 学徒: {
+        identity: '修表学徒', location: '修表铺', goal: '次日向师父说明费用', state: '已独自交表',
+        abilities_resources: [], relationships: [], knowledge: ['知道自己已交表'],
+        open_threads: ['次日解释费用'] } },
+    }, over);
+  }
+  function readyRun(b, run, candText, txDoc, { pub = true } = {}) {
+    const ws = `.guyin/work/${run}`;
+    fs.mkdirSync(path.join(b, ws, 'drafts'), { recursive: true });
+    const candBuf = Buffer.from(candText, 'utf8');
+    fs.writeFileSync(path.join(b, ws, 'drafts/v0001.md'), candBuf);
+    fs.writeFileSync(path.join(b, ws, 'transaction.json'), JSON.stringify(txDoc), 'utf8');
+    fs.writeFileSync(path.join(b, ws, 'input.json'), JSON.stringify(authorizedInput(candBuf, { pub })), 'utf8');
+    fs.writeFileSync(path.join(b, ws, 'review.md'),
+      `# 回看\n候选 ${crypto.createHash('sha256').update(candBuf).digest('hex').slice(0, 12)} 已核对\n`, 'utf8');
+    fs.writeFileSync(path.join(b, ws, 'checks.md'),
+      `# 检查证据\n候选 ${crypto.createHash('sha256').update(candBuf).digest('hex').slice(0, 12)} 全绿\n`, 'utf8');
+    const g = node3([CC3, '--gather', '--project', b, '--chapter', '1',
+      '--boundary', path.join(b, ws, 'input.json'), '--transaction', path.join(b, ws, 'transaction.json'),
+      '--out', path.join(b, ws, 'check-evidence.json'), path.join(b, ws, 'drafts/v0001.md')]);
+    if (g.out && g.out.status !== 'pass') {
+      throw new Error('readyRun gather not pass: ' + JSON.stringify(g.out.checks.map((c) => `${c.name}:${c.status}`)));
+    }
+    return ws;
+  }
+  function manifest(b, ws, { version = 2, expected = 0, mode = 'append', dest = '正文/第001章_守店.md',
+    cand = 'drafts/v0001.md', title = '守店', chapter = 1 } = {}) {
+    const stateHash = crypto.createHash('sha256').update(fs.readFileSync(path.join(b, '追踪/_tracking-state.json'))).digest('hex').slice(0, 12);
+    return {
+      schema_version: version, run_id: path.basename(ws),
+      expected_state_revision: expected,
+      target: { chapter, title, mode },
+      candidate: `${ws}/${cand}`, destination: dest, transaction: `${ws}/transaction.json`,
+      baseline: [{ path: '追踪/_tracking-state.json', hash12: stateHash }, { dir: '正文', files: [] }],
+      review: { mode: '当前会话全文回看', conclusion: '初读通过', evidence: [`${ws}/review.md`] },
+      check_evidence: [`${ws}/checks.md`],
+      author_input: `${ws}/input.json`, candidate_checks: `${ws}/check-evidence.json`,
+    };
+  }
+
+  // ---- T28/T19：preview 纯内存预演——通过 / 非法事务拒绝 / 零写入 ----
+  const bv = book3('p23v');
+  const wsV = readyRun(bv, 'rv', cleanCandidate(), tx1());
+  const mv = manifest(bv, wsV);
+  const stateBefore = fs.readFileSync(path.join(bv, '追踪/_tracking-state.json'));
+  fs.writeFileSync(path.join(bv, wsV, 'publish.json'), JSON.stringify(mv), 'utf8');
+  const pv = py3(bv, ['preview', '--project', bv, '--input', path.join(bv, wsV, 'publish.json')]);
+  check('preview 合法 v2 清单 exit0、next_revision=1、不写账本/正文',
+    pv.status === 0 && pv.out.next_state_revision === 1
+    && pv.out.candidate_checks.status === 'pass'
+    && !fs.existsSync(path.join(bv, '追踪/_publication.json'))
+    && !fs.existsSync(path.join(bv, '正文/第001章_守店.md'))
+    && fs.readFileSync(path.join(bv, '追踪/_tracking-state.json')).equals(stateBefore),
+    pv.stderr);
+  const badTx = [
+    ['空快照', tx1({ character_snapshots: { 学徒: { identity: '', location: '', goal: '', state: '' } } })],
+    ['缺核心字段', tx1({ character_snapshots: { 学徒: { identity: '学徒', location: '铺' } } })],
+    ['错误 revision', tx1({ expected_state_revision: 9 })],
+  ];
+  for (const [label, txDoc] of badTx) {
+    const wsX = readyRun(bv, `rx-${label}`, cleanCandidate(), txDoc, { pub: false });
+    fs.writeFileSync(path.join(bv, wsX, 'publish.json'),
+      JSON.stringify(manifest(bv, wsX, { expected: txDoc.expected_state_revision ?? 0 })), 'utf8');
+    const rr = py3(bv, ['preview', '--project', bv, '--input', path.join(bv, wsX, 'publish.json')]);
+    check(`T28/T19 preview 拒绝「${label}」且零写入`,
+      rr.status === 2
+      && fs.readFileSync(path.join(bv, '追踪/_tracking-state.json')).equals(stateBefore), rr.stderr.slice(0, 200));
+  }
+
+  // ---- v2 publish happy：journal/tracking_plan/staged 字节 ----
+  const pub = py3(bv, ['publish', '--project', bv, '--input', path.join(bv, wsV, 'publish.json')]);
+  check('v2 publish exit0、state rev1', pub.status === 0 && pub.out.state_revision === 1, pub.stderr);
+  const journal = JSON.parse(fs.readFileSync(path.join(bv, '追踪/_publication.json'), 'utf8'));
+  check('v2 账本 schema_version=2 且 tracking_plan 含 before/after/staged',
+    journal.schema_version === 2
+    && journal.tracking_plan.artifacts.every((a) => a.after_sha256 && a.staged_path)
+    && journal.tracking_plan.artifacts.some((a) => a.path === '追踪/_tracking-state.json' && a.before_sha256),
+    JSON.stringify(journal.tracking_plan && journal.tracking_plan.artifacts.length));
+  const stagedDir = path.join(bv, wsV, 'publication/artifacts');
+  const stagedStateFile = fs.existsSync(stagedDir)
+    && fs.readdirSync(stagedDir).find((n) => /^追踪_+tracking-state\.json$/.test(n));
+  check('v2 staged 字节落 R/publication/artifacts/（state 与派生视图）',
+    !!stagedStateFile
+    && fs.readFileSync(path.join(stagedDir, stagedStateFile), 'utf8').includes('"state_revision": 1')
+    && fs.readdirSync(stagedDir).some((n) => n.includes('章节金字塔')),
+    'staged 缺失');
+  check('v2 同 run 重入幂等（不重复发布）',
+    py3(bv, ['publish', '--project', bv, '--input', path.join(bv, wsV, 'publish.json')]).status === 0, '幂等失败');
+  check('T18 篡改证据的 v2 publish 拒绝（prepared 不信任手写证据）',
+    (() => {
+      const bz = book3('p23fake');
+      const wsZ = readyRun(bz, 'rz', cleanCandidate(), tx1());
+      const fake = manifest(bz, wsZ);
+      fake.candidate_checks = `${wsZ}/fake-ev.json`;
+      fs.writeFileSync(path.join(bz, wsZ, 'fake-ev.json'),
+        JSON.stringify({ schema_version: 1, candidate_sha256: '0'.repeat(64), status: 'pass', checks: [] }));
+      fs.writeFileSync(path.join(bz, wsZ, 'publish.json'), JSON.stringify(fake), 'utf8');
+      return py3(bz, ['publish', '--project', bz, '--input', path.join(bz, wsZ, 'publish.json')]).status === 2;
+    })(), '假证据竟通过');
+
+  // ---- T20：逐章记录超 3072 改告警，事实完整 ----
+  const bw = book3('p23warn');
+  const many = [];
+  for (let i = 1; i <= 12; i += 1) {
+    many.push({
+      id: `V${String(i).padStart(3, '0')}`, action: 'upsert', chapter: 1,
+      event: `当晚第${i}场交锋：人物各有算盘，证据链一环扣一环，场面调度与代价都落在具体动作上。`,
+      verdict: `判定${i}：这是有预谋的布局而非临时冲突，后果由布局者承担，连锁反应进入后续两章，登记备查。`,
+      status: 'active', keywords: [`布局${i}`, `代价${i}`],
+    });
+  }
+  const txBig = tx1();
+  txBig.delta = { ...txBig.delta, verdict_changes: many };
+  const wsW = readyRun(bw, 'rw', cleanCandidate(), txBig);
+  fs.writeFileSync(path.join(bw, wsW, 'publish.json'), JSON.stringify(manifest(bw, wsW)), 'utf8');
+  const pw = py3(bw, ['publish', '--project', bw, '--input', path.join(bw, wsW, 'publish.json')]);
+  const rec1 = path.join(bw, '追踪/逐章记录/第001章.md');
+  check('T20 超大逐章记录发布通过、告警、文件完整保留',
+    pw.status === 0 && fs.statSync(rec1).size > 3072 && /3072/.test(pw.stderr)
+    && fs.readFileSync(rec1, 'utf8').includes('V012'), pw.stderr.slice(0, 200));
+
+  // ---- T21：怀疑/知情不升级为客观真相 ----
+  check('T21 knowledge 怀疑原样保留在快照',
+    fs.readFileSync(path.join(bw, '追踪/角色状态/学徒.md'), 'utf8').includes('知道自己已交表'),
+    'knowledge 丢失');
+
+  // ---- T22/T24：早章修订时后章已存在，全局最新状态不倒退 ----
+  const br = book3('p23rev');
+  const wsR1 = readyRun(br, 'rr1', cleanCandidate(), tx1(), { pub: false });
+  const m1 = manifest(br, wsR1, { version: 1 });
+  delete m1.author_input; delete m1.candidate_checks;
+  fs.writeFileSync(path.join(br, wsR1, 'publish1.json'), JSON.stringify(m1), 'utf8');
+  check('T22 ch1(v1) 发布',
+    py3(br, ['publish', '--project', br, '--input', path.join(br, wsR1, 'publish1.json')]).status === 0, 'ch1 发布失败');
+  // ch2 必须是与 ch1 实质不同的文本：换标题/人名不够，跨章查重会逐段命中（T32 要验指纹）。
+  const places2 = ['官道旁', '岔路口', '旧茶棚', '土地庙', '河湾边', '黄土坡', '柳树林', '野渡口', '石桥头', '集市口'];
+  const acts2 = ['就着', '绕过', '避开', '打听', '辞别', '挤过', '望见', '歇过', '蹚过', '辨认', '躲过', '赶上'];
+  const things2 = ['半块干饼', '一群驮货的骡子', '收摊的小贩', '生锈的路标', '结冰的浅水', '塌方的崖根',
+    '飘幡的野店', '摆渡的空船', '守城的老兵', '叫卖的炊饼担子', '斜倒的石碑', '没膝的荒草'];
+  const moods2 = ['不吭声只赶路', '心里反复掂量那封信', '把包袱往肩上提了提', '盯着远处的城郭',
+    '记住来路的弯口', '喝口凉水再走', '算着还剩几天脚程', '听路人说前方的行情', '提防着尾随的人影', '闻到炊烟才觉出饿'];
+  const dirs2 = ['北', '东', '城关', '州府'];
+  const times2 = ['日头偏到山后', '晨雾还没散尽', '河风裹着沙打在脸上', '远处传来几声犬吠',
+    '云压得很低像要落雪', '茶棚的旗子无精打采', '渡口的钟敲了五下', '归鸟成群掠过头顶',
+    '霜在枯草上结了一层', '骡铃声顺着风飘远'];
+  const lines2 = [];
+  for (let n = 1; n <= 60; n += 1) {
+    lines2.push(`${places2[n % 10]}${acts2[(n * 5 + 2) % 12]}${things2[(n * 7 + 3) % things2.length]}，少年${moods2[(n * 3 + 1) % 10]}，一路往${dirs2[n % 4]}去，${times2[(n * 11 + 5) % 10]}。`);
+  }
+  const cand2 = `# 第002章 赶路\n\n${lines2.join('\n')}\n`;
+  const wsR2 = '.guyin/work/rr2';
+  fs.mkdirSync(path.join(br, wsR2, 'drafts'), { recursive: true });
+  fs.writeFileSync(path.join(br, wsR2, 'drafts/v0001.md'), cand2, 'utf8');
+  const h12c2 = crypto.createHash('sha256').update(Buffer.from(cand2, 'utf8')).digest('hex').slice(0, 12);
+  fs.writeFileSync(path.join(br, wsR2, 'review.md'), `# 回看\n候选 ${h12c2} 已核对\n`);
+  fs.writeFileSync(path.join(br, wsR2, 'checks.md'), `# 检\n候选 ${h12c2} 全绿\n`);
+  const tx2 = {
+    schema_version: 1, mode: 'append', chapter: 2, chapter_title: '赶路', expected_state_revision: 1,
+    delta: { result: '少年离店上路，章二发生新事。', character_changes: [{ name: '少年', change: '出场' }],
+      foreshadow_changes: [], timeline_events: [], verdict_changes: [], evidence_changes: [],
+      geo_changes: [], scene_changes: [], constraints: [], next_chapter_commitments: [],
+      retired_context_items: [], retired_characters: [] },
+    context: { position: { volume: '第一卷', volume_start_chapter: 2, story_time: '次日', scene: '官道' },
+      long_term_constraints: [], active_character_names: ['学徒', '少年'], continuity_risks: [] },
+    character_snapshots: {
+      少年: { identity: '赶路少年', location: '官道', goal: '进城', state: '在路上',
+        abilities_resources: [], relationships: [], knowledge: ['听说城里招工'], open_threads: [] } },
+  };
+  fs.writeFileSync(path.join(br, wsR2, 'transaction.json'), JSON.stringify(tx2), 'utf8');
+  const stateHashR2 = crypto.createHash('sha256').update(fs.readFileSync(path.join(br, '追踪/_tracking-state.json'))).digest('hex').slice(0, 12);
+  const m2 = {
+    schema_version: 1, run_id: 'rr2', expected_state_revision: 1,
+    target: { chapter: 2, title: '赶路', mode: 'append' },
+    candidate: `${wsR2}/drafts/v0001.md`, destination: '正文/第002章_赶路.md',
+    transaction: `${wsR2}/transaction.json`,
+    baseline: [{ path: '追踪/_tracking-state.json', hash12: stateHashR2 },
+      { dir: '正文', files: ['第001章_守店.md'] }],
+    review: { mode: 'solo 全文通读', conclusion: 'ok', evidence: [`${wsR2}/review.md`] },
+    check_evidence: [`${wsR2}/checks.md`],
+  };
+  fs.writeFileSync(path.join(br, wsR2, 'publish2.json'), JSON.stringify(m2), 'utf8');
+  const pCh2 = py3(br, ['publish', '--project', br, '--input', path.join(br, wsR2, 'publish2.json')]);
+  check('T22 ch2(v1) 发布，state rev2，ch1 文件保留',
+    pCh2.status === 0
+    && JSON.parse(fs.readFileSync(path.join(br, '追踪/_tracking-state.json'), 'utf8')).state_revision === 2
+    && fs.existsSync(path.join(br, '正文/第001章_守店.md')), pCh2.stderr.slice(0, 300));
+  const cand1b = cleanCandidate().replace(/学徒/g, '徒弟').replace('# 第001章 守店', '# 第001章 守店（修）');
+  const wsR3 = '.guyin/work/rr3';
+  fs.mkdirSync(path.join(br, wsR3, 'drafts'), { recursive: true });
+  fs.writeFileSync(path.join(br, wsR3, 'drafts/v0001.md'), cand1b, 'utf8');
+  const h12c1b = crypto.createHash('sha256').update(Buffer.from(cand1b, 'utf8')).digest('hex').slice(0, 12);
+  fs.writeFileSync(path.join(br, wsR3, 'review.md'), `# 回看\n候选 ${h12c1b} 修订版已核对\n`);
+  fs.writeFileSync(path.join(br, wsR3, 'checks.md'), `# 检\n候选 ${h12c1b} 全绿\n`);
+  const tx1r = tx1({ expected_state_revision: 2, mode: 'revision' });
+  fs.writeFileSync(path.join(br, wsR3, 'transaction.json'), JSON.stringify(tx1r), 'utf8');
+  const stateHashR3 = crypto.createHash('sha256').update(fs.readFileSync(path.join(br, '追踪/_tracking-state.json'))).digest('hex').slice(0, 12);
+  const m3 = {
+    schema_version: 1, run_id: 'rr3', expected_state_revision: 2,
+    target: { chapter: 1, title: '守店', mode: 'revision' },
+    candidate: `${wsR3}/drafts/v0001.md`, destination: '正文/第001章_守店.md',
+    transaction: `${wsR3}/transaction.json`,
+    baseline: [{ path: '追踪/_tracking-state.json', hash12: stateHashR3 },
+      { dir: '正文', files: ['第001章_守店.md', '第002章_赶路.md'] }],
+    review: { mode: 'solo 全文通读', conclusion: '修订版通过', evidence: [`${wsR3}/review.md`] },
+    check_evidence: [`${wsR3}/checks.md`],
+  };
+  fs.writeFileSync(path.join(br, wsR3, 'publish3.json'), JSON.stringify(m3), 'utf8');
+  const pr3 = py3(br, ['publish', '--project', br, '--input', path.join(br, wsR3, 'publish3.json')]);
+  check('T22/T24 修订 ch1 基于最新 rev2 通过；ch2 保留；rev=3；有存档',
+    pr3.status === 0
+    && JSON.parse(fs.readFileSync(path.join(br, '追踪/_tracking-state.json'), 'utf8')).state_revision === 3
+    && fs.existsSync(path.join(br, '正文/第002章_赶路.md'))
+    && fs.readdirSync(path.join(br, '正文/_archive')).some((n) => n.includes('第001章')), pr3.stderr.slice(0, 300));
+  const m3bad = JSON.parse(JSON.stringify(m3));
+  m3bad.run_id = 'rr3bad';
+  m3bad.expected_state_revision = 1;
+  fs.writeFileSync(path.join(br, wsR3, 'publish3bad.json'), JSON.stringify(m3bad), 'utf8');
+  check('T23 旧 expected revision 的修订被拒',
+    py3(br, ['publish', '--project', br, '--input', path.join(br, wsR3, 'publish3bad.json')]).status === 2, '过期基线竟通过');
+
+  // ---- T32：revision 指纹更新同章，不影响 ch2 ----
+  const lib = JSON.parse(fs.readFileSync(path.join(br, '追踪/段落指纹库.json'), 'utf8'));
+  const ch2Units = lib.entries.filter((e) => e.chapter === 2).length;
+  const rrRep = spawnSync('node', [path.join(S, 'guyin-check-repetition.js'), '--json', '--project', br,
+    '--unit', '1', path.join(br, '正文/第001章_守店.md')], { encoding: 'utf8', env: env3 });
+  check('T32 修订后 ch1 指纹为新稿（无欠账）且 ch2 指纹条数不受影响',
+    lib.entries.filter((e) => e.chapter === 1).length > 0 && rrRep.status === 0
+    && lib.entries.filter((e) => e.chapter === 2).length === ch2Units, rrRep.stdout);
+
+  // ---- T31：tracking 提交后外部改派生视图 → recover 阻断第三态 ----
+  const bx = book3('p23third');
+  const wsX = readyRun(bx, 'rx', cleanCandidate(), tx1(), { pub: false });
+  const mx = manifest(bx, wsX, { version: 1 });
+  delete mx.author_input; delete mx.candidate_checks;
+  fs.writeFileSync(path.join(bx, wsX, 'publishx.json'), JSON.stringify(mx), 'utf8');
+  const envPause = { ...env3, GUYIN_PUBLISH_PAUSE_AFTER: 'tracking_committed' };
+  const pp = py3(bx, ['publish', '--project', bx, '--input', path.join(bx, wsX, 'publishx.json')], envPause);
+  check('T31 prepared→tracking 后按暂停点停（exit3）',
+    pp.status === 3 && /tracking_committed/.test(pp.stdout), pp.stdout);
+  const planArtifacts = JSON.parse(fs.readFileSync(path.join(bx, '追踪/_publication.json'), 'utf8')).tracking_plan.artifacts;
+  const viewRel = planArtifacts.map((a) => a.path).find((p) => p.includes('上下文.md') || p.includes('伏笔'));
+  fs.appendFileSync(path.join(bx, viewRel), '\n- 外部篡改：未经发布器写入\n', 'utf8');
+  const recBlocked = py3(bx, ['recover', '--project', bx]);
+  check('T31 第三态（派生视图外部改动）recover 阻断、不重 append、rev 不增',
+    recBlocked.status === 2
+    && /before|after|第三种内容|不符/.test(recBlocked.stderr)
+    && JSON.parse(fs.readFileSync(path.join(bx, '追踪/_tracking-state.json'), 'utf8')).state_revision === 1,
+    recBlocked.stderr.slice(0, 200));
+  check('T31 现场保持阻断（不静默回滚用户改动）',
+    py3(bx, ['recover', '--project', bx]).status === 2, '外部改动竟被静默回滚');
+}
+
+// ============================================================
 // F2 / T03 去掉反效果（任务书 §4）：正常破折号/内心活动/长对话/日常余韵不得被自动强改。
 // 对照半（真实泄漏必拦）由既有测试承担：H2 整句/四字子句泄漏 blocking、工程词泄漏、
 // beat 工程词 meta-leak-beat、K3 strip-framework-word、T1/T2 物证·能力·地理（事实矛盾）。
@@ -4714,6 +5935,249 @@ console.log('== F2/T03 正常风格不误伤（破折号/内心/长对话/余韵
 // 无数字篇名 → init(chapter=0) → append 单元1 发布清单全闸门 → 指纹/篇检/状态贯穿
 // → 篇名 chapter=2 拒、第二篇冒单元1 拒 → revision 重发存档 → 发布中断 recover
 // ============================================================
+// ============================================================
+// P3.1 T25-T27：新分发无 agent 安装 / 受管退役预览-批准 / 中断与哈希重核
+// ============================================================
+console.log('== P3.1 T25-T27 分发退役（install / preview-retire / 中断重核） ==');
+{
+  const SETUP = path.join(REPO, 'skills', 'guyin-setup');
+  const DEPLOY = path.join(SETUP, 'scripts', 'guyin-deploy.js');
+  const LEGACY = path.join(SETUP, 'legacy', 'agents-v0.8');
+  const PYSCRIPT31 = path.join(S, 'guyin-tracking-commit.py');
+  const crypto31 = require('crypto');
+  const cleanEnv31 = { ...process.env };
+  delete cleanEnv31.GUYIN_PUBLISH_PAUSE_AFTER;
+  const deploy = (args) => spawnSync('node', [DEPLOY, ...args], { encoding: 'utf8' });
+  const jparse = (r) => { try { return JSON.parse(r.stdout); } catch (e) { return null; } };
+  const copyLegacy = (book, arc, rel) => {
+    const dst = path.join(book, rel);
+    fs.mkdirSync(path.dirname(dst), { recursive: true });
+    fs.copyFileSync(path.join(LEGACY, arc), dst);
+  };
+
+  // ---------- T25：新书安装（长/长短篇），非交互、零 agent、零 model ----------
+  const dL = path.join(TMP, 't25long');
+  let r = deploy(['install', '--dest', dL, '--kind', 'long', '--title', 'T25长']);
+  let jr = jparse(r);
+  check('T25 新书长篇安装 exit0（非交互 JSON）', r.status === 0 && jr && jr.ok, r.stderr || r.stdout);
+  check('T25 新安装不分发任何受管 agent（managed_agents_distributed=false）',
+    ['.claude/agents', '.opencode/agents', '.codex/agents'].every((d) => !fs.existsSync(path.join(dL, d)))
+    && jr.managed_agents_distributed === false);
+  check('T25 hook/settings/command/台账落位＋AGENTS 书名替换',
+    fs.existsSync(path.join(dL, '.claude/hooks/guyin-hook.js'))
+    && fs.existsSync(path.join(dL, '.claude/settings.json'))
+    && fs.existsSync(path.join(dL, '.opencode/commands/guyin.md'))
+    && fs.existsSync(path.join(dL, '追踪/待审台账.md'))
+    && fs.readFileSync(path.join(dL, 'AGENTS.md'), 'utf8').startsWith('# T25长'),
+    '部署件缺失');
+  const marker31 = JSON.parse(fs.readFileSync(path.join(dL, '.guyin-deployed'), 'utf8'));
+  check('T25 部署标记 v0.9.0 / single-model-free-write',
+    marker31.guyin_version === '0.9.0' && marker31.distribution === 'single-model-free-write'
+    && marker31.managed_agents === 'retired');
+  // 重跑幂等＋settings 合并不伤用户自定义键＋create-if-absent 不覆盖
+  fs.writeFileSync(path.join(dL, '.claude/settings.json'),
+    JSON.stringify({ hooks: { FooBar: [{ hooks: [{ type: 'command', command: 'echo mine' }] }] } }), 'utf8');
+  r = deploy(['install', '--dest', dL, '--kind', 'long', '--title', 'T25长']);
+  const merged31 = JSON.parse(fs.readFileSync(path.join(dL, '.claude/settings.json'), 'utf8'));
+  check('T25 重部署幂等：自定义 hook 保留、guyin hook 合并、AGENTS 不被覆盖',
+    r.status === 0
+    && merged31.hooks && merged31.hooks.FooBar && merged31.hooks.SessionStart
+    && fs.readFileSync(path.join(dL, 'AGENTS.md'), 'utf8').startsWith('# T25长'),
+    r.stderr || '合并失败');
+
+  const dS = path.join(TMP, 't25short');
+  r = deploy(['install', '--dest', dS, '--kind', 'long+short', '--title', 'T25短']);
+  check('T25 长篇+短篇 delta 安装（情节节点/情绪曲线/反转表）',
+    r.status === 0 && ['情节节点.md', '情绪曲线.md', '反转表.md']
+      .every((f) => fs.existsSync(path.join(dS, '大纲', f))), r.stderr || r.stdout);
+
+  // T25 续：在安装出来的真实模板书上跑短篇 append 首发 + revision（真实文件目标）
+  {
+    const h12f = (p) => crypto31.createHash('sha256').update(fs.readFileSync(p)).digest('hex').slice(0, 12);
+    const QA = '雨在瓦当上连成线，她把退回的信压进妆奁底层，指腹蹭过火漆残痕，门外唢呐声一遍遍往巷子里灌。';
+    const QB = '她扶着门框听了很久，认出那是自己三年前亲手挑的迎亲调子，吹曲的人换了，节拍一点没变。';
+    const QAR = '雨在瓦当上碎成珠，她把信塞到妆奁最里层，指腹蹭过残损火漆，唢呐声一遍遍漫进巷子深处。';
+    const QBR = '她靠着门框听了半晌，听出那是自己三年前亲口定下的调子，吹曲人早换了，节拍还和当年一样。';
+    const stageT25 = (book, runId, text, mode, expected) => {
+      const wsRel = `.guyin/work/${runId}`;
+      const ws = path.join(book, wsRel);
+      fs.mkdirSync(ws, { recursive: true });
+      fs.writeFileSync(path.join(ws, 'candidate.md'), text, 'utf8');
+      const ch = h12f(path.join(ws, 'candidate.md'));
+      fs.writeFileSync(path.join(ws, 'review.md'), `# 全文审读\n候选 hash12=${ch}\n通过\n`, 'utf8');
+      fs.writeFileSync(path.join(ws, 'checks.md'), `# 篇检\n候选 hash12=${ch}\n全绿\n`, 'utf8');
+      const tx = {
+        schema_version: 1, mode, chapter: 1, chapter_title: '追妻', expected_state_revision: expected,
+        delta: { result: '她认出当年定下的迎亲调子。', character_changes: [], foreshadow_changes: [],
+          timeline_events: [], verdict_changes: [], evidence_changes: [], geo_changes: [], scene_changes: [],
+          constraints: [], next_chapter_commitments: [], retired_context_items: [], retired_characters: [] },
+        context: { position: { volume: '短篇', volume_start_chapter: 1, story_time: '婚日', scene: '巷口' },
+          long_term_constraints: [], active_character_names: [], continuity_risks: [] },
+        character_snapshots: {},
+      };
+      fs.writeFileSync(path.join(ws, 'tx.json'), JSON.stringify(tx), 'utf8');
+      const proseFiles = fs.readdirSync(path.join(book, '正文')).filter((n) => !n.startsWith('.'));
+      const manifest = {
+        schema_version: 1, run_id: runId, target: { chapter: 1, title: '追妻', mode },
+        candidate: `${wsRel}/candidate.md`, destination: '正文/追妻.md', transaction: `${wsRel}/tx.json`,
+        baseline: [
+          { path: '追踪/_tracking-state.json', hash12: h12f(path.join(book, '追踪/_tracking-state.json')) },
+          { dir: '正文', files: proseFiles },
+        ],
+        expected_state_revision: expected,
+        review: { mode: 'solo 全文通读', conclusion: '通过', evidence: [`${wsRel}/review.md`] },
+        check_evidence: [`${wsRel}/checks.md`],
+      };
+      fs.writeFileSync(path.join(ws, 'manifest.json'), JSON.stringify(manifest), 'utf8');
+      return path.join(ws, 'manifest.json');
+    };
+    const runPy31 = (book, args, env) =>
+      spawnSync(pyBin31 || 'python', [PYSCRIPT31, ...args, '--project', book], { encoding: 'utf8', env: env || cleanEnv31 });
+    const pyBin31 = ['python3', 'python', 'py'].find((bin) => {
+      try { return spawnSync(bin, ['-c', ''], { encoding: 'utf8' }).status === 0; } catch (e) { return false; }
+    });
+    const first = `# 追妻\n\n${QA}\n\n${QB}\n`;
+    const revised = `# 追妻\n\n${QAR}\n\n${QBR}\n`;
+    const m1 = stageT25(dS, 't25-first', first, 'append', 0);
+    let pr = runPy31(dS, ['publish', '--input', m1]);
+    const dest31 = path.join(dS, '正文/追妻.md');
+    const state31 = () => JSON.parse(fs.readFileSync(path.join(dS, '追踪/_tracking-state.json'), 'utf8'));
+    check('T25 安装书：短篇真实文件目标 append 可发布（rev1）',
+      pr.status === 0 && fs.readFileSync(dest31, 'utf8') === first && state31().state_revision === 1,
+      (pr.stderr || pr.stdout || '').slice(0, 200));
+    const m2 = stageT25(dS, 't25-rev', revised, 'revision', 1);
+    pr = runPy31(dS, ['publish', '--input', m2]);
+    const archDir31 = path.join(dS, '正文/_archive');
+    const arch31 = fs.existsSync(archDir31)
+      ? fs.readdirSync(archDir31).filter((n) => /^单元001_追妻_发布前存档_.*\.md$/.test(n)) : [];
+    check('T25 安装书：短篇 revision 可重发（存档＋rev2，旧稿不丢）',
+      pr.status === 0 && arch31.length === 1 && state31().state_revision === 2
+      && fs.readFileSync(dest31, 'utf8') === revised,
+      (pr.stderr || '').slice(0, 200));
+  }
+
+  // ---------- T26：受管/自定义混合夹具，只处理批准的受管件，重复迁移无损失 ----------
+  const dU = path.join(TMP, 't26upgrade');
+  deploy(['install', '--dest', dU, '--kind', 'long', '--title', 'T26']);
+  // 4 个受管原件（字节等于归档）
+  copyLegacy(dU, 'claude/guyin-beat-writer.md', '.claude/agents/guyin-beat-writer.md');
+  copyLegacy(dU, 'opencode/guyin-checker.md', '.opencode/agents/guyin-checker.md');
+  copyLegacy(dU, 'codex/guyin-beat-writer.toml', '.codex/agents/guyin-beat-writer.toml');
+  copyLegacy(dU, 'codex/guyin-checker.toml', '.codex/agents/guyin-checker.toml');
+  // 1 个同名但被用户改过 → 自定义；1 个无关 agent
+  fs.mkdirSync(path.join(dU, '.claude/agents'), { recursive: true });
+  fs.writeFileSync(path.join(dU, '.claude/agents/guyin-checker.md'), 'name: guyin-checker\n# 这是书主自己改过的同名文件，绝不能被删\n', 'utf8');
+  fs.writeFileSync(path.join(dU, '.claude/agents/my-own-agent.md'), 'name: my-own-agent\n# 书主私有 agent\n', 'utf8');
+  r = deploy(['preview', '--dest', dU]);
+  const pv26 = jparse(r);
+  const expectedManaged26 = ['.claude/agents/guyin-beat-writer.md', '.codex/agents/guyin-beat-writer.toml',
+    '.codex/agents/guyin-checker.toml', '.opencode/agents/guyin-checker.md'].sort();
+  check('T26 preview 只列受管退役项（4），同名自定义与未知 agent 分类保留',
+    r.status === 0
+    && JSON.stringify(pv26.managed_retire.map((m) => m.rel).sort()) === JSON.stringify(expectedManaged26)
+    && pv26.custom_same_name.length === 1
+    && pv26.custom_same_name[0].rel === '.claude/agents/guyin-checker.md'
+    && pv26.unknown_agents.includes('.claude/agents/my-own-agent.md'),
+    JSON.stringify(pv26 && pv26.managed_retire.map((m) => m.rel)));
+  const approveList26 = pv26.managed_retire.map((m) => m.rel).join(',');
+  // 批准清单混入自定义 → 拒绝（exit 2）
+  r = deploy(['retire', '--dest', dU, '--approve',
+    `${approveList26},.claude/agents/guyin-checker.md`]);
+  check('T26 批准清单混入自定义同名文件 → exit2 拒绝且现场不动',
+    r.status === 2 && fs.existsSync(path.join(dU, '.claude/agents/guyin-checker.md'))
+    && fs.existsSync(path.join(dU, '.claude/agents/guyin-beat-writer.md')), r.stdout);
+  // 只批准受管 → 备份后删，自定义/未知原样
+  r = deploy(['retire', '--dest', dU, '--approve', approveList26]);
+  const rb26 = jparse(r);
+  const backupRoots = () => fs.readdirSync(path.join(dU, '.guyin/upgrade-backup'));
+  const manifestText = () => fs.readFileSync(
+    path.join(dU, '.guyin/upgrade-backup', backupRoots()[0], 'MANIFEST.txt'), 'utf8');
+  check('T26 受管批准后备份退役（MANIFEST 4 条），自定义与未知保留',
+    r.status === 0 && rb26
+    && approveList26.split(',').every((rel) => !fs.existsSync(path.join(dU, rel))
+      && fs.existsSync(path.join(dU, '.guyin/upgrade-backup', backupRoots()[0], rel)))
+    && (manifestText().match(/\t[0-9a-f]{64}\t/g) || []).length === 4
+    && fs.readFileSync(path.join(dU, '.claude/agents/guyin-checker.md'), 'utf8').includes('书主自己改过')
+    && fs.existsSync(path.join(dU, '.claude/agents/my-own-agent.md')),
+    r.stdout || '备份/保留异常');
+  const ledger26 = JSON.parse(fs.readFileSync(path.join(dU, '.guyin/upgrade-progress.json'), 'utf8'));
+  check('T26 进度账本记录全部受管 rel 与 source_hash',
+    ledger26.retired.length === 4 && /^[0-9a-f]{64}$/.test(ledger26.source_hash));
+  // 重复迁移：再跑一次同样批准，不产生新备份/MANIFEST 不追加
+  const manifestBefore = manifestText();
+  r = deploy(['retire', '--dest', dU, '--approve', approveList26]);
+  check('T26 重复迁移幂等：exit0、零新备份、MANIFEST 不追加、自定义仍在',
+    r.status === 0 && backupRoots().length === 1 && manifestText() === manifestBefore
+    && fs.existsSync(path.join(dU, '.claude/agents/guyin-checker.md'))
+    && jparse(r).remaining_managed.length === 0, r.stdout);
+
+  // ---------- T27：实施中断/源码哈希不符 → 凭实际现场重新核对 ----------
+  // a) 部分完成后账本丢失（崩溃在 ledger 落盘前）：续跑据实际文件补齐，不重复备份
+  const dT3 = path.join(TMP, 't27crash');
+  deploy(['install', '--dest', dT3, '--kind', 'long', '--title', 'T27a']);
+  copyLegacy(dT3, 'claude/guyin-beat-writer.md', '.claude/agents/guyin-beat-writer.md');
+  copyLegacy(dT3, 'opencode/guyin-checker.md', '.opencode/agents/guyin-checker.md');
+  r = deploy(['retire', '--dest', dT3, '--approve', '.claude/agents/guyin-beat-writer.md']);
+  check('T27(a) 首批退役成功', r.status === 0);
+  fs.rmSync(path.join(dT3, '.guyin/upgrade-progress.json'), { force: true }); // 模拟崩溃丢失账本
+  r = deploy(['retire', '--dest', dT3,
+    '--approve', '.claude/agents/guyin-beat-writer.md,.opencode/agents/guyin-checker.md']);
+  const day3 = fs.readdirSync(path.join(dT3, '.guyin/upgrade-backup'))[0];
+  check('T27(a) 账本丢失后续跑：实际现场核对补齐、不重复备份（两份备份各一份）',
+    r.status === 0
+    && fs.existsSync(path.join(dT3, '.guyin/upgrade-backup', day3, '.claude/agents/guyin-beat-writer.md'))
+    && fs.existsSync(path.join(dT3, '.guyin/upgrade-backup', day3, '.opencode/agents/guyin-checker.md'))
+    && !fs.existsSync(path.join(dT3, '.claude/agents/guyin-beat-writer.md'))
+    && !fs.existsSync(path.join(dT3, '.opencode/agents/guyin-checker.md'))
+    && JSON.parse(fs.readFileSync(path.join(dT3, '.guyin/upgrade-progress.json'), 'utf8')).retired.length === 2,
+    r.stdout);
+
+  // b) 账本假报完成（记录已退役，实际文件还在）→ status 报 drift，retire 据实际现场补做
+  const dT4 = path.join(TMP, 't27drift');
+  deploy(['install', '--dest', dT4, '--kind', 'long', '--title', 'T27b']);
+  copyLegacy(dT4, 'claude/guyin-checker.md', '.claude/agents/guyin-checker.md');
+  const sourceH = jparse(deploy(['preview', '--dest', dT4])).source_hash;
+  fs.mkdirSync(path.join(dT4, '.guyin'), { recursive: true });
+  fs.writeFileSync(path.join(dT4, '.guyin/upgrade-progress.json'),
+    JSON.stringify({ schema_version: 1, source_hash: sourceH,
+      retired: ['.claude/agents/guyin-checker.md'] }), 'utf8');
+  r = deploy(['status', '--dest', dT4]);
+  check('T27(b) 账本声称完成但文件在现场 → status 报 drift_returns（不信账本）',
+    r.status === 0 && jparse(r).drift_returns.includes('.claude/agents/guyin-checker.md'), r.stdout);
+  r = deploy(['retire', '--dest', dT4, '--approve', '.claude/agents/guyin-checker.md']);
+  check('T27(b) 据实际差异补做退役成功、drift 清零',
+    r.status === 0 && !fs.existsSync(path.join(dT4, '.claude/agents/guyin-checker.md'))
+    && jparse(deploy(['status', '--dest', dT4])).drift_returns.length === 0, r.stdout);
+
+  // c) 源码更新致 source_hash 不符 → exit4 阻断，须重 preview＋--confirm-source
+  const dT5 = path.join(TMP, 't27stale');
+  deploy(['install', '--dest', dT5, '--kind', 'long', '--title', 'T27c']);
+  copyLegacy(dT5, 'claude/guyin-beat-writer.md', '.claude/agents/guyin-beat-writer.md');
+  r = deploy(['retire', '--dest', dT5, '--approve', '.claude/agents/guyin-beat-writer.md']);
+  check('T27(c) 正常退役基线成立', r.status === 0);
+  const ledgerPath5 = path.join(dT5, '.guyin/upgrade-progress.json');
+  const led5 = JSON.parse(fs.readFileSync(ledgerPath5, 'utf8'));
+  const realH = led5.source_hash;
+  led5.source_hash = '0'.repeat(64);
+  fs.writeFileSync(ledgerPath5, JSON.stringify(led5), 'utf8');
+  r = deploy(['retire', '--dest', dT5, '--approve', '.claude/agents/guyin-beat-writer.md']);
+  check('T27(c) 进度哈希与源码不符 → exit4 阻断且不假报完成',
+    r.status === 4 && /重新 preview|不符合|实际/.test(jparse(r) ? JSON.stringify(jparse(r)) : r.stdout)
+    && JSON.parse(fs.readFileSync(ledgerPath5, 'utf8')).source_hash === '0'.repeat(64), r.stdout);
+  r = deploy(['preview', '--dest', dT5]);
+  check('T27(c) preview 标记 require_confirm_source 并给出新哈希',
+    r.status === 0 && jparse(r).require_confirm_source === true
+    && jparse(r).ledger.stale_progress === true && jparse(r).source_hash === realH, r.stdout);
+  r = deploy(['retire', '--dest', dT5,
+    '--approve', '.claude/agents/guyin-beat-writer.md', '--confirm-source', 'deadbeef']);
+  check('T27(c) 错误 confirm-source 仍阻断', r.status === 4, r.stdout);
+  r = deploy(['retire', '--dest', dT5,
+    '--approve', '.claude/agents/guyin-beat-writer.md', '--confirm-source', realH]);
+  check('T27(c) 凭新预览哈希 confirm-source 续跑成功，账本哈希修正',
+    r.status === 0
+    && JSON.parse(fs.readFileSync(ledgerPath5, 'utf8')).source_hash === realH, r.stdout);
+}
+
 console.log('== F2/T11 短篇发布端到端（临时合成项目，真实进程） ==');
 {
   const crypto = require('crypto');
@@ -4945,3 +6409,4 @@ if (skipped > 0) {
 } else {
   console.log('Result: 运行时脚本回归测试通过（全量）');
 }
+

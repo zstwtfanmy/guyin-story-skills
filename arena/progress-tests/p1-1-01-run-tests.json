@@ -1,0 +1,9 @@
+{
+  "name": "P1.1 run-tests after route rewrite",
+  "command": "node tests/run-tests.js",
+  "cwd": ".",
+  "exit_code": 0,
+  "source": "P1.1 worktree (write/story/short-write SKILL + 细纲协议 + cards + beat.js + doc-budget + tests)",
+  "result": "511 pass / 0 fail / 0 skip（基线 499；新增 12：T01-T04 共 12 条断言；C3 旧 3 条替换为新 3 条；beat semanticReview 1 条改写）",
+  "log": "arena/p1-1-run-tests.log"
+}

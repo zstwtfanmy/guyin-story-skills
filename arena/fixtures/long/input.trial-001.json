@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "target": {"kind": "long", "chapter": 1, "title": "守店", "mode": "append"},
+  "authorization": {
+    "write": {"source_id": "U1", "quote": "请试写第一章，不发布。"},
+    "selection": null,
+    "publish": null
+  },
+  "sources": [
+    {"id": "U1", "kind": "user",
+     "text": "请试写第一章，不发布。修表学徒第一次独自守店，今晚须交还一只客表。师父外出，本章不能回来解围。"}
+  ],
+  "facts": [
+    {"text": "学徒第一次独自守店，师父外出。", "source_id": "U1"},
+    {"text": "今晚须交还一只客表。", "source_id": "U1"}
+  ],
+  "locks": [
+    {"id": "L1", "kind": "semantic", "text": "本章师父不能回来解围。", "source_id": "U1"}
+  ],
+  "allowed_reuse": [],
+  "outline": null,
+  "style": {
+    "profile_id": "relationship-payoff",
+    "profile_version": 1,
+    "selection_basis": "framework-default",
+    "effective_features": ["能力经行动兑现", "配角保有自身打算", "对白与心理自然展开"]
+  },
+  "wordcount": {"min": 2500, "max": 3500}
+}

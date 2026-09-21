@@ -1,0 +1,139 @@
+{
+  "archive": null,
+  "expected_state_revision": 0,
+  "final": {
+    "at": "2026-09-21T09:23:49+08:00",
+    "library_hash12": "a080a4e422d2",
+    "prose_hash12": "e921798903d5",
+    "state_hash12": "39b14d5b854d",
+    "state_revision": 1
+  },
+  "inputs": {
+    "candidate": {
+      "hash12": "e921798903d5",
+      "rel": ".guyin/work/exp-ch1/drafts/v0001.md"
+    },
+    "destination": "正文/第001章_册子上的洞.md",
+    "transaction": {
+      "hash12": "a147fc5220b7",
+      "rel": ".guyin/work/exp-ch1/transaction.json"
+    }
+  },
+  "run_id": "exp-ch1",
+  "schema_version": 2,
+  "stage": "complete",
+  "steps": {
+    "fingerprint_committed": {
+      "at": "2026-09-21T09:23:49+08:00",
+      "imagery_hash12": "cb07d2b248f4",
+      "library_hash12": "a080a4e422d2"
+    },
+    "prepared": {
+      "at": "2026-09-21T09:23:49+08:00",
+      "state_revision": 0
+    },
+    "prose_written": {
+      "at": "2026-09-21T09:23:49+08:00",
+      "prose_hash12": "e921798903d5"
+    },
+    "tracking_committed": {
+      "at": "2026-09-21T09:23:49+08:00",
+      "chapter": 1,
+      "state_hash12": "39b14d5b854d",
+      "state_revision": 1,
+      "views": {
+        "上下文.md": "2107b59b501e",
+        "事件定性资产.md": "5525d9313222",
+        "伏笔.md": "d3216dd10c5e",
+        "地理台账.md": "e4ef4a0ca2e9",
+        "场景台账.md": "21ca9bf9dd06",
+        "时间线/作者真相.md": "98eee7c23766",
+        "时间线/读者已知.md": "a73d4f057772",
+        "物证台账.md": "b5dacd9f2457",
+        "章节金字塔.md": "69e825ea2221",
+        "角色状态/陈默.md": "f24c015bffde"
+      }
+    }
+  },
+  "target": {
+    "chapter": 1,
+    "mode": "append",
+    "title": "册子上的洞"
+  },
+  "tracking_plan": {
+    "artifacts": [
+      {
+        "after_sha256": "39b14d5b854da787996f8107463f4b9684305b940653b70deb06d0a976b935cd",
+        "before_sha256": "38f1135f4629e4cbb528ff86d1e107957237060d5464f88efa419199f7523528",
+        "path": "追踪/_tracking-state.json",
+        "staged_path": ".guyin/work/exp-ch1/publication/artifacts/追踪___tracking-state.json"
+      },
+      {
+        "after_sha256": "e09137c736d268006bd767e57ba41071990018af3bcefe6c7422bacc696108b0",
+        "before_sha256": null,
+        "path": "追踪/逐章记录/第001章.md",
+        "staged_path": ".guyin/work/exp-ch1/publication/artifacts/追踪__逐章记录__第001章.md"
+      },
+      {
+        "after_sha256": "2107b59b501eec8da125e4ebb496c9a404723ce598ba2d169f45b420ee021e31",
+        "before_sha256": null,
+        "path": "上下文.md",
+        "staged_path": ".guyin/work/exp-ch1/publication/artifacts/上下文.md"
+      },
+      {
+        "after_sha256": "5525d93132227d8e023ba3139432d4a9d5c0b8684a962007bcc99bc17beeced6",
+        "before_sha256": null,
+        "path": "事件定性资产.md",
+        "staged_path": ".guyin/work/exp-ch1/publication/artifacts/事件定性资产.md"
+      },
+      {
+        "after_sha256": "d3216dd10c5ec9fe1c3da3c70f4a5879d9f558432ed0f20ffae32f35f596c3c8",
+        "before_sha256": null,
+        "path": "伏笔.md",
+        "staged_path": ".guyin/work/exp-ch1/publication/artifacts/伏笔.md"
+      },
+      {
+        "after_sha256": "e4ef4a0ca2e989bd3dff0e4b7d6d309954d2d55e8fe8f5b71699906590501616",
+        "before_sha256": null,
+        "path": "地理台账.md",
+        "staged_path": ".guyin/work/exp-ch1/publication/artifacts/地理台账.md"
+      },
+      {
+        "after_sha256": "21ca9bf9dd069fc4dce416f727231fb5e884d18cb5ad4f81de41e7ff51587ed0",
+        "before_sha256": null,
+        "path": "场景台账.md",
+        "staged_path": ".guyin/work/exp-ch1/publication/artifacts/场景台账.md"
+      },
+      {
+        "after_sha256": "98eee7c23766e12c4ac5076689db76bf04d9bd73fbfb0c0c0ddabb0dc649e5cd",
+        "before_sha256": null,
+        "path": "时间线/作者真相.md",
+        "staged_path": ".guyin/work/exp-ch1/publication/artifacts/时间线__作者真相.md"
+      },
+      {
+        "after_sha256": "a73d4f057772fd9d4601756bf2218df047eb138ab7e419057969f1b1e47f366e",
+        "before_sha256": null,
+        "path": "时间线/读者已知.md",
+        "staged_path": ".guyin/work/exp-ch1/publication/artifacts/时间线__读者已知.md"
+      },
+      {
+        "after_sha256": "b5dacd9f24577c002ad268f88b5d4521edf2a50291a96e6e18607cd86b02b8dc",
+        "before_sha256": null,
+        "path": "物证台账.md",
+        "staged_path": ".guyin/work/exp-ch1/publication/artifacts/物证台账.md"
+      },
+      {
+        "after_sha256": "69e825ea2221dfdac3bdf20f86332f93e961850b21101d7da37bd278216ae2a1",
+        "before_sha256": null,
+        "path": "章节金字塔.md",
+        "staged_path": ".guyin/work/exp-ch1/publication/artifacts/章节金字塔.md"
+      },
+      {
+        "after_sha256": "f24c015bffde326bc2d9d6a5e2e9773edd9d036ce03b335d70193c8e913b08c4",
+        "before_sha256": null,
+        "path": "角色状态/陈默.md",
+        "staged_path": ".guyin/work/exp-ch1/publication/artifacts/角色状态__陈默.md"
+      }
+    ]
+  }
+}

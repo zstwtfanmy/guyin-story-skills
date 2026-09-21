@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "run_id": "exp-ch2",
+  "input_path": ".guyin/work/exp-ch2/input.v0002.json",
+  "input_sha256": "65c4fd734f849f8e2f05bf4f06501c73d22d0fba19c176e66335e27421d8239f",
+  "phase": "published",
+  "baseline": {
+    "state_revision": 1,
+    "state": {
+      "path": "追踪/_tracking-state.json",
+      "sha256": "4df95843ef96aa96a9cfffea66f03c5e6c1839106fee04296a1dddfb622ceda6"
+    },
+    "prose": {
+      "dir": "正文",
+      "files": [
+        {
+          "path": "正文/README.md",
+          "sha256": "4c05ada059642db1f4978ea5bd74d3b43e06b7239fb3a6dc2a44853a6ee1b702"
+        },
+        {
+          "path": "正文/第001章_八钱银子的米.md",
+          "sha256": "f0191f9c228dbf2acacdf367836b8285cf5d9455a56c4e12a02c29b72cde5db2"
+        }
+      ]
+    },
+    "sources": []
+  },
+  "draft": {
+    "path": ".guyin/work/exp-ch2/drafts/v0002.md",
+    "complete": true,
+    "sha256": "1e30d6dc07f7a23f4169abac11ceb1e40d3c640297ddfeeee45ec0617f8616bc"
+  },
+  "review": null,
+  "transaction": null,
+  "check_evidence": null,
+  "plan_patch": null,
+  "next_action": "夜路段落未写，新会话从 v0001 半稿末尾接写"
+}

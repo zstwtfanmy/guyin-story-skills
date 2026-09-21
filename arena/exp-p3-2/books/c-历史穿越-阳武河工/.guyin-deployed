@@ -1,0 +1,8 @@
+{
+  "deployed_at": "2026-09-21T01:23:46.135Z",
+  "redeployed_at": null,
+  "guyin_version": "0.9.0",
+  "form": "long",
+  "distribution": "single-model-free-write",
+  "managed_agents": "retired"
+}

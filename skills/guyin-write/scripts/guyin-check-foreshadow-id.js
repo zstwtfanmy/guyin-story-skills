@@ -66,26 +66,22 @@ for (let i = 2; i < process.argv.length; i += 1) {
   } else if (arg === '-h' || arg === '--help') {
     process.stdout.write(`${USAGE}\n`);
     process.exit(0);
+  } else if (['--chapter', '--unit', '--boundary', '--outline', '--transaction', '--state', '--title'].includes(arg)) {
+    i += 1;
   } else if (arg.startsWith('-')) {
     die(`Unknown option: ${arg}`);
   } else {
-    die(`Unexpected argument: ${arg}`);
+    options._candidate = arg; // v4 显式模式候选（配合 --chapter）
   }
 }
 
 if (!options.project) die('--project is required (project root)');
 
-const root = path.resolve(options.project);
-const ledgerPath = path.join(root, '追踪', '伏笔.md');
-
-const findings = [];
-
-// F 编号：F + 2-4 位数字（F01 / F001 / F0001），规范化为 F+三位补零
+// F 编号：F + 1-4 位数字，规范化为 F+三位补零（显式/legacy 两模式共用）。
 const ID_PATTERN = /\bF0*(\d{1,4})\b/g;
 function normId(raw) {
-  const m = /^F0*(\d{1,4})$/i.exec(raw.trim());
-  if (!m) return null;
-  return `F${Number(m[1]).toString().padStart(3, '0')}`;
+  const m = /^F0*(\d{1,4})$/i.exec(String(raw || '').trim());
+  return m ? `F${Number(m[1]).toString().padStart(3, '0')}` : null;
 }
 function findIdsInLine(line) {
   const ids = [];
@@ -96,6 +92,117 @@ function findIdsInLine(line) {
   }
   return ids;
 }
+
+// v4 显式候选模式：--project + --chapter + 候选路径（可选 --transaction/--outline）。
+// 与 legacy 目录扫描互斥：显式模式只扫候选（+给定 outline）与事务新增 ID，不扫正式目录。
+if (process.argv.includes('--chapter')) {
+  const cc = require('./lib/guyin-candidate-context');
+  let ctx;
+  try {
+    ctx = cc.resolveContext(process.argv.slice(2));
+  } catch (e) {
+    console.error(e.code === 'CTX_INPUT' ? `输入错误：${e.message}` : String(e));
+    process.exit(2);
+  }
+  const explicitFindings = [];
+  const registeredEx = new Set();
+  const ledgerEx = path.join(ctx.projectRootAbs, '追踪', '伏笔.md');
+  if (fs.existsSync(ledgerEx)) {
+    for (const line0 of fs.readFileSync(ledgerEx, 'utf8').split(/\r?\n/)) {
+      for (const id of findIdsInLine(line0)) registeredEx.add(id);
+    }
+  }
+  const candidateIds = new Set();
+  const candLines = fs.readFileSync(ctx.candidateAbs, 'utf8').split(/\r?\n/);
+  candLines.forEach((line0, i) => {
+    for (const id of findIdsInLine(line0)) {
+      candidateIds.add(id);
+      if (!registeredEx.has(id)) {
+        // 可能由本 run 事务新增——事务核对后再定性；先记候选引用。
+      }
+    }
+  });
+  const outlineIds = new Set();
+  if (ctx.outlineAbs) {
+    fs.readFileSync(ctx.outlineAbs, 'utf8').split(/\r?\n/).forEach((line0) => {
+      for (const id of findIdsInLine(line0)) outlineIds.add(id);
+    });
+  }
+  const tx = ctx.transaction;
+  const newTxIds = new Set();
+  const allTxIds = new Set();
+  if (tx) {
+    const rawTx = JSON.stringify(tx);
+    for (const id of findIdsInLine(rawTx)) allTxIds.add(id);
+    for (const ch of (tx.delta && Array.isArray(tx.delta.foreshadow_changes))
+      ? tx.delta.foreshadow_changes : []) {
+      const id = ch && normId(ch.id);
+      if (id) newTxIds.add(id);
+    }
+  }
+  const legal = new Set([...registeredEx, ...newTxIds]);
+  // 候选/显式细纲引用：登记在册或本 run 事务新增，合法；否则悬空（verify）。
+  for (const [where, ids, lineOf] of [
+    ['候选', candidateIds, null],
+    ['显式细纲', outlineIds, null],
+  ]) {
+    for (const id of ids) {
+      if (!legal.has(id)) {
+        explicitFindings.push({
+          file: where === '候选' ? ctx.candidateRel : ctx.outlineRel, line: 1, column: 1,
+          type: 'foreshadow-ref-unregistered', severity: 'verify', handling: 'verify',
+          message: `${where}引用伏笔 ${id} 但台账未登记且不在本 run 事务新增 ID 中——悬空编号`,
+          excerpt: id,
+        });
+      }
+    }
+  }
+  if (tx) {
+    // 事务新增 ID 必须被候选引用（不凭空造伏笔）。
+    for (const id of newTxIds) {
+      if (!candidateIds.has(id)) {
+        explicitFindings.push({
+          file: ctx.transactionRel, line: 1, column: 1,
+          type: 'foreshadow-new-id-not-in-candidate', severity: 'hard', handling: 'hard',
+          message: `事务新增 ${id} 但候选正文未出现——新增伏笔必须本章落地`, excerpt: id,
+        });
+      }
+    }
+    // 事务里出现的其它 F 编号：须在册、在候选、或是本次新增。
+    for (const id of allTxIds) {
+      if (!registeredEx.has(id) && !candidateIds.has(id) && !newTxIds.has(id)) {
+        explicitFindings.push({
+          file: ctx.transactionRel, line: 1, column: 1,
+          type: 'foreshadow-tx-unknown-id', severity: 'hard', handling: 'hard',
+          message: `事务引用未登记且候选未出现的伏笔 ${id}——只信台账与本 run 事实`, excerpt: id,
+        });
+      }
+    }
+  }
+  try { handling.finalizeFindings(explicitFindings, 'guyin-check-foreshadow-id'); }
+  catch (e) { console.error(e.message); process.exit(2); }
+  const status = explicitFindings.some((f) => f.severity === 'hard') ? 'fail'
+    : explicitFindings.some((f) => f.severity === 'verify') ? 'findings' : 'pass';
+  const report = {
+    status, script: 'guyin-check-foreshadow-id.js',
+    script_sha256: cc.sha256File(__filename),
+    target: { chapter: ctx.chapter, unit: ctx.unit, candidate: ctx.candidateRel,
+      candidate_sha256: ctx.candidateHash },
+    files_scanned: [ctx.candidateRel, ...(ctx.outlineRel ? [ctx.outlineRel] : [])],
+    target_files: [ctx.candidateRel],
+    reference_files: ['追踪/伏笔.md'],
+    registered: [...registeredEx].sort(), new_in_transaction: [...newTxIds].sort(),
+    findings: explicitFindings,
+  };
+  if (options.json) process.stdout.write(`${JSON.stringify(report, null, 2)}\n`);
+  else console.log(`foreshadow-id(explicit): ${status} (${explicitFindings.length} findings)`);
+  process.exit(handling.gateTripped(explicitFindings, options.failOn) ? 1 : 0);
+}
+
+const root = path.resolve(options.project);
+const ledgerPath = path.join(root, '追踪', '伏笔.md');
+
+const findings = [];
 
 const registered = new Set();
 let dataRows = 0;

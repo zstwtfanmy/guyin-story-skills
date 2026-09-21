@@ -1,0 +1,304 @@
+{
+  "schema_version": 1,
+  "project": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-p3-2\\books\\c-爽文-临渠粮事",
+  "chapter": 3,
+  "unit": 3,
+  "candidate_path": ".guyin/work/exp-ch3/drafts/v0001.md",
+  "candidate_sha256": "55c434ae79f9e4f43a5344bfec0b9a34ed34a0c6d60ae5e422ab11d46110f194",
+  "input_sha256": "16612a2824bbaf751926aab82eb0fe6aadabd5ca0cbaca9bb05d10d822f09190",
+  "baseline_state_sha256": "8d678bb2107874af410784fce873810a2eea84a98ec7b29207ebe4af7cdbdb97",
+  "assembled_at": "2026-09-21T01:28:34.118Z",
+  "checks": [
+    {
+      "name": "strip",
+      "script": "guyin-check-strip.js",
+      "script_sha256": "9addc30da043923d7189a7a764d96c741c23a760263c33f1b076b6ddbc3534de",
+      "command": [
+        "guyin-check-strip.js",
+        "--json",
+        ".guyin/work/exp-ch3/drafts/v0001.md"
+      ],
+      "exit_code": 0,
+      "files_scanned": [
+        ".guyin/work/exp-ch3/drafts/v0001.md"
+      ],
+      "target_files": [
+        ".guyin/work/exp-ch3/drafts/v0001.md"
+      ],
+      "reference_files": [],
+      "status": "pass",
+      "reason": "",
+      "findings_count": 0
+    },
+    {
+      "name": "integrity",
+      "script": "guyin-check-integrity.js",
+      "script_sha256": "8aaeb6ed677ec9b11e695e5ab7c7c2dc7ddab02e49e05fc6fad783aeb0b690c6",
+      "command": [
+        "guyin-check-integrity.js",
+        "--json",
+        ".guyin/work/exp-ch3/drafts/v0001.md"
+      ],
+      "exit_code": 0,
+      "files_scanned": [
+        ".guyin/work/exp-ch3/drafts/v0001.md"
+      ],
+      "target_files": [
+        ".guyin/work/exp-ch3/drafts/v0001.md"
+      ],
+      "reference_files": [],
+      "status": "pass",
+      "reason": "",
+      "findings_count": 0
+    },
+    {
+      "name": "beat",
+      "script": "guyin-check-beat.js",
+      "script_sha256": "c89e5e839032ca7f652318b81e8628f786ac27b1c82deba3cca25053f4b871f6",
+      "command": [
+        "guyin-check-beat.js",
+        "--json",
+        ".guyin/work/exp-ch3/drafts/v0001.md"
+      ],
+      "exit_code": 0,
+      "files_scanned": [
+        ".guyin/work/exp-ch3/drafts/v0001.md"
+      ],
+      "target_files": [
+        ".guyin/work/exp-ch3/drafts/v0001.md"
+      ],
+      "reference_files": [],
+      "status": "pass",
+      "reason": "",
+      "findings_count": 0
+    },
+    {
+      "name": "degeneration",
+      "script": "guyin-check-degeneration.js",
+      "script_sha256": "288801d68a95e473c131cd18830ea6f28cf51763e6c6a6cfc913b3fb91d1f3f7",
+      "command": [
+        "guyin-check-degeneration.js",
+        "--json",
+        ".guyin/work/exp-ch3/drafts/v0001.md"
+      ],
+      "exit_code": 0,
+      "files_scanned": [
+        ".guyin/work/exp-ch3/drafts/v0001.md"
+      ],
+      "target_files": [
+        ".guyin/work/exp-ch3/drafts/v0001.md"
+      ],
+      "reference_files": [],
+      "status": "pass",
+      "reason": "",
+      "findings_count": 0
+    },
+    {
+      "name": "ai-patterns",
+      "script": "guyin-check-ai-patterns.js",
+      "script_sha256": "bc4074ecb0abf86bdf4b2710441343b5c43b4c6d6bf13d74b1e0f7e6da3d014d",
+      "command": [
+        "guyin-check-ai-patterns.js",
+        "--json",
+        ".guyin/work/exp-ch3/drafts/v0001.md"
+      ],
+      "exit_code": 0,
+      "files_scanned": [
+        ".guyin/work/exp-ch3/drafts/v0001.md"
+      ],
+      "target_files": [
+        ".guyin/work/exp-ch3/drafts/v0001.md"
+      ],
+      "reference_files": [],
+      "status": "pass",
+      "reason": "",
+      "findings_count": 17
+    },
+    {
+      "name": "wordcount",
+      "script": "guyin-check-wordcount.js",
+      "script_sha256": "927a1d58c204f88d9fa810364d2e446cc337066eaf6a1fb62be0aa36620868d1",
+      "command": [
+        "guyin-check-wordcount.js",
+        "--json",
+        "--min=2200",
+        "--max=6000",
+        ".guyin/work/exp-ch3/drafts/v0001.md"
+      ],
+      "exit_code": 0,
+      "files_scanned": [
+        ".guyin/work/exp-ch3/drafts/v0001.md"
+      ],
+      "target_files": [
+        ".guyin/work/exp-ch3/drafts/v0001.md"
+      ],
+      "reference_files": [],
+      "status": "pass",
+      "reason": "",
+      "findings_count": 0
+    },
+    {
+      "name": "outline-deliver",
+      "script": "guyin-check-outline-deliver.js",
+      "script_sha256": "ab29c85a5951097e5f5ccc9942e1f5d721fd217f3805f5ab4d0af39c6af99508",
+      "command": [
+        "guyin-check-outline-deliver.js",
+        "--json",
+        "--json",
+        "--project",
+        "D:\\readbook-wpace\\guyin-skills\\arena\\exp-p3-2\\books\\c-爽文-临渠粮事",
+        "--chapter",
+        "3",
+        "--boundary",
+        "D:\\readbook-wpace\\guyin-skills\\arena\\exp-p3-2\\books\\c-爽文-临渠粮事\\.guyin\\work\\exp-ch3\\input.json",
+        ".guyin/work/exp-ch3/drafts/v0001.md"
+      ],
+      "exit_code": 0,
+      "files_scanned": [
+        ".guyin/work/exp-ch3/drafts/v0001.md"
+      ],
+      "target_files": [
+        ".guyin/work/exp-ch3/drafts/v0001.md"
+      ],
+      "reference_files": [],
+      "status": "pass",
+      "reason": "",
+      "findings_count": 0
+    },
+    {
+      "name": "authority-leak",
+      "script": "guyin-check-authority-leak.js",
+      "script_sha256": "1c7be67da5bb442604b9fc56be78886165b3dbfcfa1b4a8a1ee194659609adc9",
+      "command": [
+        "guyin-check-authority-leak.js",
+        "--json",
+        "--json",
+        "--project",
+        "D:\\readbook-wpace\\guyin-skills\\arena\\exp-p3-2\\books\\c-爽文-临渠粮事",
+        "--chapter",
+        "3",
+        "--boundary",
+        "D:\\readbook-wpace\\guyin-skills\\arena\\exp-p3-2\\books\\c-爽文-临渠粮事\\.guyin\\work\\exp-ch3\\input.json",
+        ".guyin/work/exp-ch3/drafts/v0001.md"
+      ],
+      "exit_code": 0,
+      "files_scanned": [
+        ".guyin/work/exp-ch3/drafts/v0001.md"
+      ],
+      "target_files": [
+        ".guyin/work/exp-ch3/drafts/v0001.md"
+      ],
+      "reference_files": [],
+      "status": "pass",
+      "reason": "",
+      "findings_count": 0
+    },
+    {
+      "name": "foreshadow-id",
+      "script": "guyin-check-foreshadow-id.js",
+      "script_sha256": "14df12ea555c604aeb560973f4c77f83a70fc81096790d9b4f2d9fdaba48646f",
+      "command": [
+        "guyin-check-foreshadow-id.js",
+        "--json",
+        "--json",
+        "--project",
+        "D:\\readbook-wpace\\guyin-skills\\arena\\exp-p3-2\\books\\c-爽文-临渠粮事",
+        "--chapter",
+        "3",
+        "--boundary",
+        "D:\\readbook-wpace\\guyin-skills\\arena\\exp-p3-2\\books\\c-爽文-临渠粮事\\.guyin\\work\\exp-ch3\\input.json",
+        "--transaction",
+        "D:\\readbook-wpace\\guyin-skills\\arena\\exp-p3-2\\books\\c-爽文-临渠粮事\\.guyin\\work\\exp-ch3\\transaction.json",
+        ".guyin/work/exp-ch3/drafts/v0001.md"
+      ],
+      "exit_code": 0,
+      "files_scanned": [
+        ".guyin/work/exp-ch3/drafts/v0001.md"
+      ],
+      "target_files": [
+        ".guyin/work/exp-ch3/drafts/v0001.md"
+      ],
+      "reference_files": [
+        "追踪/伏笔.md"
+      ],
+      "status": "pass",
+      "reason": "",
+      "findings_count": 0
+    },
+    {
+      "name": "repetition",
+      "script": "guyin-check-repetition.js",
+      "script_sha256": "358b23e9dc4ee3553df8e13bda8813dce59cf180cc11892963ea42c4890ba00b",
+      "command": [
+        "guyin-check-repetition.js",
+        "--json",
+        "--project",
+        "D:\\readbook-wpace\\guyin-skills\\arena\\exp-p3-2\\books\\c-爽文-临渠粮事",
+        "--unit",
+        "3",
+        "--prepublish",
+        ".guyin/work/exp-ch3/drafts/v0001.md"
+      ],
+      "exit_code": 0,
+      "files_scanned": [
+        ".guyin/work/exp-ch3/drafts/v0001.md"
+      ],
+      "target_files": [
+        ".guyin/work/exp-ch3/drafts/v0001.md"
+      ],
+      "reference_files": [],
+      "status": "pass",
+      "reason": "",
+      "findings_count": 7
+    },
+    {
+      "name": "narrative-asset",
+      "script": "guyin-check-narrative-asset.js",
+      "script_sha256": "6adbb4c62b316a74b90b829523dc5b5b9ed6b8ccafa891e58f61937abac482fb",
+      "command": [
+        "guyin-check-narrative-asset.js",
+        "--json",
+        "--state=D:\\readbook-wpace\\guyin-skills\\arena\\exp-p3-2\\books\\c-爽文-临渠粮事\\追踪\\_tracking-state.json",
+        ".guyin/work/exp-ch3/drafts/v0001.md"
+      ],
+      "exit_code": 0,
+      "files_scanned": [
+        ".guyin/work/exp-ch3/drafts/v0001.md"
+      ],
+      "target_files": [
+        ".guyin/work/exp-ch3/drafts/v0001.md"
+      ],
+      "reference_files": [
+        "追踪/_tracking-state.json"
+      ],
+      "status": "pass",
+      "reason": "",
+      "findings_count": 0
+    },
+    {
+      "name": "consistency",
+      "script": "guyin-check-consistency.js",
+      "script_sha256": "671c7b118a65cf3f1cdb55bd429e629c833f39421f6359a6db508bb00dfbc0aa",
+      "command": [
+        "guyin-check-consistency.js",
+        "--json",
+        "--state=D:\\readbook-wpace\\guyin-skills\\arena\\exp-p3-2\\books\\c-爽文-临渠粮事\\追踪\\_tracking-state.json",
+        ".guyin/work/exp-ch3/drafts/v0001.md"
+      ],
+      "exit_code": 0,
+      "files_scanned": [
+        ".guyin/work/exp-ch3/drafts/v0001.md"
+      ],
+      "target_files": [
+        ".guyin/work/exp-ch3/drafts/v0001.md"
+      ],
+      "reference_files": [
+        "追踪/_tracking-state.json"
+      ],
+      "status": "pass",
+      "reason": "",
+      "findings_count": 0
+    }
+  ],
+  "status": "pass"
+}

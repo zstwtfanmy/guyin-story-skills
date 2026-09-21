@@ -4,7 +4,7 @@
 // guyin-check-beat.js — 连续场景/整章的确定性预检
 //
 // P1 核心件：确定性可查的检查下沉为零 token 脚本；语义审读（动机/兑现/承接）
-// 归完整章审读（SKILL.md 步骤 4a + 自检卡三步），本脚本不做语义判断。
+// 归当前会话 drafted 阶段全文回看（review.md；自检卡为可选问题单），本脚本不做语义判断。
 //
 // 四组化（任务书 §2.2）：beat 只是节奏标签，不再是字数桶/逐拍验收单位——
 // 字数检测（beat-too-short / beat-too-long）与 --min/--max 已删除，正文长度
@@ -55,8 +55,8 @@ Wordcount checks abolished (任务书 §2.2): beat-too-short / beat-too-long 与
 --fail-on=block（默认）hard/verify 任一存在即 1；hard 仅 hard；all 含 editorial（审计模式）。
 Exit codes: 0=无未决阻断, 1=存在未决阻断(hard/verify), 2=执行/输入错误。
 
-After this script, semantic review lives in the full-chapter read (SKILL.md
-step 4a, three-step card): motivation / promise delivery / scene continuity.
+After this script, semantic review lives in the current session's full-chapter
+read (drafted phase, review.md): motivation / promise delivery / scene continuity.
 No numbered question system — reactions and consequences may be implicit or
 delayed; do not demand an immediate reaction line after every action.
 
@@ -339,7 +339,7 @@ if (options.json) {
     findings,
     summary: {
       scriptHandled: [...new Set(scriptChecks)],
-      semanticReview: 'full-chapter-read (SKILL.md 4a)',
+      semanticReview: 'full-chapter-read (drafted review.md)',
       banList: options.ban,
     },
   }, null, 2)}\n`);
@@ -352,7 +352,7 @@ if (options.json) {
   const handled = [...new Set(findings.map((f) => f.checkId))];
   console.log('');
   console.log(`[summary] 脚本已查：${handled.length > 0 ? handled.join(', ') : '（无报警）'}`);
-  console.log(`[summary] 语义审读（动机/兑现/承接）归完整章审读（SKILL.md 4a）——反应与后果可隐含可延迟`);
+  console.log(`[summary] 语义审读（动机/兑现/承接）归当前会话 drafted 阶段全文回看（review.md）——反应与后果可隐含可延迟`);
 }
 
 process.exit(handling.gateTripped(findings, options.failOn) ? 1 : 0);

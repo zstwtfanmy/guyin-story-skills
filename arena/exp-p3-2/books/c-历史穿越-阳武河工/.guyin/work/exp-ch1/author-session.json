@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "run_id": "exp-ch1",
+  "input_path": ".guyin/work/exp-ch1/input.json",
+  "input_sha256": "3da304bafb94ab0a1e204804d75e18364c89e9b9f1657bd0c12c02974bcc13b3",
+  "phase": "published",
+  "baseline": {
+    "state_revision": 0,
+    "state": {
+      "path": "追踪/_tracking-state.json",
+      "sha256": "38f1135f4629e4cbb528ff86d1e107957237060d5464f88efa419199f7523528"
+    },
+    "prose": {
+      "dir": "正文",
+      "files": [
+        {
+          "path": "正文/README.md",
+          "sha256": "4c05ada059642db1f4978ea5bd74d3b43e06b7239fb3a6dc2a44853a6ee1b702"
+        }
+      ]
+    },
+    "sources": []
+  },
+  "draft": {
+    "path": ".guyin/work/exp-ch1/drafts/v0001.md",
+    "complete": true,
+    "sha256": "e921798903d5a3c1b166cf190495c2bf92876836b6f762cc798ee283d5f4d373"
+  },
+  "review": null,
+  "transaction": null,
+  "check_evidence": null,
+  "plan_patch": null,
+  "next_action": null
+}

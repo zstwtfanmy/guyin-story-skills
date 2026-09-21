@@ -1,0 +1,9 @@
+{
+  "name": "P0 baseline doc-budget",
+  "command": "node scripts/check-doc-budget.js",
+  "cwd": ".",
+  "exit_code": 0,
+  "source": "1830b0e",
+  "result": "hot path 10951/10970 (margin 19)",
+  "log": "arena/baseline-doc-budget.log"
+}

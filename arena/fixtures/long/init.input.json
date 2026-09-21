@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "book_title": "试写",
+  "last_chapter": 0,
+  "context": {
+    "position": {
+      "volume": "第一卷",
+      "volume_start_chapter": 1,
+      "story_time": "首日清晨",
+      "scene": "修表铺"
+    }
+  }
+}

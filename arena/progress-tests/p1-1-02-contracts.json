@@ -1,0 +1,9 @@
+{
+  "name": "P1.1 skill contracts",
+  "command": "node scripts/check-skill-contracts.js",
+  "cwd": ".",
+  "exit_code": 0,
+  "source": "P1.1 worktree",
+  "result": "9 skills ok（write 91 行 / story 47 行 / short-write 55 行，均 ≤150）",
+  "log": "arena/p1-1-contracts.log"
+}

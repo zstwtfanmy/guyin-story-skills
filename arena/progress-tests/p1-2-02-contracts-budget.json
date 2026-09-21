@@ -1,0 +1,9 @@
+{
+  "name": "P1.2 contracts + doc-budget",
+  "command": "node scripts/check-skill-contracts.js; node scripts/check-doc-budget.js",
+  "cwd": ".",
+  "exit_code": 0,
+  "source": "P1.2 worktree",
+  "result": "契约 9 ok；预算全 ok，新增 默认叙事风格.md 条目 7477/7700，写章热路径 12635/13000（profile 保守按全文件称重，实际仅加载所选段）",
+  "logs": ["arena/p1-2-contracts.log", "arena/p1-2-doc-budget.log"]
+}

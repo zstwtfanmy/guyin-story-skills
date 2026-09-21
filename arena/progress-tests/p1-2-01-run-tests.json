@@ -1,0 +1,9 @@
+{
+  "name": "P1.2 run-tests after profile single-source",
+  "command": "node tests/run-tests.js",
+  "cwd": ".",
+  "exit_code": 0,
+  "source": "P1.2 worktree",
+  "result": "528 pass / 0 fail / 0 skip（较 P1.1 的 511 新增 17 条 T05-T07 断言：机读路由 15 例+规则顺序、11 profile 定义段、冻结/W-B 边界/书级入口/谱系可选/无配额/exemplars 取消强制等）",
+  "log": "arena/p1-2-run-tests.log"
+}
