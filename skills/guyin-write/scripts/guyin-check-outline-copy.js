@@ -10,22 +10,24 @@
  * ——细纲只锁功能与结果，句子一律在正文现场写。
  *
  * 词面相同不等于不良照搬：系统面板、任务要求、固定专名本就该保持一致。因此本脚本
- * 只提供证据（位置与片段），是否重写由 agent 读上下文语义判断，同 check-ai-patterns.js
- * 的 advisory 轨——但每条都要有结论，不允许只报不改，也不为归零机械改写。
- * 判定保留的只由主会话补进细纲锚句：子代理不改大纲细纲（见 narrative-writer「不自行改纲」），
- * 否则子代理误判的重合会被自己写进白名单，主会话复扫时不再报出，第二层复核失明。
+ * 只提供证据（位置与片段），是否重写由当前会话读上下文语义判断（verify 轨）——
+ * 每条都要有结论，不允许只报不改，也不为归零机械改写。
+ * 判定保留的只由主会话补进细纲锚句，不允许检查对象自行改写细纲白名单——
+ * 否则误判的重合会被写进白名单，复扫时不再报出，第二层复核失明。
  *
  * 免报：细纲「复沓锚句」字段下列出的原话允许逐字落地——誓言、系统面板、
  * 旧案原话等写细纲时判定必须原文出现的部分，逐行一条。只扣除锚句自身的精确区间，
  * 前后剩余片段照常按阈值判定，避免紧挨锚句的照搬被顺带赦免。
  * 豁免量单独统计并在报告末尾列出，滥用锚句绕过检测时一眼可见。
  *
- * 由 narrative-writer 落盘后自查、主会话收尾复扫时调用（两侧同一份实现，口径一致）。
+ * 由当前会话在候选上调用（候选链汇总器与收尾复扫同一份实现，口径一致）。
  * 不进 hook：正文兜底 hook 的共享核是四端共用的，不为单项检测扩面。
  *
  * 用法：
- *   node check-outline-copy.js <正文路径...>                    # 自动找同章细纲；短篇找同目录小节大纲
- *   node check-outline-copy.js --outline <细纲路径> <正文路径...> # 指定细纲
+ *   node check-outline-copy.js <正文路径...>                    # 自动找同章细纲（旧纯文本模式）
+ *   node check-outline-copy.js --outline <细纲路径> <正文路径...> # 指定细纲（旧纯文本模式）
+ *   node check-outline-copy.js --json --project <B> --chapter N [--unit N] [--outline <细纲>] <候选>
+ *                                                              # v4 候选链显式模式（JSON）
  *
  * 位置参数一律按正文处理，与 check-ai-patterns.js 的 `<file...>` 口径一致：
  * 收尾复扫用 `正文/第XXX章_*.md` 这类通配传多章时，多出来的正文不能被当成细纲吞掉
@@ -190,11 +192,53 @@ function checkOne(proseFile, explicitOutline) {
   const outline = read(outlineFile)
   if (outline === null) return 0
 
+  const result = inspectCopy(proseFile, prose, outlineFile)
+  if (!result.hits.length) {
+    // 全部命中都是锚句豁免：静默放行，但把豁免量报出来供人工复核滥用
+    if (result.anchoredCount) {
+      process.stdout.write(
+        `细纲照搬检测（${path.basename(proseFile)}）：无未授权誊抄；` +
+          `另有 ${result.anchoredCount} 处 ${result.anchored} 字为复沓锚句的逐字落地。` +
+          (result.deviationStripped ? `另剥除执行偏差区 ${result.deviationStripped} 字（写后回填授权，不比对）。` : '') +
+          '\n'
+      )
+    }
+    return 0
+  }
+
+  const hits = result.hits
+  const rate = ((result.copied * 100) / result.P).toFixed(1)
+  const out = [
+    `=== 细纲照搬检测（${path.basename(proseFile)}）===`,
+    `正文 ${result.P} 字，与 ${path.basename(outlineFile)} 连续重合 >${MIN_RUN - 1} 字的片段 ${hits.length} 处，共 ${result.copied} 字（${rate}%）。`,
+    `逐条对照原文判断：确属把细纲叙述搬进正文就重写——细纲只锁功能与结果，句子在正文现场写；系统面板、誓词、案卷原话、固定专名等功能性重合可保留。每条都要有结论，不为归零机械改写。保留项由主会话补进细纲「复沓锚句」，不允许改细纲来自行消警。`,
+  ]
+  hits
+    .sort((a, b) => b.len - a.len)
+    .slice(0, REPORT_TOP)
+    .forEach((h) => out.push(`  · ${h.len} 字「${h.frag}」`))
+  if (hits.length > REPORT_TOP) out.push(`  · …另有 ${hits.length - REPORT_TOP} 处`)
+  if (result.anchoredCount) out.push(`（另有 ${result.anchoredCount} 处 ${result.anchored} 字为复沓锚句的逐字落地，不计入誊抄）`)
+  if (result.deviationStripped) out.push(`（比对前已剥除执行偏差区 ${result.deviationStripped} 字：写后回填授权通道，不计入誊抄）`)
+  process.stdout.write(out.join('\n') + '\n')
+  return 1
+}
+
+/**
+ * 检测核（纯文本旧模式与显式 JSON 模式共用）：返回结构化结果，不打印、不退出。
+ * { P, hits:[{frag,len}], copied, anchored, anchoredCount, deviationStripped }
+ */
+function inspectCopy(proseFile, prose, outlineFile) {
+  const outline = read(outlineFile)
+  if (outline === null) return { P: 0, hits: [], copied: 0, anchored: 0, anchoredCount: 0, deviationStripped: 0 }
+
   // 正文去掉标题行后比对；细纲先剥除「执行偏差」区（P2，写后回填授权通道）
   const P = hanOnly(prose.replace(/^#.*$/gm, ''))
   const { text: outlineBody, stripped: deviationStripped } = stripDeviationBlock(outline)
   const O = hanOnly(outlineBody)
-  if (P.length < MIN_RUN || O.length < MIN_RUN) return 0
+  if (P.length < MIN_RUN || O.length < MIN_RUN) {
+    return { P, hits: [], copied: 0, anchored: 0, anchoredCount: 0, deviationStripped }
+  }
 
   // 复沓锚句列出的原话允许逐字落地，命中后计入豁免、不判誊抄
   const anchors = extractAnchors(outline)
@@ -236,34 +280,76 @@ function checkOne(proseFile, explicitOutline) {
       i += best
     } else i++
   }
-  if (!hits.length) {
-    // 全部命中都是锚句豁免：静默放行，但把豁免量报出来供人工复核滥用
-    if (anchoredCount) {
-      process.stdout.write(
-        `细纲照搬检测（${path.basename(proseFile)}）：无未授权誊抄；` +
-          `另有 ${anchoredCount} 处 ${anchored} 字为复沓锚句的逐字落地。` +
-          (deviationStripped ? `另剥除执行偏差区 ${deviationStripped} 字（写后回填授权，不比对）。` : '') +
-          '\n'
-      )
+  return { P, hits, copied, anchored, anchoredCount, deviationStripped }
+}
+
+// ============================================================
+// B-1 候选链显式模式：--project/--chapter（--unit 短篇），JSON 报告。
+// 无细纲＝not_applicable（exit0＋原因）；显式 --outline 不可读＝exit2（不假通过）。
+// ============================================================
+'use strict'
+const cc = require('./lib/guyin-candidate-context')
+const handling = require('./lib/guyin-handling')
+
+function runExplicitCopy() {
+  let ctx
+  try {
+    ctx = cc.resolveContext(process.argv.slice(2))
+  } catch (e) {
+    console.error(e.code === 'CTX_INPUT' ? `输入错误：${e.message}` : String(e))
+    process.exit(2)
+  }
+  const asJson = ctx.flags.has('--json')
+  const failOpt = [...ctx.flags].find((f) => f.startsWith('--fail-on='))
+  const failOn = failOpt ? handling.parseFailOn(failOpt.slice('--fail-on='.length)) : 'block'
+  const candidateText = fs.readFileSync(ctx.candidateAbs, 'utf8')
+
+  // 无真实细纲：显式模式下列为 not_applicable＋原因，不造四组过门，也不冒充 pass。
+  if (!ctx.outlineAbs) {
+    const doc = ctx.notApplicable('未提供本章真实细纲（--outline）：细纲照搬检查不适用')
+    doc.files_scanned = [ctx.candidateRel] // 候选确实读过（区分于缺件/零扫描）
+    if (asJson) {
+      process.stdout.write(`${JSON.stringify(doc, null, 2)}\n`)
+    } else {
+      process.stdout.write('outline-copy(explicit): not_applicable（无细纲）\n')
     }
-    return 0
+    process.exit(0)
   }
 
-  const rate = ((copied * 100) / P.length).toFixed(1)
-  const out = [
-    `=== 细纲照搬检测（${path.basename(proseFile)}）===`,
-    `正文 ${P.length} 字，与 ${path.basename(outlineFile)} 连续重合 >${MIN_RUN - 1} 字的片段 ${hits.length} 处，共 ${copied} 字（${rate}%）。`,
-    `逐条对照原文判断：确属把细纲叙述搬进正文就重写——细纲只锁功能与结果，句子在正文现场写；系统面板、誓词、案卷原话、固定专名等功能性重合可保留。每条都要有结论，不为归零机械改写。保留项由主会话补进细纲「复沓锚句」——子代理只重写正文或标 \`[需复核]\` 交回，不改大纲细纲。`,
-  ]
-  hits
-    .sort((a, b) => b.len - a.len)
-    .slice(0, REPORT_TOP)
-    .forEach((h) => out.push(`  · ${h.len} 字「${h.frag}」`))
-  if (hits.length > REPORT_TOP) out.push(`  · …另有 ${hits.length - REPORT_TOP} 处`)
-  if (anchoredCount) out.push(`（另有 ${anchoredCount} 处 ${anchored} 字为复沓锚句的逐字落地，不计入誊抄）`)
-  if (deviationStripped) out.push(`（比对前已剥除执行偏差区 ${deviationStripped} 字：写后回填授权通道，不计入誊抄）`)
-  process.stdout.write(out.join('\n') + '\n')
-  return 1
+  // 复用纯文本模式的检测核（显式细纲；候选即受检正文）。
+  const result = inspectCopy(ctx.candidateAbs, candidateText, ctx.outlineAbs)
+  const findings = result.hits.map((h, i) => ({
+    file: ctx.candidateRel,
+    line: 1, column: 1,
+    type: 'outline-copy-overlap',
+    severity: 'advisory',
+    handling: 'verify',
+    length: h.len,
+    message: `与细纲连续重合 ${h.len} 字（阈值 >${MIN_RUN - 1}）：细纲只锁功能与结果，句子在正文现场写；功能性重合保留须登记复沓锚句`,
+    excerpt: h.frag,
+  }))
+  const status = findings.length ? 'findings' : 'pass'
+  const report = {
+    script: 'guyin-check-outline-copy.js',
+    script_sha256: cc.sha256File(__filename),
+    status,
+    target: { chapter: ctx.chapter, unit: ctx.unit, candidate: ctx.candidateRel, candidate_sha256: ctx.candidateHash },
+    outline: ctx.outlineRel,
+    files_scanned: [ctx.candidateRel],
+    target_files: [ctx.candidateRel],
+    reference_files: [ctx.outlineRel],
+    anchored_count: result.anchoredCount,
+    anchored_chars: result.anchored,
+    deviation_stripped: result.deviationStripped,
+    findings,
+  }
+  if (asJson) process.stdout.write(`${JSON.stringify(report, null, 2)}\n`)
+  else process.stdout.write(`outline-copy(explicit): ${status}（${findings.length} 处未授权重合）\n`)
+  process.exit(findings.length && handling.gateTripped(findings, failOn) ? 1 : 0)
+}
+
+if (process.argv.includes('--project')) {
+  runExplicitCopy()
 }
 
 try {

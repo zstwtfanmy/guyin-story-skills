@@ -1,0 +1,49 @@
+{
+  "spec_version": "整改任务书v4 执行核查与整改（rect-v4-20260921）",
+  "head_baseline": "c460e86",
+  "head_at_start": "c460e86",
+  "source_baseline": "本地 HEAD c460e86（未联网复核 main/dev）",
+  "completed_steps": ["R0", "R1", "R2", "R3", "R4", "R5", "R6"],
+  "current_step": "R6 完成；R7 用户决定暂不处理（2026-09-22）；R8 用户已指示暂不执行",
+  "tests": {
+    "baseline_20260921": "629 pass / 1 fail(T07 CRLF) / 0 skip",
+    "after_r5": "708 pass / 0 fail / 0 skip（r5c 日志；r5 时代码已落地，旧日志为过时结果）",
+    "after_r6": "739 pass / 0 fail / 0 skip（r6i-run-tests.log），T01-T35 编号全部在日志有行为断言",
+    "entries": {
+      "run-tests": "node tests/run-tests.js → logs/r6i-run-tests.log（exit0）",
+      "check-skill-contracts": "node scripts/check-skill-contracts.js → logs/r6-final-contracts.log（exit0）",
+      "check-doc-budget": "node scripts/check-doc-budget.js → logs/r6-final-doc-budget.log（exit0），预算不放宽",
+      "package-verify(F.3)": "guyin-check-package.js verify：163 文件 0 缺件/0 混版/0 加载失败"
+    },
+    "platform_note": "本机 Windows/PowerShell；Linux 全量未跑，CI(ubuntu-latest) 断言未在本轮实跑"
+  },
+  "r2_r6_evidence": {
+    "R2_G-6": "author-session：blocked 可达、阶段共同校验、证据 R 归属/哈希/候选绑定、baseline drift、repair 无基线 blocked、多 run 不擅选",
+    "R3_B1_B4_G5": "candidate-context 必需检查集/同稿同参等价/真实扫描证据/zero-scan error/not_applicable 带原因/state 缺省 error/语义锁 verify/合法空指纹；outline-copy/ai-patterns/narrative-asset/consistency 显式 --project/--chapter/--boundary/--outline",
+    "R4_G1_G2_B5": "v2 强基线 files_hashed、三方目标一致、preview 首次原子生成证据且零正式写入、授权 null 可 preview 不可 publish、篡改证据 prepared 重跑拒绝、冻结输入 SHA-256",
+    "R5_G3_G4_G7_B3": "tracking_plan before/after/staged 全固化、state 最后原子落盘、四类现场分类、第三态零新增写入、指纹修订同章替换+--verify-owner+双指纹 before/after、规划补丁会话校验",
+    "R6_A-3": "consult/tracking-transaction.md 升级为 v2 运行协议：写作 run/input/checkpoint 完整示例、v2 发布清单示例、preview、精确恢复、规划补丁；3072 降建议；低层 commit 非发布入口",
+    "R6_C-1": "T29 真实进程终止（GUYIN_PUBLISH_CRASH_AFTER=state_write→os._exit(9)）recover 续跑；T30 部分 after+state before 的 mixed 现场零写入、补齐 all_after 续跑；T35 固定形状 v1 旧账本（c460e86 形状：after/staged 未固化）可证明阶段恢复、不可证明窗口保留现场",
+    "R6_C-3": "测试解析端 CRLF→LF 归一化 + LF/CRLF 合成夹具",
+    "R6_E1": "lifecycle-protocols.md 加 v4 降级横幅（压测三问可选自查、尾声硬门废止）并入 INDEX 降级表",
+    "R6_E2": "模板 语言纪律.md 去编排/执行双层措辞（当前会话按需读）",
+    "R6_E4": "anti-ai-writing.md 文件内降级横幅（数量配额失效、去味走 revision 候选）",
+    "R6_E5": "模板 批次公约.md 去伪装硬锁：比喻域非轮换配额、配角心理无次数、收束位非轮换锁；保留 POV 锚点与知情边界",
+    "R6_F3": "新增 skills/guyin-setup/scripts/guyin-check-package.js + scripts/package-manifest.json（固定版本 163 文件 sha256）：realpath 锚定不回退、缺件/损坏/混版 exit1、Node/Python 版本与脚本语法加载；setup SKILL 增 Phase 0.5 与 deploy 职责边界；安装来源统一 zstwtfanmy",
+    "R6_lock": "项目锁 Windows 归属加固：owner.json 记 pid_ctime；WaitForSingleObject 识别僵尸 + 创建时间防 PID 复用 + 同机才回收",
+    "R6_budget": "write SKILL 5254/5300、风格文件 7700/7700（D-8 人面新增内容靠压缩旧冗余消化，未抬预算）"
+  },
+  "changed_files_by_rect": "见 git status；R6 主要新增 skills/guyin-setup/scripts/guyin-check-package.js、scripts/package-manifest.json；改写 guyin-tracking-commit.py（T29/T35/锁）、tests/run-tests.js（+34 检查）、tracking-transaction.md、默认叙事风格.md、两个 write SKILL、INDEX/lifecycle/anti-ai/语言纪律/批次公约、setup SKILL",
+  "e3_repo_root_mirror_readonly": {
+    "what": "仓库根 .agents/skills/guyin-* 为未跟踪本地实体目录（0.14.0，99 文件）；.claude/skills/guyin-* 为 9 个 junction 指向同仓 .agents 镜像；两处 git 均不跟踪",
+    "action": "R6 仅只读核查，未删未改",
+    "user_decision_20260922": "永久保留不处理：该 0.14.0 镜像作为历史用途保留，不参与加载与验收，不备份不迁移；后续 R7 若启动也不覆盖此镜像"
+  },
+  "blockers": [
+    "R7 用户于 2026-09-22 决定暂不处理：全局 ~/.agents/skills（1.0.0 缺 68 文件）维持现状；日后启动仍须按 F.4 先备份再恢复并 verify/夹具验收",
+    "Linux 全量与其他宿主（ZCode/OpenClaw 等）未测；已测/未测需在 R7 报告分列",
+    "并发作者 D-8 改动（默认风格 v2 人面机制、tracking-transaction 关系行等）本轮在保留语义前提下已收敛入预算；未碰活书"
+  ],
+  "living_book_and_experiment": "arena/exp-p3-2 与两份未跟踪 docs、活书未改；R8 新创作实验由用户另行执行",
+  "next_action": "源码主线整改（R0-R6）收口；R7/R8 均待用户另行发起。日后安装恢复时用 guyin-check-package.js verify + F.4 备份流程"
+}

@@ -281,7 +281,10 @@ try {
 }
 
 if (options.json) {
-  process.stdout.write(`${JSON.stringify({ findings }, null, 2)}\n`);
+  process.stdout.write(`${JSON.stringify({
+    findings,
+    files_scanned: files.map((f) => require('path').resolve(f)),
+  }, null, 2)}\n`);
 } else {
   for (const f of findings) {
     console.log(`${f.file}: [${handling.label(f)}] ${f.type}: ${f.message}`);

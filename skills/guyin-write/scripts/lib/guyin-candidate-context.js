@@ -245,89 +245,178 @@ function gatherArgv(raw) {
   return out;
 }
 
-function runCheck(name, args, ctx, { target = true, referenceFiles = null } = {}) {
-  const scriptRel = args[0];
-  const scriptAbs = path.join(SCRIPT_DIR, scriptRel);
+function pythonExe() {
+  return process.env.GUYIN_PYTHON
+    || (process.platform === 'win32' ? 'python' : 'python3');
+}
+
+function runCheck(name, spec, ctx) {
+  // spec: { interpreter?: 'node'|'python', script, args, target?, referenceFiles?, expectJson? }
+  const interpreter = spec.interpreter || 'node';
+  const bin = interpreter === 'python' ? pythonExe() : process.execPath;
+  const scriptAbs = path.join(SCRIPT_DIR, spec.script);
+  const target = spec.target !== false;
   const entry = {
     name,
-    script: scriptRel,
+    script: spec.script,
+    interpreter,
     script_sha256: fs.existsSync(scriptAbs) ? sha256File(scriptAbs) : null,
-    command: args.map((x) => (x === ctx.candidateAbs ? ctx.candidateRel : x)),
+    command: spec.args.map((x) => (x === ctx.candidateAbs ? ctx.candidateRel : x)),
     exit_code: null,
-    files_scanned: target ? [ctx.candidateRel] : [],
+    files_scanned: [],
     target_files: target ? [ctx.candidateRel] : [],
-    reference_files: referenceFiles || [],
+    reference_files: spec.referenceFiles || [],
     status: 'error',
     reason: '',
     findings_count: 0,
   };
   if (!fs.existsSync(scriptAbs)) {
-    entry.reason = `脚本不存在：${scriptRel}`;
+    entry.reason = `脚本不存在：${spec.script}`;
     return entry;
   }
-  const r = spawnSync(process.execPath, [scriptAbs, ...args.slice(1)], {
-    encoding: 'utf8',
-  });
+  const r = spawnSync(bin, [scriptAbs, ...spec.args], { encoding: 'utf8' });
   entry.exit_code = r.status === null ? -1 : r.status;
   let parsed = null;
   try { parsed = r.stdout.trim() ? JSON.parse(r.stdout) : null; } catch (e) { parsed = null; }
-  if (Array.isArray(parsed && parsed.findings)) {
-    entry.findings_count = parsed.findings.length;
-    if (parsed.summary && typeof parsed.summary.files_scanned === 'number') {
-      entry.files_scanned = parsed.summary.files_scanned > 0 ? [ctx.candidateRel] : [];
+
+  // G-5：files_scanned/target_files/status 以检查脚本自己的报告为准，不在入口预填。
+  if (parsed && typeof parsed === 'object') {
+    if (Array.isArray(parsed.findings)) entry.findings_count = parsed.findings.length;
+    const reportScanned = parsed.files_scanned
+      || (parsed.summary && parsed.summary.files_scanned)
+      || (parsed.target_files)
+      || null;
+    if (Array.isArray(reportScanned)) {
+      entry.files_scanned = reportScanned.map(String);
+    } else if (typeof reportScanned === 'number' && reportScanned > 0) {
+      // 旧式数值计数（repetition 等）：脚本自报实际扫描文件数 >0 才算读到目标。
+      entry.files_scanned = [ctx.candidateRel];
+    }
+    if (Array.isArray(parsed.target_files)) entry.target_files = parsed.target_files.map(String);
+    if (parsed.status === 'pass' || parsed.status === 'findings'
+        || parsed.status === 'not_applicable' || parsed.status === 'error') {
+      entry.status = parsed.status;
+      if (parsed.reason) entry.reason = String(parsed.reason).slice(0, 300);
     }
   }
-  if (r.status === 0) entry.status = 'pass';
-  else if (r.status === 1) entry.status = 'findings';
-  else {
-    entry.status = 'error';
-    entry.reason = (r.stderr || r.stdout || `exit ${r.status}`).trim().slice(0, 300);
+  if (entry.status === 'error') {
+    if (r.status === 0) entry.status = 'pass';
+    else if (r.status === 1) entry.status = 'findings';
+    else {
+      entry.status = 'error';
+      entry.reason = (r.stderr || r.stdout || `exit ${r.status}`).trim().slice(0, 300);
+    }
   }
-  if (target && entry.files_scanned.length === 0) {
+  // not_applicable 必须带原因（G-5）：脚本未给时补可审计默认说明，禁止空白终态。
+  if (entry.status === 'not_applicable' && !entry.reason) {
+    entry.reason = 'not_applicable：该检查对本候选不适用（以脚本输出为准）';
+  }
+  // 目标类检查：not_applicable 是合法终态（已带原因）；其余状态必须真扫到候选，零扫描＝error。
+  // 报告可能给书根相对路径或绝对路径，两种都认。
+  const scannedProof = new Set(entry.files_scanned);
+  const candidateScanned = target && entry.status !== 'not_applicable'
+    && (scannedProof.has(ctx.candidateRel) || scannedProof.has(ctx.candidateAbs));
+  if (target && entry.status !== 'not_applicable' && !candidateScanned) {
     entry.status = 'error';
-    entry.reason = '零扫描：检查结果未证明读到候选（files_scanned 为空）';
+    entry.reason = '零扫描：检查报告未证明读到候选（files_scanned 未含候选）';
   }
   return entry;
 }
 
 function requiredChain(ctx) {
   const cand = ctx.candidateAbs;
-  const unit = ctx.unit || ctx.chapter;
+  const b = ctx.boundaryAbs;
   const common = ['--json', '--project', ctx.projectRootAbs, '--chapter', String(ctx.chapter)];
+  if (ctx.unit) common.push('--unit', String(ctx.unit));
+  if (b) common.push('--boundary', b);
+  const stateAbs = path.join(ctx.projectRootAbs, '追踪', '_tracking-state.json');
+  const hasState = fs.existsSync(stateAbs);
   const chain = [
-    () => runCheck('strip', ['guyin-check-strip.js', '--json', cand], ctx),
-    () => runCheck('integrity', ['guyin-check-integrity.js', '--json', cand], ctx),
-    () => runCheck('beat', ['guyin-check-beat.js', '--json', cand], ctx),
-    () => runCheck('degeneration', ['guyin-check-degeneration.js', '--json', cand], ctx),
-    () => runCheck('ai-patterns', ['guyin-check-ai-patterns.js', '--json', cand], ctx),
-    () => runCheck('wordcount', ['guyin-check-wordcount.js', '--json',
+    () => runCheck('tracking-check', {
+      interpreter: 'python', script: 'guyin-tracking-commit.py',
+      args: ['check', '--project', ctx.projectRootAbs], target: false,
+      referenceFiles: ['追踪/_tracking-state.json'],
+    }, ctx),
+    () => runCheck('rule-conflict', {
+      script: 'guyin-check-rule-conflict.js',
+      args: ['--json', '--project', ctx.projectRootAbs], target: false,
+      referenceFiles: ['作者性/纪律冲突台账.md', '大纲/批次公约.md'],
+    }, ctx),
+    () => runCheck('strip', { script: 'guyin-check-strip.js', args: ['--json', cand] }, ctx),
+    () => runCheck('integrity', { script: 'guyin-check-integrity.js', args: ['--json', cand] }, ctx),
+    () => runCheck('beat', { script: 'guyin-check-beat.js', args: ['--json', cand] }, ctx),
+    () => runCheck('degeneration', { script: 'guyin-check-degeneration.js', args: ['--json', cand] }, ctx),
+    () => runCheck('ai-patterns', {
+      script: 'guyin-check-ai-patterns.js',
+      args: [...common, cand],
+    }, ctx),
+    () => runCheck('wordcount', { script: 'guyin-check-wordcount.js', args: ['--json',
       `--min=${(ctx.boundary && ctx.boundary.wordcount && ctx.boundary.wordcount.min) || 1}`,
       `--max=${(ctx.boundary && ctx.boundary.wordcount && ctx.boundary.wordcount.max) || 100000}`,
-      cand], ctx),
-    () => runCheck('outline-deliver', ['guyin-check-outline-deliver.js', '--json', ...common,
-      ...(ctx.boundaryRel ? ['--boundary', ctx.boundaryAbs] : []),
-      ...(ctx.outlineAbs ? ['--outline', ctx.outlineAbs] : []), cand], ctx),
-    () => runCheck('authority-leak', ['guyin-check-authority-leak.js', '--json', ...common,
-      ...(ctx.boundaryRel ? ['--boundary', ctx.boundaryAbs] : []), cand], ctx),
-    () => runCheck('foreshadow-id', ['guyin-check-foreshadow-id.js', '--json', ...common,
-      ...(ctx.boundaryRel ? ['--boundary', ctx.boundaryAbs] : []),
-      ...(ctx.transactionAbs ? ['--transaction', ctx.transactionAbs] : []), cand], ctx,
-      { referenceFiles: ['追踪/伏笔.md'] }),
-    () => runCheck('repetition', ['guyin-check-repetition.js', '--json', '--project', ctx.projectRootAbs,
-      '--unit', String(unit), '--prepublish', cand], ctx),
+      cand] }, ctx),
+    // G-5：outline-copy 是必需检查；无细纲时脚本给 not_applicable（合法终态，带原因）。
+    () => runCheck('outline-copy', {
+      script: 'guyin-check-outline-copy.js',
+      args: [...common, ...(ctx.outlineAbs ? ['--outline', ctx.outlineAbs] : []), cand],
+      referenceFiles: ctx.outlineRel ? [ctx.outlineRel] : [],
+    }, ctx),
+    () => runCheck('outline-deliver', {
+      script: 'guyin-check-outline-deliver.js',
+      args: [...common, ...(ctx.outlineAbs ? ['--outline', ctx.outlineAbs] : []), cand],
+    }, ctx),
+    () => runCheck('authority-leak', {
+      script: 'guyin-check-authority-leak.js', args: [...common, cand],
+    }, ctx),
+    () => runCheck('foreshadow-id', {
+      script: 'guyin-check-foreshadow-id.js',
+      args: [...common, ...(ctx.transactionAbs ? ['--transaction', ctx.transactionAbs] : []), cand],
+      referenceFiles: ['追踪/伏笔.md'],
+    }, ctx),
+    () => runCheck('repetition', {
+      script: 'guyin-check-repetition.js',
+      args: ['--json', '--project', ctx.projectRootAbs,
+        '--unit', String(ctx.unit || ctx.chapter), '--prepublish', cand],
+    }, ctx),
+    // G-5：state 类检查是必需项。缺 state 不允许静默少跑：显式 error 条目阻止发布。
+    ...(hasState ? [
+      () => runCheck('narrative-asset', {
+        script: 'guyin-check-narrative-asset.js',
+        args: ['--json', `--state=${stateAbs}`, ...common.slice(1), cand],
+        referenceFiles: ['追踪/_tracking-state.json'],
+      }, ctx),
+      () => runCheck('consistency', {
+        script: 'guyin-check-consistency.js',
+        args: ['--json', `--state=${stateAbs}`, ...common.slice(1), cand],
+        referenceFiles: ['追踪/_tracking-state.json'],
+      }, ctx),
+    ] : [
+      () => ({
+        name: 'narrative-asset', script: 'guyin-check-narrative-asset.js', interpreter: 'node',
+        script_sha256: sha256File(path.join(SCRIPT_DIR, 'guyin-check-narrative-asset.js')),
+        command: [], exit_code: 2, files_scanned: [], target_files: [ctx.candidateRel],
+        reference_files: ['追踪/_tracking-state.json'], status: 'error',
+        reason: '缺 追踪/_tracking-state.json：state 类检查不能静默跳过（少跑检查即 error）',
+        findings_count: 0,
+      }),
+      () => ({
+        name: 'consistency', script: 'guyin-check-consistency.js', interpreter: 'node',
+        script_sha256: sha256File(path.join(SCRIPT_DIR, 'guyin-check-consistency.js')),
+        command: [], exit_code: 2, files_scanned: [], target_files: [ctx.candidateRel],
+        reference_files: ['追踪/_tracking-state.json'], status: 'error',
+        reason: '缺 追踪/_tracking-state.json：state 类检查不能静默跳过（少跑检查即 error）',
+        findings_count: 0,
+      }),
+    ]),
   ];
-  const stateAbs = path.join(ctx.projectRootAbs, '追踪', '_tracking-state.json');
-  if (fs.existsSync(stateAbs)) {
-    chain.push(() => runCheck('narrative-asset', ['guyin-check-narrative-asset.js', '--json',
-      `--state=${stateAbs}`, cand], ctx, { referenceFiles: ['追踪/_tracking-state.json'] }));
-    chain.push(() => runCheck('consistency', ['guyin-check-consistency.js', '--json',
-      `--state=${stateAbs}`, cand], ctx, { referenceFiles: ['追踪/_tracking-state.json'] }));
-  }
   if (ctx.outlineAbs) {
-    chain.push(() => runCheck('outline-slots', ['guyin-check-outline-slots.js', '--json', ctx.outlineAbs],
-      ctx, { target: false, referenceFiles: [ctx.outlineRel] }));
-    chain.push(() => runCheck('opening-retention', ['guyin-check-opening-retention.js', '--json', ctx.outlineAbs],
-      ctx, { target: false, referenceFiles: [ctx.outlineRel] }));
+    chain.push(() => runCheck('outline-slots', {
+      script: 'guyin-check-outline-slots.js', args: ['--json', ctx.outlineAbs],
+      target: false, referenceFiles: [ctx.outlineRel],
+    }, ctx));
+    chain.push(() => runCheck('opening-retention', {
+      script: 'guyin-check-opening-retention.js', args: ['--json', ctx.outlineAbs],
+      target: false, referenceFiles: [ctx.outlineRel],
+    }, ctx));
   }
   return chain;
 }
@@ -352,7 +441,13 @@ function buildEvidence(ctx) {
   };
 }
 
-// 校验一份既有证据：候选哈希/脚本版本/扫描对象/必需检查/状态。
+// G-5 必需检查集合（缺任一不得发布）：tracking/state 门、笔法治理、全文候选检查、
+// 锁检查、指纹前置；outline-slots/opening-retention 仅在有真实细纲时入链。
+const REQUIRED_CHECK_NAMES = ['tracking-check', 'rule-conflict', 'strip', 'integrity', 'beat',
+  'degeneration', 'ai-patterns', 'wordcount', 'outline-copy', 'outline-deliver',
+  'authority-leak', 'foreshadow-id', 'repetition', 'narrative-asset', 'consistency'];
+
+// 校验一份既有证据：候选/input/state/脚本版本/扫描对象/必需检查/终态。
 function validateEvidence(ctx, evidenceAbs) {
   const errors = [];
   let doc;
@@ -360,6 +455,16 @@ function validateEvidence(ctx, evidenceAbs) {
   catch (e) { return { ok: false, errors: [`证据不是合法 JSON：${e.message}`] }; }
   if (!doc || doc.schema_version !== 1) errors.push('schema_version 必须为 1');
   if (doc.candidate_sha256 !== ctx.candidateHash) errors.push('candidate_sha256 与当前候选不一致（过期证据）');
+  // G-5：input/state 绑定必须与当前调用对象一致，旧 input/state 的证据不得复用。
+  const expectedInput = ctx.boundary ? sha256File(ctx.boundaryAbs) : null;
+  if ((doc.input_sha256 || null) !== expectedInput) {
+    errors.push(`input_sha256 不一致（证据 ${doc.input_sha256 ? '绑旧 input' : '无 input 绑定'}，须重跑）`);
+  }
+  const stateAbs = path.join(ctx.projectRootAbs, '追踪', '_tracking-state.json');
+  const expectedState = fs.existsSync(stateAbs) ? sha256File(stateAbs) : null;
+  if ((doc.baseline_state_sha256 || null) !== expectedState) {
+    errors.push('baseline_state_sha256 与当前 state 不一致（state 已变，证据过期）');
+  }
   if (!Array.isArray(doc.checks)) errors.push('checks 必须是数组');
   const present = new Set();
   for (const c of doc.checks || []) {
@@ -368,14 +473,20 @@ function validateEvidence(ctx, evidenceAbs) {
     if (!c.script || !fs.existsSync(scriptAbs)) { errors.push(`${c.name}: 脚本缺失 ${c.script}`); continue; }
     if (c.script_sha256 !== sha256File(scriptAbs)) errors.push(`${c.name}: 脚本已变更，证据过期（须重跑）`);
     if (c.status === 'error') errors.push(`${c.name}: 检查状态 error（${c.reason || ''}）`);
-    if (c.exit_code === 1) errors.push(`${c.name}: 存在未处置 findings（exit 1），须先落 hard/verify 处置`);
-    if (Array.isArray(c.target_files) && c.target_files.includes(ctx.candidateRel)) {
-      if (!(c.files_scanned || []).includes(ctx.candidateRel)) errors.push(`${c.name}: 零扫描（files_scanned 未含候选）`);
+    if (c.status === 'findings' && c.exit_code === 1) {
+      errors.push(`${c.name}: 存在未处置 findings（exit 1），须先落 hard/verify 合法终态`);
     }
+    // not_applicable 是合法终态（须带原因），不要求扫到候选。
+    if (c.status !== 'not_applicable' && Array.isArray(c.target_files)
+        && c.target_files.includes(ctx.candidateRel)) {
+      const scanned = new Set(c.files_scanned || []);
+      if (!scanned.has(ctx.candidateRel) && !scanned.has(ctx.candidateAbs)) {
+        errors.push(`${c.name}: 零扫描（files_scanned 未含候选）`);
+      }
+    }
+    if (c.status === 'not_applicable' && !c.reason) errors.push(`${c.name}: not_applicable 必须带原因`);
   }
-  const requiredNames = ['strip', 'integrity', 'beat', 'degeneration', 'ai-patterns', 'wordcount',
-    'outline-deliver', 'authority-leak', 'foreshadow-id', 'repetition'];
-  for (const n of requiredNames) if (!present.has(n)) errors.push(`缺必需检查：${n}`);
+  for (const n of REQUIRED_CHECK_NAMES) if (!present.has(n)) errors.push(`缺必需检查：${n}`);
   if (doc.status === 'error' || doc.status === 'fail') errors.push(`证据汇总状态为 ${doc.status}，不能发布`);
   return { ok: errors.length === 0, errors };
 }

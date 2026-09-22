@@ -120,8 +120,8 @@
 
 **写后同轮清零**：正文落盘不是汇报时机——每章落盘后必须在**同一轮**内跑完上方步骤 10-11 扫描、下方确定性收尾脚本与章检审查，blocking 清零才算本章完成；不得先汇报"已写完"再等指示。若项目部署了隐笔 hook（`.claude/hooks/guyin-hook.js`，Claude Code 端，guyin-setup 模板自带），落盘正文会被自动扫一道极短/字数兜底并注入提醒——那是兜底网不是替代，hook 报出的命中当轮清零，完整检查仍走确定性收尾与章检四脚本。豁免一律走 `追踪/豁免台账.md`（五测试），不用正文内标记。
 
-**确定性收尾**：本批正文写完后，主会话对实际落盘文件运行 `node scripts/guyin-check-ai-patterns.js --check --fail-on=blocking 正文/第XXX章_*.md` 与 `node scripts/guyin-check-outline-copy.js 正文/第XXX章_*.md`（细纲照搬复扫）。blocking 命中先回正文改写并复扫；advisory 与细纲重合逐条读原文判断，确属问题才改，功能性写法标 `[需复核]`——每条都要有结论，不为归零机械改写；细纲重合里判定保留的补进细纲「复沓锚句」，下章起不再复报。其中 `formulaic-parallelism` 必须连同对话一起复核，不能因它只是 advisory 就略过。
-随后运行 `node scripts/guyin-normalize-punctuation.js 正文/第XXX章_*.md`（默认 `--quote-mode keep`）清理无功能省略号、破折号、双连字符和独立分隔线；盐言「」不受影响。执行层（guyin-beat-writer）不运行这些脚本，一律由编排层跑。
+**确定性收尾**：本批候选写完后，主会话对实际候选运行 `node scripts/guyin-check-ai-patterns.js --fail-on=block R/drafts/vNNNN.md` 与 `node scripts/guyin-check-outline-copy.js R/drafts/vNNNN.md`（细纲照搬复扫）。blocking 命中先回候选改写并复扫；advisory 与细纲重合逐条读原文判断，确属问题才改，功能性写法标 `[需复核]`——每条都要有结论，不为归零机械改写；细纲重合里判定保留的补进细纲「复沓锚句」，下章起不再复报。其中 `formulaic-parallelism` 必须连同对话一起复核，不能因它只是 advisory 就略过。
+随后运行 `node scripts/guyin-normalize-punctuation.js R/drafts/vNNNN.md`（默认逐字只读、`--quote-mode keep`）：分隔线/引号类 hard 按报处置；省略号、破折号、双连字符是 editorial 观察，功能正常的停顿/打断（……/——)逐字保留，不自动清除。确需确定性修复（分隔线；用户明确的引号规格）才显式 `--write`，且只接受候选、另存 vNNNN+1，旧候选与正式正文原位不动。这些脚本只对隔离候选跑，不直接改 `正文/` 正式稿。
 
 **退化防护**：正文落盘后运行 `node scripts/guyin-check-degeneration.js --check 正文/第XXX章_*.md`。blocking（复读、截断、拒绝语、tier1 工程词泄漏）只重写受影响章节，最多 2 次；仍失败就报告证据让用户定夺。
 advisory 只提示可疑处，先看脚本给出的例外；故事内系统/界面用语、弹幕刷屏、重复台词等有功能则保留。

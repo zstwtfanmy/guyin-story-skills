@@ -81,6 +81,7 @@
 | 文件 | 标注 | 说明 |
 |------|------|------|
 | anti-ai-writing.md | [降级] | 原去AI味完整指南。负面清单路线已废弃；确定性部分已编译进 `scripts/guyin-check-ai-patterns.js`，示范部分由 exemplars 好坏对照例替代 |
+| lifecycle-protocols.md | [降级] | 原点子压测/收线审计协议。压测三问降为可选自查（非开写前置门、不绑作者性四件）；收线以 write SKILL「完书」段为准，收线清单/尾声细纲硬门已废止 |
 | banned-words.md | [降级] | 原禁用词与句式表。不再作为主流程强制；仅 lint 与改写卡设计时参考 |
 
 ---

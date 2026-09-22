@@ -53,6 +53,7 @@ const RULE_HANDLING = {
   'skip-write': HARD, // 括号省略＝显式未完成输出；时间压缩词变体在发射点覆写为 editorial
   'dialogue-run': EDITORIAL,
   'mono-count': EDITORIAL,
+  'emotion-tell': EDITORIAL, // 情绪直名词（P3.2 与内心动作词分账）；峰值直陈可成立，须结合上下文
   // （beat-too-short / beat-too-long 已废除：beat 降为节奏标签，无字数桶——长度权威归
   //  章级 wordcount，任务书 §2.2/§3 B）
 
@@ -156,6 +157,8 @@ const RULE_HANDLING = {
   //  -emotion-beats / outline-scene-floor-conflict 已废除：对应字段随四组化删除，
   //  存量旧格式不追溯——删掉的栏目不能仍由脚本强制补回，任务书 §2.1/§3 B）
 
+  // --- guyin-check-outline-copy.js ---
+  'outline-copy-overlap': VERIFY, // 与细纲连续重合：须对照上下文核实，登记锚句或回候选改（B-1 显式模式）
   // --- guyin-check-outline-deliver.js ---
   'outline-term-missing': VERIFY, // 锚定戏整场漏写——细纲承诺 vs 正文履行，须对照核实
   'outline-term-unanchored': VERIFY, // 术语首现未台词级锚定——工艺词泄漏契约风险

@@ -1,0 +1,1161 @@
+{
+  "schema_version": 1,
+  "distribution": "guyin-story-skills",
+  "source": "zstwtfanmy/guyin-story-skills",
+  "built_at": "2026-09-22",
+  "note": "固定发布版本相对路径清单；安装后用 guyin-check-package.js verify 核对，缺件/损坏/混版 exit1",
+  "skills": [
+    "guyin-story",
+    "guyin-write",
+    "guyin-short-write",
+    "guyin-analyze",
+    "guyin-short-analyze",
+    "guyin-review",
+    "guyin-deslop",
+    "guyin-pitch",
+    "guyin-setup"
+  ],
+  "files": [
+    {
+      "skill": "guyin-story",
+      "path": "SKILL.md",
+      "sha256": "ba3bf0fdf917d5fd8ddb7b32dc1d948ebbe629b7d77f343c9b8c045b7329ba86",
+      "size": 2943,
+      "role": "skill-md"
+    },
+    {
+      "skill": "guyin-write",
+      "path": "SKILL.md",
+      "sha256": "1ea354e1970c2af3c0de71543e0d6df28f8ba00221156aded737fc57f0e4cead",
+      "size": 11444,
+      "role": "skill-md"
+    },
+    {
+      "skill": "guyin-write",
+      "path": "cards/README.md",
+      "sha256": "ad05f26eecebd20c2132fc81c935d2dbadc794f9150949ab116a4d3b596b0cb8",
+      "size": 2397,
+      "role": "reference"
+    },
+    {
+      "skill": "guyin-write",
+      "path": "cards/写作卡.md",
+      "sha256": "c8fef3a41a2d5ee6b049c419ab0779723531dea4d2cecd724ccc84fab5f49af0",
+      "size": 1619,
+      "role": "reference"
+    },
+    {
+      "skill": "guyin-write",
+      "path": "cards/分诊卡.md",
+      "sha256": "058b6ff030cd5170946af9468406f752c1d9c1ed8771abb7d6c2b9d8fdf301b0",
+      "size": 1341,
+      "role": "reference"
+    },
+    {
+      "skill": "guyin-write",
+      "path": "cards/发散卡.md",
+      "sha256": "4b83de55339790bcc6f94e6aa97087e4e4663e250e257ebf940affab6432eadf",
+      "size": 1052,
+      "role": "reference"
+    },
+    {
+      "skill": "guyin-write",
+      "path": "cards/摘要卡.md",
+      "sha256": "cdcd660ef1fc54a7ab04a5609da139ebf3ffe785a13761944612092a1e335b98",
+      "size": 1711,
+      "role": "reference"
+    },
+    {
+      "skill": "guyin-write",
+      "path": "cards/改写卡.md",
+      "sha256": "3d0c798aec1053f7de61ab853fe0f2c1905999e47c65f1d794d3e0beb4b94653",
+      "size": 2014,
+      "role": "reference"
+    },
+    {
+      "skill": "guyin-write",
+      "path": "cards/自检卡.md",
+      "sha256": "40935320c0706824da5f38deedff6aa031194fc61f8962742326d029193457e0",
+      "size": 2319,
+      "role": "reference"
+    },
+    {
+      "skill": "guyin-write",
+      "path": "references/consult/INDEX.md",
+      "sha256": "a6abab034f707dd1f41472d41f7a2b92fa1b840925753b3d8bde202656a0dcae",
+      "size": 7021,
+      "role": "reference"
+    },
+    {
+      "skill": "guyin-write",
+      "path": "references/consult/anti-ai-writing.md",
+      "sha256": "358f34b803c7de7e34804313f2120c01334f27d1e0e3d49bd2981db33e1a878e",
+      "size": 37910,
+      "role": "reference"
+    },
+    {
+      "skill": "guyin-write",
+      "path": "references/consult/artifact-protocols.md",
+      "sha256": "12078eac1f80d7bba74ab905fe60d9e66ea1d541a77db802dd6933cc87b8c138",
+      "size": 18068,
+      "role": "reference"
+    },
+    {
+      "skill": "guyin-write",
+      "path": "references/consult/banned-words.md",
+      "sha256": "5db4723131aa9cfdc5d78eace10e25e1de18171ffa3cf5db315e25d5a29ee968",
+      "size": 9836,
+      "role": "reference"
+    },
+    {
+      "skill": "guyin-write",
+      "path": "references/consult/character-basics.md",
+      "sha256": "8640865bf6da15afb6f57313bb8a4fbee4dba292f45b5d359fdb2b5fce9b337b",
+      "size": 17366,
+      "role": "reference"
+    },
+    {
+      "skill": "guyin-write",
+      "path": "references/consult/character-design-methods.md",
+      "sha256": "04cfb6a745d344ca066487abe6f56937e14d415e49843716f0becb6d411c46e8",
+      "size": 18142,
+      "role": "reference"
+    },
+    {
+      "skill": "guyin-write",
+      "path": "references/consult/character-relations.md",
+      "sha256": "05c354cad2c048c105207a622a47bd69e70eff37db37d2394e9a5bce8eb0a5be",
+      "size": 17142,
+      "role": "reference"
+    },
+    {
+      "skill": "guyin-write",
+      "path": "references/consult/commercial-core-methods.md",
+      "sha256": "c03eae6ce4749676abc4134c5694dcfceef7f4c12f7e3ddf9e62b84debfafe4e",
+      "size": 21165,
+      "role": "reference"
+    },
+    {
+      "skill": "guyin-write",
+      "path": "references/consult/cross-book-recall.md",
+      "sha256": "fcf96997813448fd4b38e8642396a8fcaf5d396d50c17889ee7fbdd9ed0e53fc",
+      "size": 6519,
+      "role": "reference"
+    },
+    {
+      "skill": "guyin-write",
+      "path": "references/consult/dialogue-mastery.md",
+      "sha256": "6a9f69691179dcdbc327b12215e4d3bd6204c3af51156943c8b6eae9e23650dc",
+      "size": 11609,
+      "role": "reference"
+    },
+    {
+      "skill": "guyin-write",
+      "path": "references/consult/emotional-arc-design.md",
+      "sha256": "a17e196c39943c0fa74d395d8a3185e37e04817ad7cb1eb0696a13f9c7cc3420",
+      "size": 17073,
+      "role": "reference"
+    },
+    {
+      "skill": "guyin-write",
+      "path": "references/consult/emotional-methods.md",
+      "sha256": "1af03ab254b1f5d949d204f68cbdf5530db2c96963b3651870706fce441916e8",
+      "size": 10417,
+      "role": "reference"
+    },
+    {
+      "skill": "guyin-write",
+      "path": "references/consult/female-audience-writing.md",
+      "sha256": "a8e73d6322fae65a7275e856c38e11c35668ada882ab860f3e236978b0ed4152",
+      "size": 11615,
+      "role": "reference"
+    },
+    {
+      "skill": "guyin-write",
+      "path": "references/consult/format-and-structure.md",
+      "sha256": "003406e186d871b13b42857f8d8e5c3e6a7d8d925ee82c64f6ec627b3325c9b3",
+      "size": 10350,
+      "role": "reference"
+    },
+    {
+      "skill": "guyin-write",
+      "path": "references/consult/genre-catalog.md",
+      "sha256": "9aaf4cb09ee33522858acc79d04ea64c8270ed6a6fba3bb525d055e72c1500cb",
+      "size": 21161,
+      "role": "reference"
+    },
+    {
+      "skill": "guyin-write",
+      "path": "references/consult/genre-core-mechanics.md",
+      "sha256": "18a1a2b689eddb97362d05a5827053e281ec32493647cfbfc4ec354d11ac4767",
+      "size": 17775,
+      "role": "reference"
+    },
+    {
+      "skill": "guyin-write",
+      "path": "references/consult/genre-readers.md",
+      "sha256": "d71b4ae5e028c8ccec8f5ab2cdecfceecd1aaf2f33ab2e55f17d071a9e6b3d66",
+      "size": 11207,
+      "role": "reference"
+    },
+    {
+      "skill": "guyin-write",
+      "path": "references/consult/genre-writing-formulas.md",
+      "sha256": "b29bcf34c4abeca86e59f890e857b68cf2fdd41f6f1150e15213811285fbf09c",
+      "size": 21784,
+      "role": "reference"
+    },
+    {
+      "skill": "guyin-write",
+      "path": "references/consult/hooks-chapter.md",
+      "sha256": "db7ccb7a8364b0ac8e19e6783f1fc5aaa14b1c377c64173580c8a76f5b905c7e",
+      "size": 8857,
+      "role": "reference"
+    },
+    {
+      "skill": "guyin-write",
+      "path": "references/consult/hooks-paragraph.md",
+      "sha256": "2b6987682ad63b858bcc69d2c9846fa05a48f5163d19eb9d2a24812cd9a8eb81",
+      "size": 6994,
+      "role": "reference"
+    },
+    {
+      "skill": "guyin-write",
+      "path": "references/consult/hooks-suspense.md",
+      "sha256": "e80fd4344f906baaa12daf57daeb7d337d6d33aad6656be52e01e98df717c68d",
+      "size": 15660,
+      "role": "reference"
+    },
+    {
+      "skill": "guyin-write",
+      "path": "references/consult/lifecycle-protocols.md",
+      "sha256": "18d27e2683e858adfb83c78721a11cebe3c8867d65c8c6dd580975a1326db061",
+      "size": 6603,
+      "role": "reference"
+    },
+    {
+      "skill": "guyin-write",
+      "path": "references/consult/opening-design.md",
+      "sha256": "a86ae468959358ff27508f22a191a4e8ff37ccfdf61f649d7ec85196a6c5af67",
+      "size": 14127,
+      "role": "reference"
+    },
+    {
+      "skill": "guyin-write",
+      "path": "references/consult/outline-conflict.md",
+      "sha256": "1f91e1b12af630013703e6eab94beb69ec1f89ceac24823d3f902483eeb2d49f",
+      "size": 18144,
+      "role": "reference"
+    },
+    {
+      "skill": "guyin-write",
+      "path": "references/consult/outline-methods.md",
+      "sha256": "e850f76b4d1e925bddefd9286987b24576000c00b9608c73ed533d9655ec1e85",
+      "size": 11162,
+      "role": "reference"
+    },
+    {
+      "skill": "guyin-write",
+      "path": "references/consult/outline-rhythm.md",
+      "sha256": "2d4de913350b3eded3a486606df091e41b3e8a827f4c8907a49e8d17d42581b7",
+      "size": 13267,
+      "role": "reference"
+    },
+    {
+      "skill": "guyin-write",
+      "path": "references/consult/outline-structure-theory.md",
+      "sha256": "a71739ef5ef7256957edde754ffde925e9463e48c5c4c038c42e542f24b37a64",
+      "size": 22875,
+      "role": "reference"
+    },
+    {
+      "skill": "guyin-write",
+      "path": "references/consult/plot-core-methods.md",
+      "sha256": "5b9c80d31351d2eecec8ef92a74a51d28b9d52caddd35c1303bfc3f575fb9232",
+      "size": 20813,
+      "role": "reference"
+    },
+    {
+      "skill": "guyin-write",
+      "path": "references/consult/plot-emotion-system.md",
+      "sha256": "77c25c49b1ab1ffcd9b7ed852419249277994e32b567032fea153daa5251aba5",
+      "size": 16221,
+      "role": "reference"
+    },
+    {
+      "skill": "guyin-write",
+      "path": "references/consult/plot-frameworks.md",
+      "sha256": "137e53acb1309340ebede1ab1ddfc35973d3086100a98c3c848c00b98a042f2c",
+      "size": 28466,
+      "role": "reference"
+    },
+    {
+      "skill": "guyin-write",
+      "path": "references/consult/plot-special-topics.md",
+      "sha256": "239f2223b8de2b283fe08c8357f9c14e0cbf892db8579922597c4a8341caba45",
+      "size": 26166,
+      "role": "reference"
+    },
+    {
+      "skill": "guyin-write",
+      "path": "references/consult/quality-checklist.md",
+      "sha256": "66b8e2bacc83565980bec3b189e23b86ff1b6487278b8e910f4fdd817a55c99e",
+      "size": 9918,
+      "role": "reference"
+    },
+    {
+      "skill": "guyin-write",
+      "path": "references/consult/reader-contract-and-progression.md",
+      "sha256": "dec2bcea2ae6f9cc3a4416f21cecf5f238fa1d8fd002fea86ad7d0f0833d68b8",
+      "size": 11253,
+      "role": "reference"
+    },
+    {
+      "skill": "guyin-write",
+      "path": "references/consult/reversal-toolkit.md",
+      "sha256": "32d494a358c2833f6231a94234fd4ee440dd775ba791da81dad1af6fe52d6db6",
+      "size": 15755,
+      "role": "reference"
+    },
+    {
+      "skill": "guyin-write",
+      "path": "references/consult/state-tracking.md",
+      "sha256": "148561ba196c3d6f67bfd231e42351d6128dd137f6938ac1199d30d095e4dc8e",
+      "size": 4641,
+      "role": "reference"
+    },
+    {
+      "skill": "guyin-write",
+      "path": "references/consult/style-combat-face.md",
+      "sha256": "ca6462bbfb53aeda6332fd5332a74daba3b71c8edef6d126a96ad2061e704a6f",
+      "size": 20466,
+      "role": "reference"
+    },
+    {
+      "skill": "guyin-write",
+      "path": "references/consult/style-craft.md",
+      "sha256": "6954b835f51f3da9e536127d5aa4819f8e43aab8ff7e1da589e56685b437807f",
+      "size": 14243,
+      "role": "reference"
+    },
+    {
+      "skill": "guyin-write",
+      "path": "references/consult/style-genre-modules.md",
+      "sha256": "d348ee781589c3d31324d10a9126dd0acc617abfea9fbb65de1873edf6c86040",
+      "size": 24991,
+      "role": "reference"
+    },
+    {
+      "skill": "guyin-write",
+      "path": "references/consult/tracking-transaction.md",
+      "sha256": "4e2888b26aa966b7ab357e99bfc35476d7cd0bea5bc885f0f2d5348bdd025aaa",
+      "size": 31404,
+      "role": "reference"
+    },
+    {
+      "skill": "guyin-write",
+      "path": "references/consult/workflow-chapter.md",
+      "sha256": "03d18101fe1f6d6e9d6aa62d7171c31a3172af7bff242f0a47419ad7e92f8f6a",
+      "size": 28076,
+      "role": "reference"
+    },
+    {
+      "skill": "guyin-write",
+      "path": "references/consult/workflow-daily.md",
+      "sha256": "a1aeb22b1b1625b5a52a2e33a33183eb1f4e7c4a39efc19aa05e720f41f875d5",
+      "size": 26141,
+      "role": "reference"
+    },
+    {
+      "skill": "guyin-write",
+      "path": "references/consult/workflow-revision.md",
+      "sha256": "e5c33e5d3748818a26e54658aff5de42c1622641d08f64d539d0eeb42cdc8bef",
+      "size": 6551,
+      "role": "reference"
+    },
+    {
+      "skill": "guyin-write",
+      "path": "references/consult/workflow-setup.md",
+      "sha256": "3667472b958376973f885168962edc2790f38cb6621b6220acf6bacd547ca644",
+      "size": 32120,
+      "role": "reference"
+    },
+    {
+      "skill": "guyin-write",
+      "path": "references/consult/writing-craft.md",
+      "sha256": "d038cd3f5b5f61c2d84590ec4f48baad8a8089202f4705f6ff7e714e876d9680",
+      "size": 23287,
+      "role": "reference"
+    },
+    {
+      "skill": "guyin-write",
+      "path": "references/exemplars/README.md",
+      "sha256": "fca1725b59ea41aabbe581848cd93a09b3e3cc675bd153e26629ed24ebad02ec",
+      "size": 7500,
+      "role": "reference"
+    },
+    {
+      "skill": "guyin-write",
+      "path": "references/exemplars/世情生活-受戒.md",
+      "sha256": "65ab3f0fb6c124677397a3b664a076063fa68e677142b5c935c58261d49ae0b8",
+      "size": 4716,
+      "role": "reference"
+    },
+    {
+      "skill": "guyin-write",
+      "path": "references/exemplars/东方仙侠-将夜.md",
+      "sha256": "303e0aed59a41cc3e166f0901ee28f3ee713b3bef72924c7521640d0edf6f872",
+      "size": 4403,
+      "role": "reference"
+    },
+    {
+      "skill": "guyin-write",
+      "path": "references/exemplars/传统玄幻-盘龙.md",
+      "sha256": "85850c29e3f48728e3ee7bc01943c7352410f33557787ac64967eea1dc4ce5c7",
+      "size": 3037,
+      "role": "reference"
+    },
+    {
+      "skill": "guyin-write",
+      "path": "references/exemplars/体感粒度.md",
+      "sha256": "e41486adcc1252b97fadee55aa095cc8c71b7c5e914d725976f47973600d328e",
+      "size": 3041,
+      "role": "reference"
+    },
+    {
+      "skill": "guyin-write",
+      "path": "references/exemplars/历史悬疑.md",
+      "sha256": "1f23df9ecd4db80379aefd0c3fa1fee86369f185e6b7f2ed356b7a71fa84d09e",
+      "size": 6331,
+      "role": "reference"
+    },
+    {
+      "skill": "guyin-write",
+      "path": "references/exemplars/历史脑洞-显微镜下的大明.md",
+      "sha256": "ce6bda1a8e530c3c61cd7cb08a35e03bb65318915ab02498bba8fc01b6d902bf",
+      "size": 5143,
+      "role": "reference"
+    },
+    {
+      "skill": "guyin-write",
+      "path": "references/exemplars/年代市井-大淖记事.md",
+      "sha256": "cd1f1404c5ddc5b5d1e2e04b6c1ee026f0c07652583c169c652c65e82e47aeef",
+      "size": 4903,
+      "role": "reference"
+    },
+    {
+      "skill": "guyin-write",
+      "path": "references/exemplars/悬疑追凶-两京十五日.md",
+      "sha256": "47babb34eb859de6ab1c5d17a2f7b5924e69354d238f38a4399ad7e3a05ebf67",
+      "size": 4599,
+      "role": "reference"
+    },
+    {
+      "skill": "guyin-write",
+      "path": "references/exemplars/架空历史-长安十二时辰.md",
+      "sha256": "4577bccdc12794345a1d17790f7da8fe0fbc05e07b988922cc2bdf7f45600658",
+      "size": 4674,
+      "role": "reference"
+    },
+    {
+      "skill": "guyin-write",
+      "path": "references/exemplars/架空权谋-庆余年.md",
+      "sha256": "56772c178034772dffd46fefa83ebd111a098a3c6947c166bb59e14724ef000d",
+      "size": 4721,
+      "role": "reference"
+    },
+    {
+      "skill": "guyin-write",
+      "path": "references/exemplars/科幻末世-间客.md",
+      "sha256": "fbb1ec61b3f600bd1873674a6ea5e16c8c1a7110bc723dd19fb4dcf63b18c007",
+      "size": 4596,
+      "role": "reference"
+    },
+    {
+      "skill": "guyin-write",
+      "path": "references/exemplars/都市日常-安乐居.md",
+      "sha256": "6064b1e968a0c78d47bde3653f5a2c72585111c1b93f58d3415f3d8165238a10",
+      "size": 4442,
+      "role": "reference"
+    },
+    {
+      "skill": "guyin-write",
+      "path": "references/muse/README.md",
+      "sha256": "0dbbc9e0c5cbf3e734651c3cf3d35e83378db4bdff6b8f3058fe786355692eb2",
+      "size": 348,
+      "role": "reference"
+    },
+    {
+      "skill": "guyin-write",
+      "path": "references/texture/README.md",
+      "sha256": "3e9f321171199f32a017ab1be5847b127abf2e08416d0bdd16a83552dc657442",
+      "size": 273,
+      "role": "reference"
+    },
+    {
+      "skill": "guyin-write",
+      "path": "references/作者性引导.md",
+      "sha256": "238aac1db78e6efbdf879233e20aaa733caf6c93645d7fb55cd63f76a67043d1",
+      "size": 3530,
+      "role": "reference"
+    },
+    {
+      "skill": "guyin-write",
+      "path": "references/候选隔离协议.md",
+      "sha256": "96dd417b528a163e6d3ac8e9f727870efc1db60d9e0b96a934abc82c9f5a99a9",
+      "size": 2877,
+      "role": "reference"
+    },
+    {
+      "skill": "guyin-write",
+      "path": "references/细纲协议.md",
+      "sha256": "21be8fdb9c16fdd56708f93b59f1119803dbcf8f09a2fe769121f8355105fa46",
+      "size": 16568,
+      "role": "reference"
+    },
+    {
+      "skill": "guyin-write",
+      "path": "references/默认叙事风格.md",
+      "sha256": "b2af86428a0357ba1e8d85e52cf53ac974800ca8253d6e863c077ac919f96d81",
+      "size": 17838,
+      "role": "reference"
+    },
+    {
+      "skill": "guyin-write",
+      "path": "scripts/guyin-author-session.py",
+      "sha256": "579fd77d9a222fd536f1a8f8e92e2cb48ec2a03800a527ce5020496325b25124",
+      "size": 52105,
+      "role": "script"
+    },
+    {
+      "skill": "guyin-write",
+      "path": "scripts/guyin-check-ai-patterns.js",
+      "sha256": "6eca63403896d4770ec5ffd4ebc9d65358a2f2e1f4e3b4184507c3d8d877d1b1",
+      "size": 112439,
+      "role": "script"
+    },
+    {
+      "skill": "guyin-write",
+      "path": "scripts/guyin-check-authority-leak.js",
+      "sha256": "1c7be67da5bb442604b9fc56be78886165b3dbfcfa1b4a8a1ee194659609adc9",
+      "size": 20395,
+      "role": "script"
+    },
+    {
+      "skill": "guyin-write",
+      "path": "scripts/guyin-check-beat.js",
+      "sha256": "8a7284d654a0e1264adeea2e19aaf89475f171f983027808f2a795a3adaca5a0",
+      "size": 18248,
+      "role": "script"
+    },
+    {
+      "skill": "guyin-write",
+      "path": "scripts/guyin-check-consistency.js",
+      "sha256": "3b8e53ee773971d7601d4dbc55241009f5e07c39f4cd1918d48c71066632e3a9",
+      "size": 16741,
+      "role": "script"
+    },
+    {
+      "skill": "guyin-write",
+      "path": "scripts/guyin-check-degeneration.js",
+      "sha256": "3df7d8d1ad3e6c4370ae49d550b5733b0167d018168c69e66e8d2541f92bcca9",
+      "size": 14788,
+      "role": "script"
+    },
+    {
+      "skill": "guyin-write",
+      "path": "scripts/guyin-check-flesh.js",
+      "sha256": "494aa241839b1843584fda7904f217ea122fa7b9603f042e30e0027d0238d842",
+      "size": 18716,
+      "role": "script"
+    },
+    {
+      "skill": "guyin-write",
+      "path": "scripts/guyin-check-foreshadow-id.js",
+      "sha256": "0fb03d8798c59b9b01e00911404c15e490036a3209f3723303e07d26439374b6",
+      "size": 13590,
+      "role": "script"
+    },
+    {
+      "skill": "guyin-write",
+      "path": "scripts/guyin-check-hook-rotation.js",
+      "sha256": "a9b296d6e4a8e60be653256e9fa5ebf1a5dd8a437883b153a3a61958a35f8c25",
+      "size": 11999,
+      "role": "script"
+    },
+    {
+      "skill": "guyin-write",
+      "path": "scripts/guyin-check-integrity.js",
+      "sha256": "7989df07eafbcf030b153065221e8c7260cb55b43ec66cd60606cf9903fdc6a8",
+      "size": 12807,
+      "role": "script"
+    },
+    {
+      "skill": "guyin-write",
+      "path": "scripts/guyin-check-narrative-asset.js",
+      "sha256": "ead9047cbff06991bc78e4298c1b2319ed96d5724af4bf63a162903bf11d32b7",
+      "size": 9081,
+      "role": "script"
+    },
+    {
+      "skill": "guyin-write",
+      "path": "scripts/guyin-check-opening-retention.js",
+      "sha256": "11239ca432c4204786002c4131c69dd132071e2fad21269846159ee11a2e5db9",
+      "size": 8894,
+      "role": "script"
+    },
+    {
+      "skill": "guyin-write",
+      "path": "scripts/guyin-check-outline-copy.js",
+      "sha256": "54e6ada168258cdaa649cec46ab611914b5a7cf04db0cb541358a08fcd909652",
+      "size": 15772,
+      "role": "script"
+    },
+    {
+      "skill": "guyin-write",
+      "path": "scripts/guyin-check-outline-deliver.js",
+      "sha256": "0f44fd26b2a333d0ba7c14c157140b404410fe1ddf1b2904040bc05356a08856",
+      "size": 20460,
+      "role": "script"
+    },
+    {
+      "skill": "guyin-write",
+      "path": "scripts/guyin-check-outline-slots.js",
+      "sha256": "84fe694d9877ac63fc92010e6ed65b36acfae4b2d9148d59d503f14ad8df0b15",
+      "size": 20699,
+      "role": "script"
+    },
+    {
+      "skill": "guyin-write",
+      "path": "scripts/guyin-check-outline-verdict.js",
+      "sha256": "684e1701eba3870c2046d68f4f3b0ac83bfa679050213dbbc59408643bde98eb",
+      "size": 18735,
+      "role": "script"
+    },
+    {
+      "skill": "guyin-write",
+      "path": "scripts/guyin-check-pending.js",
+      "sha256": "cefa0422674e6bd278be1f02c609e692cc661f4d9e9595481ab6794bab5eafb4",
+      "size": 16325,
+      "role": "script"
+    },
+    {
+      "skill": "guyin-write",
+      "path": "scripts/guyin-check-pitch.js",
+      "sha256": "fc4bcff80be216ba915f34af54da4b12527b175b13341c568d1906c5f7157c71",
+      "size": 10671,
+      "role": "script"
+    },
+    {
+      "skill": "guyin-write",
+      "path": "scripts/guyin-check-reader-signal.js",
+      "sha256": "c9da30e7e5d2b305330653ff67afc187fcc0cd04b354496bb3c794fb30d616a9",
+      "size": 8538,
+      "role": "script"
+    },
+    {
+      "skill": "guyin-write",
+      "path": "scripts/guyin-check-repetition.js",
+      "sha256": "983e90e1aa681802177c27301f6826d46fc85b214c6e3abc3ff976f354898942",
+      "size": 55842,
+      "role": "script"
+    },
+    {
+      "skill": "guyin-write",
+      "path": "scripts/guyin-check-rule-conflict.js",
+      "sha256": "a1885a6c4b116531115a29b77678a0ae06dbdf12ee1ddd36b51f5dff8f5fdde3",
+      "size": 6102,
+      "role": "script"
+    },
+    {
+      "skill": "guyin-write",
+      "path": "scripts/guyin-check-strip.js",
+      "sha256": "8e0a0f62c48a7da5e45a262805015b84d722d5e5918a2a4fde268c7b04310f3b",
+      "size": 8676,
+      "role": "script"
+    },
+    {
+      "skill": "guyin-write",
+      "path": "scripts/guyin-check-trial-gate.js",
+      "sha256": "ce8145125763c877b8855d0a432208a68f907c432b4e8aac406a363ac887a556",
+      "size": 35050,
+      "role": "script"
+    },
+    {
+      "skill": "guyin-write",
+      "path": "scripts/guyin-check-wordcount.js",
+      "sha256": "fbe174545a1e236b823b6f3f63cd8d55325741f25252c3c334d61ad4d634e064",
+      "size": 13115,
+      "role": "script"
+    },
+    {
+      "skill": "guyin-write",
+      "path": "scripts/guyin-impact-map.js",
+      "sha256": "409cb7eb2cce0b2fa4f4abf94fd4e79b0026baf98057c30c6a582bb751441980",
+      "size": 10702,
+      "role": "script"
+    },
+    {
+      "skill": "guyin-write",
+      "path": "scripts/guyin-normalize-punctuation.js",
+      "sha256": "278e2bbebf7a0f458f1140e852f239c76a0e663a81acdc826852518f570af380",
+      "size": 17021,
+      "role": "script"
+    },
+    {
+      "skill": "guyin-write",
+      "path": "scripts/guyin-tracking-commit.py",
+      "sha256": "9fe9c10ec404b6ddc97d74c3753b15a8128342ac1551576eb3ae69b0660977da",
+      "size": 178455,
+      "role": "script"
+    },
+    {
+      "skill": "guyin-write",
+      "path": "scripts/lib/guyin-candidate-context.js",
+      "sha256": "761e62dd976794ee1b81d13c62a8239739eb8d41988e80781d7cca6c2cdc6ff9",
+      "size": 24865,
+      "role": "lib"
+    },
+    {
+      "skill": "guyin-write",
+      "path": "scripts/lib/guyin-handling.js",
+      "sha256": "4fc06cc73aa33c7372da30096758a4be3aea08e26010b71a92a8b49d331227ff",
+      "size": 14704,
+      "role": "lib"
+    },
+    {
+      "skill": "guyin-short-write",
+      "path": "SKILL.md",
+      "sha256": "0fe3a358b7368d196abfd5cc2c415d30b3a549b53b4772ceab74183231f534c8",
+      "size": 5270,
+      "role": "skill-md"
+    },
+    {
+      "skill": "guyin-analyze",
+      "path": "SKILL.md",
+      "sha256": "74b19f63423174688c89ce42265b243cb672b66f1753acd11639f6c75eafb028",
+      "size": 3997,
+      "role": "skill-md"
+    },
+    {
+      "skill": "guyin-short-analyze",
+      "path": "SKILL.md",
+      "sha256": "d8403a446fac5d8efeba9fae22b614b30385f0805f41e33b68c1db8ec5ca32ab",
+      "size": 2861,
+      "role": "skill-md"
+    },
+    {
+      "skill": "guyin-review",
+      "path": "SKILL.md",
+      "sha256": "cab5293132396336f9e603baec6f8248732049efc37ac0d8420c33977b3129d7",
+      "size": 5885,
+      "role": "skill-md"
+    },
+    {
+      "skill": "guyin-deslop",
+      "path": "SKILL.md",
+      "sha256": "7ee05e01f80ffae0bdc89aa29b7bc7cf937bdecec25836964c7e49f7fb00da84",
+      "size": 3284,
+      "role": "skill-md"
+    },
+    {
+      "skill": "guyin-pitch",
+      "path": "SKILL.md",
+      "sha256": "89c3f97294e86f22816cd45a3c7413f91ec8e94dcb4c83ad143a8c559d61bc55",
+      "size": 4464,
+      "role": "skill-md"
+    },
+    {
+      "skill": "guyin-setup",
+      "path": "SKILL.md",
+      "sha256": "814d3976a1ef431e0aadd49c1607bdd430dad4d2f25ba10c753d4a0221471aec",
+      "size": 11359,
+      "role": "skill-md"
+    },
+    {
+      "skill": "guyin-setup",
+      "path": "legacy/agents-v0.8/canonical/guyin-beat-writer.md",
+      "sha256": "36a2ecd89be872b614be29c3610a00308bac65c4920c23e700b6f86cabc916c0",
+      "size": 1303,
+      "role": "legacy"
+    },
+    {
+      "skill": "guyin-setup",
+      "path": "legacy/agents-v0.8/canonical/guyin-checker.md",
+      "sha256": "de146df362e1348e70f2969a2432dc60ad4700596262212f943b934b5875cd36",
+      "size": 1076,
+      "role": "legacy"
+    },
+    {
+      "skill": "guyin-setup",
+      "path": "legacy/agents-v0.8/claude/guyin-beat-writer.md",
+      "sha256": "154ff940bcf4c584d4c143f7f2d94504b753879064939169e3f51134d07c08ea",
+      "size": 1583,
+      "role": "legacy"
+    },
+    {
+      "skill": "guyin-setup",
+      "path": "legacy/agents-v0.8/claude/guyin-checker.md",
+      "sha256": "3a0d29cea6554a3210a7e17411606a31e263592a89bd7a175fec9601e38a8d62",
+      "size": 1238,
+      "role": "legacy"
+    },
+    {
+      "skill": "guyin-setup",
+      "path": "legacy/agents-v0.8/codex/guyin-beat-writer.toml",
+      "sha256": "27282f8e3ee4e0d137789ebd22ed469ae181dd04e03d70f73e5dd13963fbe8cf",
+      "size": 2372,
+      "role": "legacy"
+    },
+    {
+      "skill": "guyin-setup",
+      "path": "legacy/agents-v0.8/codex/guyin-checker.toml",
+      "sha256": "e74da3f9edb645b6ad30e43da71a90367980b1e3864719c3cd027c85ccd6b7c0",
+      "size": 1612,
+      "role": "legacy"
+    },
+    {
+      "skill": "guyin-setup",
+      "path": "legacy/agents-v0.8/opencode/guyin-beat-writer.md",
+      "sha256": "023bd86e24e3b7efd23b9fb6c1c97f45974194e4e05c2500919c53b6eb79eff6",
+      "size": 1560,
+      "role": "legacy"
+    },
+    {
+      "skill": "guyin-setup",
+      "path": "legacy/agents-v0.8/opencode/guyin-checker.md",
+      "sha256": "168796328996cdc02a65ca3c18e14724a3c3ea2c496dbfe6f6e43d771a92a785",
+      "size": 1252,
+      "role": "legacy"
+    },
+    {
+      "skill": "guyin-setup",
+      "path": "scripts/guyin-check-package.js",
+      "sha256": "e953050a9084c22fd9577b602e03512249df96bbb1e43ef1bc1c73843e634263",
+      "size": 9468,
+      "role": "script"
+    },
+    {
+      "skill": "guyin-setup",
+      "path": "scripts/guyin-deploy.js",
+      "sha256": "97f6ef4e299f52526fb4f419bc4c429375b22329c82728c14fe07c59aff10244",
+      "size": 15621,
+      "role": "script"
+    },
+    {
+      "skill": "guyin-setup",
+      "path": "scripts/merge-claude-settings.js",
+      "sha256": "c1df1a5cef6404ae73722472e85858e4e44b444f1d55e11b7c79caa34bb7333a",
+      "size": 5351,
+      "role": "script"
+    },
+    {
+      "skill": "guyin-setup",
+      "path": "templates/long/.claude/hooks/guyin-hook.js",
+      "sha256": "87307f2b88572b8f30c66c6273650e60f0e7a3207412a033d9f6efe5ef9f2f55",
+      "size": 29314,
+      "role": "template"
+    },
+    {
+      "skill": "guyin-setup",
+      "path": "templates/long/.claude/settings.json",
+      "sha256": "09494174c3cfd6d5211489ac3b18cab0a0bfd937e78a88e964974d84353810df",
+      "size": 1193,
+      "role": "template"
+    },
+    {
+      "skill": "guyin-setup",
+      "path": "templates/long/.opencode/commands/guyin.md",
+      "sha256": "1c2974f1b7bcedabf7a7e7a65c74375cf371cfd373b6e06cee416db28922cff2",
+      "size": 389,
+      "role": "template"
+    },
+    {
+      "skill": "guyin-setup",
+      "path": "templates/long/AGENTS.md",
+      "sha256": "ce3d88da114a2751e439b34256d1b5a28d9152df4952e34fe69ee648bd02f85d",
+      "size": 3488,
+      "role": "template"
+    },
+    {
+      "skill": "guyin-setup",
+      "path": "templates/long/README.md",
+      "sha256": "7034b45ba799b228b98b8b232f48d566951614fec6c783c3245a72a4a5e189e9",
+      "size": 6879,
+      "role": "template"
+    },
+    {
+      "skill": "guyin-setup",
+      "path": "templates/long/作者性/偏执点.md",
+      "sha256": "219901262fcf732091389274ebb7e5f39edd026fdd9ec124154aacc1f88c828a",
+      "size": 727,
+      "role": "template"
+    },
+    {
+      "skill": "guyin-setup",
+      "path": "templates/long/作者性/参考-气质谱系.md",
+      "sha256": "e0a9723229480d94565f2b3e96e598e9b852687eeb3e037f3a04f5d12255e247",
+      "size": 2863,
+      "role": "template"
+    },
+    {
+      "skill": "guyin-setup",
+      "path": "templates/long/作者性/口述定稿单.md",
+      "sha256": "40d5ee50fe607d8adf85090d83fa26baaa8ef50a0a028f33abec6d0b0b3f49cd",
+      "size": 1423,
+      "role": "template"
+    },
+    {
+      "skill": "guyin-setup",
+      "path": "templates/long/作者性/指纹.md",
+      "sha256": "c4ddcca6b5ffd10f39296eb2ec85b4d8c1adc806adb0a05ed65918071b6f001e",
+      "size": 916,
+      "role": "template"
+    },
+    {
+      "skill": "guyin-setup",
+      "path": "templates/long/作者性/气卡.md",
+      "sha256": "905e01d68701e74d679002f0aa884ccd9046a2f75191c67a6eaca7df3ac582ae",
+      "size": 1300,
+      "role": "template"
+    },
+    {
+      "skill": "guyin-setup",
+      "path": "templates/long/作者性/粒度配置.md",
+      "sha256": "ce2fe76933ca91d4f2d9fa53f1d0bfa9a41562c8054570cef0bc5f6c1db04683",
+      "size": 1522,
+      "role": "template"
+    },
+    {
+      "skill": "guyin-setup",
+      "path": "templates/long/作者性/纪律冲突台账.md",
+      "sha256": "e1e5ca1a23c91e6eb0e53dab3196da3dd38d5e287b9a3f7b839cda8d77de4155",
+      "size": 1169,
+      "role": "template"
+    },
+    {
+      "skill": "guyin-setup",
+      "path": "templates/long/作者性/语言纪律.md",
+      "sha256": "6ef88cf4feba847017f63230fa9e17053aa2fc394486de076c2e400b76c26bef",
+      "size": 2302,
+      "role": "template"
+    },
+    {
+      "skill": "guyin-setup",
+      "path": "templates/long/作者性/魂档案.md",
+      "sha256": "9a79511b7ab8c21c8a465505e98006f507493711624064578c4fd755ec20370b",
+      "size": 1042,
+      "role": "template"
+    },
+    {
+      "skill": "guyin-setup",
+      "path": "templates/long/大纲/README.md",
+      "sha256": "2121e181563f39c1a4daad4e138b8a9511678adc6e345e2c5d137d54568d9ab3",
+      "size": 5656,
+      "role": "template"
+    },
+    {
+      "skill": "guyin-setup",
+      "path": "templates/long/大纲/执行层一页纸.md",
+      "sha256": "77a8e22586af4e4e1c5d74d4a25b86a63319c98ebed713426940cf32bfbd337b",
+      "size": 2358,
+      "role": "template"
+    },
+    {
+      "skill": "guyin-setup",
+      "path": "templates/long/大纲/批次公约.md",
+      "sha256": "1b089b43d0c27d014595db2bd4a917f7c23d7b9a9042171d6a56cba252942b23",
+      "size": 2791,
+      "role": "template"
+    },
+    {
+      "skill": "guyin-setup",
+      "path": "templates/long/大纲/魂谱对表.md",
+      "sha256": "eca7c70f17828be13855c4459019285a7754ff5e5730d05abded7c59a38a1756",
+      "size": 1835,
+      "role": "template"
+    },
+    {
+      "skill": "guyin-setup",
+      "path": "templates/long/正文/README.md",
+      "sha256": "4c05ada059642db1f4978ea5bd74d3b43e06b7239fb3a6dc2a44853a6ee1b702",
+      "size": 154,
+      "role": "template"
+    },
+    {
+      "skill": "guyin-setup",
+      "path": "templates/long/灵感池/README.md",
+      "sha256": "316e666f54bdf0042052f88343f8f2ed69234d73b888abd740cb5ed0a2a74bf8",
+      "size": 1200,
+      "role": "template"
+    },
+    {
+      "skill": "guyin-setup",
+      "path": "templates/long/设定/世界观/README.md",
+      "sha256": "86fc0dca4f9aac14c3ad9397a064b6911d1c228063dfc12119957e62acc47ea0",
+      "size": 139,
+      "role": "template"
+    },
+    {
+      "skill": "guyin-setup",
+      "path": "templates/long/设定/角色/README.md",
+      "sha256": "c710b28a4a27a3e3988bdcc1dd178013d8bdc1eefaba7af34e42d72a7c4bbbd7",
+      "size": 839,
+      "role": "template"
+    },
+    {
+      "skill": "guyin-setup",
+      "path": "templates/long/设定/题材定位.md",
+      "sha256": "a4fb30885504f71c9795c36e46871cb9543830974eaca5924d83cd1c94e527f1",
+      "size": 5828,
+      "role": "template"
+    },
+    {
+      "skill": "guyin-setup",
+      "path": "templates/long/追踪/_tracking-state.json",
+      "sha256": "38f1135f4629e4cbb528ff86d1e107957237060d5464f88efa419199f7523528",
+      "size": 647,
+      "role": "template"
+    },
+    {
+      "skill": "guyin-setup",
+      "path": "templates/long/追踪/上下文.md",
+      "sha256": "5622848ed6613199decac22dd0b5f8056a3357b5818ee5cf13ddeadd563d386f",
+      "size": 460,
+      "role": "template"
+    },
+    {
+      "skill": "guyin-setup",
+      "path": "templates/long/追踪/事件定性资产.md",
+      "sha256": "e0fe0b25ea817e1c76f2cc2198de90e0a8ce7fe1b8b3ef69be130da78d23e8b8",
+      "size": 451,
+      "role": "template"
+    },
+    {
+      "skill": "guyin-setup",
+      "path": "templates/long/追踪/伏笔.md",
+      "sha256": "fd368ea88c6ff7e22614e7a337b700d3254a5a0567505be35965200165ed4f62",
+      "size": 262,
+      "role": "template"
+    },
+    {
+      "skill": "guyin-setup",
+      "path": "templates/long/追踪/地理台账.md",
+      "sha256": "e4b0d1093bdc2e90660b4f246305498a7dab6a85a8703ee2cd102857c8ebebaa",
+      "size": 440,
+      "role": "template"
+    },
+    {
+      "skill": "guyin-setup",
+      "path": "templates/long/追踪/场景台账.md",
+      "sha256": "b6e54fc4687d51f8910807be7bcbd53d4de1749bc4b25cbc2a5b844b9cca4500",
+      "size": 448,
+      "role": "template"
+    },
+    {
+      "skill": "guyin-setup",
+      "path": "templates/long/追踪/复沓锚句.md",
+      "sha256": "67c2b8417840d179bf8c91ad3c54448c5879d027a81958f0592832f566f1d878",
+      "size": 1480,
+      "role": "template"
+    },
+    {
+      "skill": "guyin-setup",
+      "path": "templates/long/追踪/契约对账矩阵.md",
+      "sha256": "03f41a6679292b6c52708346f07c31ab24a5f174531d278b262e7b385a5cae6c",
+      "size": 1678,
+      "role": "template"
+    },
+    {
+      "skill": "guyin-setup",
+      "path": "templates/long/追踪/待审台账.md",
+      "sha256": "91d66e946967021c2b9c6d79d8c88d7de079f161a98483be795b4674472ac1b3",
+      "size": 3052,
+      "role": "template"
+    },
+    {
+      "skill": "guyin-setup",
+      "path": "templates/long/追踪/时间线/README.md",
+      "sha256": "7ccce10f2b4bd8cdbafa8069c612b68447dcf027d0f691101548dcee214f9da0",
+      "size": 111,
+      "role": "template"
+    },
+    {
+      "skill": "guyin-setup",
+      "path": "templates/long/追踪/时间线/作者真相.md",
+      "sha256": "ca8f52f0230588c354e6bf9cc016f845ceebf216fb2bdafb741baa40f67ece08",
+      "size": 276,
+      "role": "template"
+    },
+    {
+      "skill": "guyin-setup",
+      "path": "templates/long/追踪/时间线/读者已知.md",
+      "sha256": "7ecaf4c2f238d1ecfb33c861d60b7c617773fa2847d8331c1c85ad991b8cd3b3",
+      "size": 214,
+      "role": "template"
+    },
+    {
+      "skill": "guyin-setup",
+      "path": "templates/long/追踪/灵感台账.md",
+      "sha256": "1b1babde083e9fd9de3ae63f8b3616abd714d31ba895b9f161ee7e765a0662d0",
+      "size": 1339,
+      "role": "template"
+    },
+    {
+      "skill": "guyin-setup",
+      "path": "templates/long/追踪/物证台账.md",
+      "sha256": "f00f4101f9c6960053d964cfbac07d5394c42dfc3bf6a6f56fd2929367faa3c2",
+      "size": 408,
+      "role": "template"
+    },
+    {
+      "skill": "guyin-setup",
+      "path": "templates/long/追踪/短语黑名单.md",
+      "sha256": "ccd552132c337295ee78a13f752406b0fe294e3371380107b497c909048079eb",
+      "size": 1845,
+      "role": "template"
+    },
+    {
+      "skill": "guyin-setup",
+      "path": "templates/long/追踪/章节金字塔.md",
+      "sha256": "e421df1cd5a5b5008db0511f944d1b96bc8089ba6b7304b614ad2fd2c11effba",
+      "size": 222,
+      "role": "template"
+    },
+    {
+      "skill": "guyin-setup",
+      "path": "templates/long/追踪/读者信号.md",
+      "sha256": "dd958f8d299ae3218471180b102d9aa514d8b00f006f2f7799097c1f1fa57463",
+      "size": 4354,
+      "role": "template"
+    },
+    {
+      "skill": "guyin-setup",
+      "path": "templates/long/追踪/豁免台账.md",
+      "sha256": "4ba97ba2d3974d70acf4feefb65feff06b27c0e487afeeb2973724bb293ea79b",
+      "size": 1343,
+      "role": "template"
+    },
+    {
+      "skill": "guyin-setup",
+      "path": "templates/short/大纲/反转表.md",
+      "sha256": "ad4e30d13d0bc346b6b218e803ba0894b728515606b1f1649e14c3e4b5efa77e",
+      "size": 818,
+      "role": "template"
+    },
+    {
+      "skill": "guyin-setup",
+      "path": "templates/short/大纲/情绪曲线.md",
+      "sha256": "d3a416e572cf96ccb004715a93d00bcef676845ce01fe1afd0a58978088e57e9",
+      "size": 843,
+      "role": "template"
+    },
+    {
+      "skill": "guyin-setup",
+      "path": "templates/short/大纲/情节节点.md",
+      "sha256": "01143e5536791153ddc04979e7d957b56112f800f9e81bbea568c0232f27ecc3",
+      "size": 815,
+      "role": "template"
+    }
+  ]
+}

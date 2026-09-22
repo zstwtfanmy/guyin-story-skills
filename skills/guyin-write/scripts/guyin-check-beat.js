@@ -15,7 +15,8 @@
 //   ② 禁止项检测：--ban 列表的关键词零出现
 //   ③ 跳写检测：括号省略（未完成输出）blocking；时间压缩词 advisory
 //   ④ 连续对话检测：连续 ≥4 行纯对白（叙述余量 ≤4 字）advisory
-//   ⑤ 心理词频计数：引号外心理/情绪词命中数，advisory
+//   ⑤ 心理词频计数：引号外内心动作词（心想/思忖…）命中数，advisory——不抑制内心戏
+//   ⑥ 情绪告知计数：引号外情绪直名词（愤怒/恐惧…）命中数，advisory（show-don't-tell 提示）
 //
 // v3-A1 误报修复（docs/框架整改任务书 §4 A1）：
 //   - 时间概述词（不多时/一番…之后等）不再判 blocking——合法概述与跳过必须展示
@@ -45,8 +46,12 @@ card sink-down; beat is a rhythm label only — no wordcount buckets):
                        概述与漏写须语义区分，脚本只报观测值）
   ④ dialogue-run      (editorial): 连续 ≥4 行纯对白（剥引号后叙述余量 ≤4 字；
                        同行含动作的行不计入，不声称「无动作」）
-  ⑤ mono-count        (editorial): 引号外心理/情绪词命中数超 --mono-limit（词频
-                       观测，非独白句数；知道/明白/清楚等认知半句不计数，Fw-05）
+  ⑤ mono-count        (editorial): 引号外内心动作词（心想/思忖/觉得…）命中数超
+                       --mono-limit（词频观测，非独白句数；知道/明白/清楚等认知
+                       半句不计数，Fw-05）——不抑制持续的、个性化的内心段落
+  ⑥ emotion-tell      (editorial): 引号外情绪直名词（愤怒/恐惧/绝望…）命中数超
+                       --mono-limit（直接命名情绪＝告知而非展示；情绪峰值处
+                       直陈可成立，须结合上下文）
 
 Wordcount checks abolished (任务书 §2.2): beat-too-short / beat-too-long 与
 --min/--max 已删除——beat 只是节奏标签，正文长度权威归章级 wordcount；
@@ -82,9 +87,12 @@ const SKIP_WRITE_TIME_COMPRESS = [
 // 只在引号外（stripQuoted 后的叙述行）匹配；对话内的「想」「觉得」是角色台词不算。
 // SP2（docs/11 §一）：前后字符类加 "——直引号对白外判定同样生效。
 // Fw-05（docs/12）拆分：「知道／明白／清楚／疑惑／纳闷」是限知视角的合法认知半句
-//（"他知道这病几年后会要他爸的命"是信息差叙事，不是心理独白），移出计数表；
-// 只保留内心独白标记（心想/暗道/思忖…）与情绪告知词（直接命名情绪=告知而非展示）。
-const PSYCH_VERBS = /(?<!["「」『』“”‘’《》])(心想(?:道)?|心道|暗道|暗想|暗忖|思忖|寻思|盘算|琢磨|觉得|暗自|内心|心底|心中|愤怒|暴怒|恼怒|惊怒|悲愤|震怒|狂喜|恐惧|惊恐|惊惧|惶恐|绝望|崩溃)(?!["「」『』“”‘’《》])/g;
+//（"他知道这病几年后会要他爸的命"是信息差叙事，不是心理独白），移出计数表。
+// P3.2（docs/P3.2样稿诊断 B3）再拆分：内心动作词与情绪直名词分开计数——
+// 心想/思忖等是合法叙述工具，持续的、个性化的内心段落不因本项被抑制；
+// 愤怒/恐惧等直接命名情绪＝告知而非展示，保留 show-don't-tell 提示。两表各自 advisory。
+const PSYCH_VERBS = /(?<!["「」『』“”‘’《》])(心想(?:道)?|心道|暗道|暗想|暗忖|思忖|寻思|盘算|琢磨|觉得|暗自|内心|心底|心中)(?!["「」『』“”‘’《》])/g;
+const EMOTION_LABELS = /(?<!["「」『』“”‘’《》])(愤怒|暴怒|恼怒|惊怒|悲愤|震怒|狂喜|恐惧|惊恐|惊惧|惶恐|绝望|崩溃)(?!["「」『』“”‘’《》])/g;
 
 // ---- 对话行判定（含中文引号/书名号包裹的行视为对话行）----
 // SP2（docs/11 §一）：字符类加 "——直引号对白行同样判对话行（dialogue-run 检测覆盖）。
@@ -298,16 +306,26 @@ for (const { trimmed, lineNo } of content) {
 }
 reportDialogueRun(); // 文件末尾收尾
 
-// ---- ⑤ 心理词频计数（mono-count，advisory，半自动）----
-// 只数引号外叙述行中的心理/情绪词命中次数——词频观测，非独白句数（v3-A1）。
+// ---- ⑤⑥ 心理/情绪词频计数（mono-count / emotion-tell，advisory，半自动）----
+// 内心动作词（心想/思忖…）与情绪直名词（愤怒/恐惧…）分开计数（P3.2 拆分）：
+// 内心动作词是合法叙述工具——只报观测值，不抑制持续的、个性化的内心段落；
+// 情绪直名词是 show-don't-tell 提示——多数场合用身体动作/环境/言行带出，
+// 但情绪峰值处的直陈也可能成立，都须结合上下文判断，不因词频本身定罪。
 let monoCount = 0;
+let emotionCount = 0;
 const monoLines = [];
+const emotionLines = [];
 for (const { text, trimmed, lineNo } of content) {
   const stripped = stripQuoted(trimmed);
-  const matches = stripped.match(PSYCH_VERBS);
-  if (matches) {
-    monoCount += matches.length;
-    if (matches.length > 0) monoLines.push(lineNo);
+  const m = stripped.match(PSYCH_VERBS);
+  if (m) {
+    monoCount += m.length;
+    monoLines.push(lineNo);
+  }
+  const e = stripped.match(EMOTION_LABELS);
+  if (e) {
+    emotionCount += e.length;
+    emotionLines.push(lineNo);
   }
 }
 if (monoCount > options.monoLimit) {
@@ -318,7 +336,20 @@ if (monoCount > options.monoLimit) {
     severity: 'advisory',
     count: monoCount,
     limit: options.monoLimit,
-    message: `引号外心理/情绪词命中 ${monoCount} 处（观测值，非独白句数；对话内心理词不算）——是否过多需结合上下文判断：限知视角的心理活动、情绪峰值处的直陈都可能成立；确属堆砌再进改写，不因词频本身定罪`,
+    message: `引号外内心动作词（心想/思忖/觉得等）命中 ${monoCount} 处（观测值，非独白句数；对话内不计）——持续、个性化的内心段落是合法写法，本项不抑制内心戏；是否堆砌须结合上下文判断，确属堆砌再进改写`,
+    excerpt: '',
+    checkId: 'Q3',
+  });
+}
+if (emotionCount > options.monoLimit) {
+  findings.push({
+    line: emotionLines[0] || 1,
+    column: 1,
+    type: 'emotion-tell',
+    severity: 'advisory',
+    count: emotionCount,
+    limit: options.monoLimit,
+    message: `引号外情绪直名词（愤怒/恐惧/绝望等）命中 ${emotionCount} 处（观测值；对话内不计）——直接命名情绪＝告知而非展示，多数场合改用身体动作/环境/言行带出；情绪峰值处的直陈可以成立，结合上下文判断`,
     excerpt: '',
     checkId: 'Q3',
   });
@@ -337,6 +368,7 @@ if (options.json) {
   const scriptChecks = findings.map((f) => f.checkId);
   process.stdout.write(`${JSON.stringify({
     findings,
+    files_scanned: [require('path').resolve(options.file)],
     summary: {
       scriptHandled: [...new Set(scriptChecks)],
       semanticReview: 'full-chapter-read (drafted review.md)',

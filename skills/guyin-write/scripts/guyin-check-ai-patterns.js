@@ -304,8 +304,13 @@ const options = {
   json: false,
   files: [],
   failOn: 'block',
+  // B-4 候选链显式上下文：深层候选（.guyin/work/…/drafts/v*.md）无章号文件名，
+  // 跨章窗口/状态/公约/锚点必须按显式书根与章号读真实来源，不从草稿路径瞎猜。
+  project: null,
+  chapter: null,
 };
 
+function consumeValue(i) { return i + 1; }
 for (let i = 2; i < process.argv.length; i += 1) {
   const arg = process.argv[i];
   if (arg === '--check') {
@@ -318,6 +323,16 @@ for (let i = 2; i < process.argv.length; i += 1) {
     } catch (e) {
       die(e.message);
     }
+  } else if (arg === '--project') {
+    options.project = path.resolve(process.argv[i + 1]); i = consumeValue(i);
+  } else if (arg.startsWith('--project=')) {
+    options.project = path.resolve(arg.slice('--project='.length));
+  } else if (arg === '--chapter' || arg === '--unit') {
+    options.chapter = Number(process.argv[i + 1]); i = consumeValue(i);
+  } else if (arg.startsWith('--chapter=')) {
+    options.chapter = Number(arg.slice('--chapter='.length));
+  } else if (['--boundary', '--state', '--transaction', '--outline', '--title'].includes(arg)) {
+    i += 1; // 候选链统一参数：本脚本不直接消费，吃掉值避免 Unknown
   } else if (arg === '-h' || arg === '--help') {
     process.stdout.write(`${USAGE}\n`);
     process.exit(0);
@@ -327,6 +342,7 @@ for (let i = 2; i < process.argv.length; i += 1) {
     options.files.push(arg);
   }
 }
+if (options.chapter !== null && !Number.isInteger(options.chapter)) die('--chapter 必须是整数');
 
 if (options.files.length === 0) {
   die('No files provided');
@@ -403,7 +419,19 @@ try {
 }
 
 if (options.json) {
-  process.stdout.write(`${JSON.stringify({ findings: allFindings }, null, 2)}\n`);
+  // G-5：报告自带真实扫描证据——目标文件逐个列出（读失败的不计入），汇总器不得入口预填。
+  const scanned = [];
+  for (const f of options.files) {
+    const abs = path.resolve(f);
+    if (fs.existsSync(abs) && fs.statSync(abs).isFile()) {
+      scanned.push(options.project ? path.relative(options.project, abs).replace(/\\/g, '/') : f);
+    }
+  }
+  process.stdout.write(`${JSON.stringify({
+    findings: allFindings,
+    files_scanned: scanned,
+    target_files: scanned,
+  }, null, 2)}\n`);
 } else {
   for (const finding of allFindings) {
     console.log(`${finding.file}:${finding.line}:${finding.column}: [${handling.label(finding)}] ${finding.type}: ${finding.message} (${finding.excerpt})`);
@@ -1738,9 +1766,33 @@ function parseChapterNumber(basename) {
 }
 
 
+// B-4：深层候选（.guyin/work/…/drafts/v*.md）无章号文件名——显式 --chapter 兜底；
+// 定位项目内参考文件（正文/追踪/大纲）时优先 --project 书根，避免从草稿目录向上瞎找。
+function effectiveChapter(basename) {
+  return parseChapterNumber(basename) ?? (options.chapter !== null ? options.chapter : null);
+}
+
+function locateProjectFile(file, relParts) {
+  if (options.project) {
+    const p = path.join(options.project, ...relParts);
+    return fs.existsSync(p) ? p : null;
+  }
+  let cur = path.dirname(path.resolve(file));
+  for (let depth = 0; depth < 4; depth += 1) {
+    const candidate = path.join(cur, ...relParts);
+    if (fs.existsSync(candidate)) return candidate;
+    const parent = path.dirname(cur);
+    if (parent === cur) break;
+    cur = parent;
+  }
+  return null;
+}
+
+
 // 同目录章文件映射（章号 → 文件名，首个命中优先）。窗口/相邻档的供给源。
 function listSiblingChapters(file) {
-  const dir = path.dirname(path.resolve(file));
+  // 显式书根：兄弟章永远读 书根/正文/，深层候选也拿到真实前章而不是草稿目录。
+  const dir = options.project ? path.join(options.project, '正文') : path.dirname(path.resolve(file));
   if (siblingChaptersCache.has(dir)) return siblingChaptersCache.get(dir);
   const map = new Map();
   try {
@@ -1844,15 +1896,7 @@ function findPhraseQuota(fullPath, input) {
 
 // 从受检文件向上（≤4 层）定位 追踪/复沓锚句.md（与 locatePhraseBlacklist 同构）。
 function locateAnchorRegistry(file) {
-  let cur = path.dirname(path.resolve(file));
-  for (let depth = 0; depth < 4; depth += 1) {
-    const candidate = path.join(cur, '追踪', '复沓锚句.md');
-    if (fs.existsSync(candidate)) return candidate;
-    const parent = path.dirname(cur);
-    if (parent === cur) break;
-    cur = parent;
-  }
-  return null;
+  return locateProjectFile(file, ['追踪', '复沓锚句.md']);
 }
 
 // 解析表格 | 实体 |：跳过表头、占位行（{{...}}）与 HTML 注释块（模板示例区）。
@@ -1893,7 +1937,8 @@ function loadAnchorRegistry(file) {
 // 目录级全量兄弟章文本缓存（扫全卷用，避免 O(N²) 重读——首章受检时全读并缓存，
 // 后续兄弟章复用同一目录缓存）。
 function loadSiblingTexts(fullPath, chapterNum) {
-  const dir = path.resolve(path.dirname(fullPath));
+  // B-4：显式书根时兄弟章在 书根/正文/（深层候选不在草稿目录找兄弟）。
+  const dir = options.project ? path.join(options.project, '正文') : path.resolve(path.dirname(fullPath));
   if (siblingTextCache.has(dir)) return siblingTextCache.get(dir);
   const siblings = listSiblingChapters(fullPath);
   const texts = new Map();
@@ -1926,8 +1971,8 @@ function sentenceAroundOffset(text, offset) {
 // 单模式本章只报首个跨章命中（单章密度归 cliche-density 管，不在此复读）。
 function findSensoryRepeatTic(fullPath, input) {
   const findings = [];
-  const chapterNum = parseChapterNumber(path.basename(fullPath));
-  if (chapterNum == null) return findings; // 无法解析章号 → 无兄弟章可比，跳过
+  const chapterNum = effectiveChapter(path.basename(fullPath));
+  if (chapterNum == null) return findings; // 无显式 --chapter 且文件名无章号 → 无兄弟章可比，跳过
   const siblingTexts = loadSiblingTexts(fullPath, chapterNum);
   if (siblingTexts.size === 0) return findings; // 无兄弟章（开篇章）→ 跳过
   const registry = loadAnchorRegistry(fullPath);
@@ -2010,40 +2055,30 @@ function findStutterPunct(fullPath, input) { // eslint-disable-line no-unused-va
 // 「内心活动标记」高置信形态。
 // POV_PSYCH_RE / POV_FREE_INDIRECT_RE 已置于主循环前（与 SENSORY_REPEAT_PATTERNS 同区，避免 TDZ）。
 
-// 从受检文件向上（≤4 层）定位 大纲/批次公约.md（与 locateAnchorRegistry 同构，路径不同）。
+// 从受检文件定位 大纲/批次公约.md（显式 --project 时直接锚定书根）。
 function locateBatchPact(file) {
-  let cur = path.dirname(path.resolve(file));
-  for (let depth = 0; depth < 4; depth += 1) {
-    const candidate = path.join(cur, '大纲', '批次公约.md');
-    if (fs.existsSync(candidate)) return candidate;
-    const parent = path.dirname(cur);
-    if (parent === cur) break;
-    cur = parent;
-  }
-  return null;
+  return locateProjectFile(file, ['大纲', '批次公约.md']);
 }
 
-// 从受检文件向上（≤4 层）定位 追踪/_tracking-state.json（同上）。
+// 定位 追踪/_tracking-state.json（同上）。
 function locateTrackingState(file) {
-  let cur = path.dirname(path.resolve(file));
-  for (let depth = 0; depth < 4; depth += 1) {
-    const candidate = path.join(cur, '追踪', '_tracking-state.json');
-    if (fs.existsSync(candidate)) return candidate;
-    const parent = path.dirname(cur);
-    if (parent === cur) break;
-    cur = parent;
-  }
-  return null;
+  return locateProjectFile(file, ['追踪', '_tracking-state.json']);
 }
 
-// Fw-02：从受检正文文件名（第N章…）向上（≤4 层）定位 大纲/细纲_第NNN章.md。
-// 章号三种写法都试（三位补零为模板规范，原始号/去零兼容存量）。找不到返回 null（fail-open）。
+// Fw-02/B-4：定位本章细纲。显式 --project/--chapter（深层候选）时直接在 书根/大纲/
+// 按章号找；否则沿受检文件向上（≤4 层）。找不到返回 null（fail-open）。
 function locateChapterOutline(file) {
-  const base = path.basename(file);
-  const m = /第0*(\d+)章/.exec(base);
-  if (!m) return null;
-  const padded = m[1].padStart(3, '0');
-  const names = [`细纲_第${padded}章.md`, `细纲_第${m[1]}章.md`];
+  const ch = effectiveChapter(path.basename(file));
+  if (ch == null) return null;
+  const padded = String(ch).padStart(3, '0');
+  const names = [`细纲_第${padded}章.md`, `细纲_第${ch}章.md`];
+  if (options.project) {
+    for (const name of names) {
+      const candidate = path.join(options.project, '大纲', name);
+      if (fs.existsSync(candidate)) return candidate;
+    }
+    return null;
+  }
   let cur = path.dirname(path.resolve(file));
   for (let depth = 0; depth < 4; depth += 1) {
     for (const name of names) {

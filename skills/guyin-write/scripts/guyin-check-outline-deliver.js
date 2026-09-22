@@ -103,11 +103,13 @@ function runExplicitDeliver() {
     : findings.some((f) => f.severity === 'verify') ? 'findings'
     : (outlineChecked || hasLocks) ? 'pass' : 'not_applicable';
   const report = {
-    status,
     script: 'guyin-check-outline-deliver.js',
     script_sha256: candidateContext.sha256File(__filename),
-    target: { chapter: ctx.chapter, unit: ctx.unit, candidate: ctx.candidateRel,
-      candidate_sha256: ctx.candidateHash },
+    status,
+    reason: status === 'not_applicable'
+      ? '无真实细纲（--outline）且 input 无 exact/semantic 锁：细纲交付检查不适用（不造四组过门）'
+      : undefined,
+    target: { chapter: ctx.chapter, unit: ctx.unit, candidate: ctx.candidateRel, candidate_sha256: ctx.candidateHash },
     files_scanned: ctx.filesScanned,
     target_files: [ctx.candidateRel],
     reference_files: ctx.referenceFiles.map((f) => f.rel),

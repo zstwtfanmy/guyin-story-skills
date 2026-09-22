@@ -21,7 +21,20 @@ description: "隐笔项目脚手架部署。把长篇/短篇项目模板（硬�
 4. `legacy/agents-v0.8/` 退役归档存在（旧项目受管 agent 识别的唯一字节依据）；
 5. **反向检查：`templates/` 树内不得存在任何 `agents/guyin-beat-writer.*`、`agents/guyin-checker.*`**——新分发已无执行层 agent，发现即模板被污染，停止部署。
 
-任一缺失/污染 → **立即停止，不写任何部署文件**，报告缺哪些（区分「缺文件」与「目录为空」），给修复指令：「guyin-setup 模板包不完整，缺 {文件}。按你的安装方式重装 guyin-story-skills（skills CLI 装的重跑 `npx skills add https://github.com/zshuminghui/guyin-story-skills -g`；手动复制的重新复制 skills/ 目录），再执行 /guyin-setup。」
+任一缺失/污染 → **立即停止，不写任何部署文件**，报告缺哪些（区分「缺文件」与「目录为空」），给修复指令：「guyin-setup 模板包不完整，缺 {文件}。按你的安装方式重装 guyin-story-skills（skills CLI 装的重跑 `npx skills add https://github.com/zstwtfanmy/guyin-story-skills -g`；手动复制的重新复制 skills/ 目录），再执行 /guyin-setup。」安装来源以 README 与本机锁记录共同确认的 `zstwtfanmy/guyin-story-skills` 为准，不运行来源不明的第三方安装代码。
+
+## Phase 0.5：技能包完整性预检（F.3，安装/开写前）
+
+模板自检只覆盖 setup 自身；写作链依赖的脚本、lib、运行参考与默认 profile 在 **guyin-write 技能包**里。安装后、首次开写前（或怀疑安装残缺/混版时）跑：
+
+```
+node {本技能目录}/scripts/guyin-check-package.js verify [--root {skills 根}]
+```
+
+- 以**真实加载的 SKILL.md realpath**锚定技能根，显式 `--root` 优先；不回退混找全局/旧项目目录（F.3.2）。
+- 按固定版本清单 `scripts/package-manifest.json` 逐项核对相对路径与 sha256：缺件、损坏、混版分别报告实际路径并 exit 1；不报「29 个脚本」这种写死数，也不因锁最新就判完整。
+- 同时检查 Node/Python 解释器真实路径与版本，并对全部 .js 做语法加载、对 .py 做编译加载；脚本不可加载同样 exit 1。
+- 隔离夹具真实链路（长短篇起草→preview→发布/修订/恢复）是分层验收的下一层，在 R7 安装恢复时从**实际加载根**跑；本预检只证明文件完整与可加载，不冒充写作链路验收。
 
 ## Phase 1：检测项目状态
 
@@ -103,5 +116,6 @@ create-if-absent 不会更新已存在的追踪文件——重部署后做一次
 ## 边界
 
 - 只部署不动笔：作者性素材的逐件口述引导在 guyin-write 开书流程，不在本技能；
+- `guyin-deploy.js` 的 preview/retire 只管**受管 agent**，不是全技能包差异预览，也不是安装修复器：包缺件/混版以 Phase 0.5 的 package-manifest 核对为准；install 会刷新 hook/command 并合并 settings，对活书部署要先列差异、获用户授权再动；
 - 不做：扫榜/封面/逆向导入（预留方向）；ZCode / OpenClaw 等其他端适配；探测或注回模型配置；删除用户自定义 agent；修改宿主全局设置；
 - Web AI / 无 subagent 宿主：部署同样成立，当前会话直接按单模型自由执笔工作。

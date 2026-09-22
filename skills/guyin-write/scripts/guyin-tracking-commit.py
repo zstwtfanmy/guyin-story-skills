@@ -1929,26 +1929,81 @@ class PublishPaused(Exception):
 
 # ---------------- 项目级互斥锁（跨语言：目录即锁 + owner.json） ----------------
 
-def _pid_alive(pid: object) -> bool:
+def _win_kernel32():
+    """共享 kernel32 原型声明：HANDLE 在 x64 必须 c_void_p，缺 argtypes 会截断伪句柄致访问冲突。"""
+    import ctypes
+
+    k = ctypes.WinDLL("kernel32", use_last_error=True)
+    k.OpenProcess.restype = ctypes.c_void_p
+    k.OpenProcess.argtypes = [ctypes.c_uint32, ctypes.c_int, ctypes.c_uint32]
+    k.CloseHandle.restype = ctypes.c_int
+    k.CloseHandle.argtypes = [ctypes.c_void_p]
+    k.GetCurrentProcess.restype = ctypes.c_void_p
+    k.GetCurrentProcess.argtypes = []
+    k.GetProcessTimes.restype = ctypes.c_int
+    # 本机实测四个输出指针都必须给（传 NULL 会 access violation writing 0x0）。
+    k.GetProcessTimes.argtypes = [ctypes.c_void_p] + [ctypes.POINTER(ctypes.c_uint64)] * 4
+    k.WaitForSingleObject.restype = ctypes.c_uint32
+    k.WaitForSingleObject.argtypes = [ctypes.c_void_p, ctypes.c_uint32]
+    return k, ctypes
+
+
+def _win_process_info(pid: int) -> str:
+    """进程归属三态：'dead'（不存在/已终止，含僵尸）| 'alive'（运行中）| 'unknown'。
+
+    T29：os._exit 后 Windows 进程对象在父进程回收前后仍可能被 OpenProcess 打开、
+    GetProcessTimes 也返回原创建时间——只看句柄/ctime 会把僵尸当存活。
+    WaitForSingleObject(h, 0) 对终止进程立即返回 WAIT_OBJECT_0，是僵尸期仍可靠的死亡信号。
+    返回 (state, ctime)：ctime 仅 alive 时有意义，用于 PID 复用二次归属。
+    """
+    kernel32, ctypes = _win_kernel32()
+    PROCESS_QUERY_LIMITED_INFORMATION = 0x1000
+    SYNCHRONIZE = 0x00100000
+    # SYNCHRONIZE 是 WaitForSingleObject 所需访问位；与查询位一起申请。
+    handle = kernel32.OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION | SYNCHRONIZE, False, pid)
+    if not handle:
+        return "dead", None
+    try:
+        wait = kernel32.WaitForSingleObject(handle, 0)
+        if wait == 0x00000000:  # WAIT_OBJECT_0：已终止（含尚未回收的僵尸）
+            return "dead", None
+        if wait == 0x00000102:  # WAIT_TIMEOUT：仍在运行
+            times = [ctypes.c_uint64() for _ in range(4)]
+            ok = kernel32.GetProcessTimes(handle, *[ctypes.byref(t) for t in times])
+            return "alive", (int(times[0].value) if ok else None)
+        return "unknown", None  # WAIT_FAILED 等：fail-closed
+    finally:
+        kernel32.CloseHandle(handle)
+
+
+def _win_process_ctime(pid: int) -> int | None:
+    """兼容包装：仅取运行中进程的创建时间 ticks（已终止/不存在返回 None）。"""
+    _state, ctime = _win_process_info(pid)
+    return ctime if _state == "alive" else None
+
+
+def _win_current_ctime() -> int | None:
+    """当前进程创建时间（GetProcessTimes 配 GetCurrentProcess 伪句柄）。"""
+    kernel32, ctypes = _win_kernel32()
+    times = [ctypes.c_uint64() for _ in range(4)]
+    pseudo = kernel32.GetCurrentProcess()  # (HANDLE)-1，c_void_p 下保持 64 位
+    ok = kernel32.GetProcessTimes(pseudo, *[ctypes.byref(t) for t in times])
+    return int(times[0].value) if ok else None
+
+
+def _pid_alive(pid: object, *, owner_ctime: object = None) -> bool:
     if not isinstance(pid, int) or pid <= 0:
         return True  # 无法判定 → fail-closed 当存活
     if sys.platform == "win32":
-        # 禁用 os.kill(pid, 0)：本机实测 Python 3.12 该调用对存活进程也会污染其退出码/
-        # 误杀句柄持有者（对测试父进程调用时父进程直接消失）。OpenProcess 只查不发信号：
-        # 拿到句柄=存活；GetLastError=87(ERROR_INVALID_PARAMETER)=无此进程；
-        # 5(ACCESS_DENIED)=进程存在但无权查询=存活；其余未知 fail-closed。
-        import ctypes
-
-        kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
-        PROCESS_QUERY_LIMITED_INFORMATION = 0x1000
-        handle = kernel32.OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, False, pid)
-        if handle:
-            kernel32.CloseHandle(handle)
-            return True
-        last_error = ctypes.get_last_error()
-        if last_error == 87:  # ERROR_INVALID_PARAMETER：系统无此 pid
+        # 已终止/僵尸/无此 pid → 可回收；运行中再比创建时间防 PID 复用；无法判定 fail-closed。
+        state, ctime = _win_process_info(pid)
+        if state == "dead":
             return False
-        return True  # 5=拒绝访问（存活）；其余 fail-closed
+        if state == "unknown":
+            return True
+        if isinstance(owner_ctime, int) and owner_ctime > 0:
+            return ctime == owner_ctime  # 同 PID 但创建时间变了＝PID 已复用，原锁主已死
+        return True  # 旧锁无创建时间记录：fail-closed，由人工确认
     try:
         os.kill(pid, 0)
     except ProcessLookupError:
@@ -1977,12 +2032,18 @@ class ProjectLock:
         self.held = False
 
     def _owner_payload(self) -> str:
-        return json_payload({
+        payload = {
             "pid": os.getpid(),
             "host": socket.gethostname(),
             "label": self.label,
             "started_at": datetime.now().astimezone().isoformat(timespec="seconds"),
-        })
+        }
+        # T29：Windows 记进程创建时间，崩溃后 PID 被复用也能认出锁主已死（见 _pid_alive）。
+        if sys.platform == "win32":
+            ctime = _win_current_ctime()
+            if ctime:
+                payload["pid_ctime"] = ctime
+        return json_payload(payload)
 
     def _read_owner(self) -> dict[str, Any] | None:
         try:
@@ -2000,7 +2061,11 @@ class ProjectLock:
             except FileExistsError:
                 owner = self._read_owner()
                 holder_pid = owner.get("pid") if owner else None
-                if isinstance(holder_pid, int) and not _pid_alive(holder_pid):
+                # 只回收同机锁主的死锁；异机（网络/共享目录）无法判活，fail-closed 保留。
+                # owner_ctime 做 PID 复用二次归属：崩溃后该 pid 若被新进程占用也不算存活。
+                same_host = (owner or {}).get("host") in (None, socket.gethostname())
+                if (same_host and isinstance(holder_pid, int)
+                        and not _pid_alive(holder_pid, owner_ctime=(owner or {}).get("pid_ctime"))):
                     stale = self.lock_dir.with_name(
                         f"{LOCK_DIRNAME}.stale-{int(time.time())}-{os.getpid()}"
                     )
@@ -2182,12 +2247,43 @@ def _normalize_manifest(document: object) -> dict[str, Any]:
             require(bool(re.fullmatch(r"[0-9a-f]{12}", digest)), f"baseline[{index}].hash12 须为 hash12")
             baseline.append({"kind": "file", "rel": rel, "hash12": digest})
         elif "dir" in entry:
-            require_known_keys(entry, {"dir", "files"}, f"baseline[{index}]")
+            require_known_keys(entry, {"dir", "files", "files_hashed"}, f"baseline[{index}]")
             rel_dir = clean_text(entry.get("dir"), f"baseline[{index}].dir", max_bytes=256)
-            files = [clean_text(v, f"baseline[{index}].files[{i}]", max_bytes=256)
-                     for i, v in enumerate(as_list(entry.get("files"), f"baseline[{index}].files"))]
+            raw_files = as_list(entry.get("files"), f"baseline[{index}].files")
+            files: list[str] = []
+            files_hashed: list[dict[str, str]] = []
+            # v2：files_hashed 为独立字段（{path,hash12} 列表）；与 files 名称集合须一致。
+            raw_hashed = as_list(entry.get("files_hashed", []), f"baseline[{index}].files_hashed")
+            for fi, v in enumerate(raw_hashed):
+                fe = as_mapping(v, f"baseline[{index}].files_hashed[{fi}]")
+                require_known_keys(fe, {"path", "hash12"}, f"baseline[{index}].files_hashed[{fi}]")
+                fp = clean_text(fe.get("path"), f"baseline[{index}].files_hashed[{fi}].path", max_bytes=256)
+                fh = clean_text(fe.get("hash12"), f"baseline[{index}].files_hashed[{fi}].hash12", max_bytes=12)
+                require(bool(re.fullmatch(r"[0-9a-f]{12}", fh)),
+                        f"baseline[{index}].files_hashed[{fi}].hash12 须为 hash12")
+                files_hashed.append({"path": fp, "hash12": fh})
+            files: list[str] = []
+            for fi, v in enumerate(raw_files):
+                if isinstance(v, str):
+                    # v1 名称清单（不保护内容）；v2 以 files_hashed 为准，files 仅作成员名单。
+                    files.append(clean_text(v, f"baseline[{index}].files[{fi}]", max_bytes=256))
+                elif isinstance(v, dict):
+                    # 兼容把对象直接放进 files 的清单。
+                    fe = as_mapping(v, f"baseline[{index}].files[{fi}]")
+                    require_known_keys(fe, {"path", "hash12"}, f"baseline[{index}].files[{fi}]")
+                    fp = clean_text(fe.get("path"), f"baseline[{index}].files[{fi}].path", max_bytes=256)
+                    files.append(fp)
+                else:
+                    require(False, f"baseline[{index}].files[{fi}] 须为路径字符串")
+            if files_hashed:
+                # v2：files 名单与 files_hashed 成员一致（files 可写纯文件名或书根相对路径）。
+                hashed_names = sorted(h["path"].split("/")[-1] for h in files_hashed)
+                hashed_rels = sorted(h["path"] for h in files_hashed)
+                require(sorted(files) in (hashed_names, hashed_rels),
+                        f"baseline[{index}] files 与 files_hashed 成员不一致")
             require(len(set(files)) == len(files), f"baseline[{index}].files 有重复成员")
-            baseline.append({"kind": "dir", "rel": rel_dir, "files": files})
+            baseline.append({"kind": "dir", "rel": rel_dir, "files": files,
+                             "files_hashed": files_hashed})
         else:
             require(False, f"baseline[{index}] 须为 path+hash12 单文件条目或 dir+files 目录条目")
 
@@ -2259,6 +2355,95 @@ def _check_baseline(project: Path, baseline: list[dict[str, Any]]) -> None:
                     f"基线变化：{entry['rel']} 成员新增/缺失（新增={added or '无'}，缺失={missing or '无'}）"
                     "——文件新增或缺失也算基线变化，停用户裁决"
                 )
+
+
+def _check_baseline_v2(project: Path, m: dict[str, Any], input_abs: Path) -> None:
+    """G-1 v2 强基线：state 内容哈希＋正文逐成员内容哈希＋input 实际 file 来源哈希。
+
+    v1 只用目录成员名单（不保护内容）；v2 不允许拿名单替代逐文件哈希，空数组也不接受。
+    """
+    baseline = m["baseline"]
+    # 1) _tracking-state.json 必须有单文件条目且哈希等于当前内容。
+    state_entries = [e for e in baseline if e["kind"] == "file" and e["rel"] == "追踪/_tracking-state.json"]
+    require(len(state_entries) >= 1, "v2 基线必须含 追踪/_tracking-state.json 的内容哈希条目")
+    if hash12_file(tracking_root(project) / "_tracking-state.json") != state_entries[0]["hash12"]:
+        raise PublicationError("v2 基线：追踪/_tracking-state.json 内容哈希与当前不符——正式基线已变")
+    # 2) 正文/ 目录必须给逐成员 {path,hash12}，集合与当前完全一致且内容逐一对上。
+    prose_dirs = [e for e in baseline if e["kind"] == "dir" and e["rel"] == "正文"]
+    require(len(prose_dirs) >= 1, "v2 基线必须含 正文/ 目录条目（逐成员内容哈希）")
+    pe = prose_dirs[0]
+    # v2 逐成员哈希（首章发布时 正文 为空合法：两集合皆空即一致；有成员则必须逐条带哈希）。
+    listed = {h["path"]: h["hash12"] for h in pe.get("files_hashed", [])}
+    if pe.get("files") and not pe.get("files_hashed"):
+        raise PublicationError("v2 正文基线必须逐成员给 {path,hash12}，名称清单不能替代内容哈希")
+    actual = {f.relative_to(project.resolve()).as_posix(): hash12_file(f)
+              for f in sorted((project / "正文").rglob("*"))
+              if f.is_file() and not any(part.startswith(".") or part == "_archive" for part in f.relative_to(project / "正文").parts)}
+    if set(actual) != set(listed):
+        added = sorted(set(actual) - set(listed))
+        missing = sorted(set(listed) - set(actual))
+        raise PublicationError(
+            f"v2 正文基线成员不一致（新增={added or '无'}，缺失={missing or '无'}）——发布外增删即阻断")
+    for rel, h in listed.items():
+        if actual.get(rel) != h:
+            raise PublicationError(f"v2 正文基线内容不符：{rel}（清单 {h} ≠ 盘上 {actual.get(rel)}）")
+    # 3) input 中每个 kind=file 来源：盘上当前内容必须仍是 input 冻结时记录的 sha256。
+    try:
+        input_doc = json.loads(input_abs.read_text(encoding="utf-8-sig"))
+    except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+        raise PublicationError(f"v2 基线核验读不了 author_input：{exc}")
+    for src in input_doc.get("sources", []):
+        if not isinstance(src, dict) or src.get("kind") != "file":
+            continue
+        rel = str(src.get("path", "")).replace("\\", "/")
+        recorded = src.get("sha256")
+        if not (isinstance(recorded, str) and re.fullmatch(r"[0-9a-f]{64}", recorded)):
+            raise PublicationError(f"v2 基线：来源 {rel} 在 input 中无完整 sha256（实际读取来源必须冻结）")
+        sp = _resolve_under(project, rel, f"input source {rel}")
+        if not sp.is_file():
+            raise PublicationError(f"v2 基线：实际读取来源已缺失：{rel}")
+        if sha256_file(sp) != recorded:
+            raise PublicationError(f"v2 基线：实际读取来源内容已变：{rel}（先重核基线/重建清单）")
+
+
+def _assert_targets_agree(m: dict[str, Any], transaction: dict[str, Any]) -> None:
+    """G-1/T28：manifest.target、事务 chapter/mode/chapter_title 三处一致（preview/prepared 共用）。"""
+    if transaction.get("chapter") != m["chapter"]:
+        raise PublicationError(
+            f"三处目标不一致：transaction.chapter={transaction.get('chapter')} ≠ target.chapter={m['chapter']}")
+    if transaction.get("mode") != m["mode"]:
+        raise PublicationError(
+            f"三处目标不一致：transaction.mode={transaction.get('mode')} ≠ target.mode={m['mode']}")
+    tx_title = transaction.get("title") or transaction.get("chapter_title")
+    if tx_title != m["title"]:
+        raise PublicationError(
+            f"三处目标不一致：transaction 标题={tx_title!r} ≠ target.title={m['title']!r}")
+
+
+def _resolve_destination(project: Path, m: dict[str, Any]) -> Path:
+    """preview 与 prepared 共用的 destination 规则（G-2：预演必须同样发现磁盘冲突）。"""
+    destination = _resolve_under(project, m["destination_rel"], "destination")
+    try:
+        dest_rel = destination.relative_to(project.resolve()).as_posix()
+    except ValueError:
+        raise PublicationError("destination 越出项目根")
+    require(dest_rel.startswith("正文/"), "destination 必须落在 正文/ 下")
+    name_match = re.fullmatch(r"第0*(\d+)章.*\.md", destination.name)
+    if name_match:
+        require(int(name_match.group(1)) == m["chapter"],
+                f"destination 文件名章号与 target.chapter={m['chapter']} 不一致：{destination.name}")
+    else:
+        require(destination.name.endswith(".md"), "destination 必须是 .md 文件")
+        require(
+            m["chapter"] == 1,
+            f"非章号文件名仅允许短篇固定单元 1（target.chapter=1）；单元 {m['chapter']} 须先另定"
+            f"稳定映射与状态隔离，不靠篇名猜序号：{destination.name}",
+        )
+    if m["mode"] == "append":
+        require(not destination.exists(), f"append 目标已存在：{dest_rel}（修订须走 revision 并先存档）")
+    else:
+        require(destination.is_file(), f"revision 目标不存在：{dest_rel}（无法修订未发布的章）")
+    return destination
 
 
 def _evidence_bound(project: Path, refs: list[str], candidate_hash: str, label: str) -> None:
@@ -2397,15 +2582,32 @@ def _verify_candidate_checks(project: Path, m: dict[str, Any], checks_path: Path
     if missing:
         raise PublicationError(f"candidate_checks 缺少重跑存在的检查：{', '.join(missing)}")
     for name, fresh_c in fresh.items():
-        sc = stored.get(name)
-        if sc.get("status") != "pass" or fresh_c.get("status") != "pass":
-            raise PublicationError(f"检查 {name} 非 pass（存储={sc.get('status')} 重跑={fresh_c.get('status')}）")
+        sc = stored.get(name) or {}
+        # G-5 合法终态：pass 与 not_applicable（后者须带原因）；findings/error 一律拒。
+        legal = ("pass", "not_applicable")
+        if sc.get("status") not in legal or fresh_c.get("status") not in legal:
+            raise PublicationError(
+                f"检查 {name} 非合法终态（存储={sc.get('status')} 重跑={fresh_c.get('status')}）；"
+                "findings 须落五终态、error 须修复")
+        if sc.get("status") == "not_applicable" and not (sc.get("reason") or "").strip():
+            raise PublicationError(f"检查 {name} 为 not_applicable 但未带原因（不接受空白终态）")
         if sc.get("script_sha256") != fresh_c.get("script_sha256"):
             raise PublicationError(f"检查 {name} 脚本版本与重跑不一致——证据过期，须重新汇总")
         targets = sc.get("target_files") or []
-        scanned = sc.get("files_scanned") or []
-        if targets and not set(targets).issubset(set(scanned)):
-            raise PublicationError(f"检查 {name} 零扫描/漏扫目标文件")
+        if targets:
+            # 扫描证据可能是书根相对或绝对路径；统一归一为书根相对再比对（防 abs/rel 假零扫描）。
+            def _norm_scan(p: object) -> str:
+                s = str(p).replace("\\", "/")
+                ps = Path(s)
+                if not ps.is_absolute():
+                    return s
+                try:
+                    return ps.resolve().relative_to(project.resolve()).as_posix()
+                except ValueError:
+                    return s
+            scanned = {_norm_scan(p) for p in (sc.get("files_scanned") or [])}
+            if not set(targets).issubset(scanned):
+                raise PublicationError(f"检查 {name} 零扫描/漏扫目标文件")
 
 
 def _stage_prepared(project: Path, m: dict[str, Any], tx_bytes: bytes) -> dict[str, Any]:
@@ -2431,38 +2633,21 @@ def _stage_prepared(project: Path, m: dict[str, Any], tx_bytes: bytes) -> dict[s
     candidate_hash = hash12_file(candidate)
     candidate_sha256_full = sha256_file(candidate)
 
-    destination = _resolve_under(project, m["destination_rel"], "destination")
-    try:
-        dest_rel = destination.relative_to(project.resolve()).as_posix()
-    except ValueError:
-        raise PublicationError("destination 越出项目根")
-    require(dest_rel.startswith("正文/"), "destination 必须落在 正文/ 下")
-    name_match = re.fullmatch(r"第0*(\d+)章.*\.md", destination.name)
-    if name_match:
-        require(int(name_match.group(1)) == m["chapter"],
-                f"destination 文件名章号与 target.chapter={m['chapter']} 不一致：{destination.name}")
-    else:
-        require(destination.name.endswith(".md"), "destination 必须是 .md 文件")
-        require(
-            m["chapter"] == 1,
-            f"非章号文件名仅允许短篇固定单元 1（target.chapter=1）；单元 {m['chapter']} 须先另定"
-            f"稳定映射与状态隔离，不靠篇名猜序号：{destination.name}",
-        )
-    if m["mode"] == "append":
-        require(not destination.exists(), f"append 目标已存在：{dest_rel}（修订须走 revision 并先存档）")
-    else:
-        require(destination.is_file(), f"revision 目标不存在：{dest_rel}（无法修订未发布的章）")
+    destination = _resolve_destination(project, m)
+    dest_rel = destination.relative_to(project.resolve()).as_posix()
 
     tx_path = _resolve_under(project, m["transaction_rel"], "transaction")
     require(tx_path.is_file(), f"事务 JSON 不存在：{m['transaction_rel']}")
     require(hash12_bytes(tx_bytes) == hash12_file(tx_path), "内部错误：事务字节固化不一致")
 
-    # v2：发布授权与机器证据（§7.3.1）。v1 清单不要求（旧账本 recover 仍可读）。
+    # v2：发布授权与机器证据（§7.3.1）。v1 清单不允许新发起（publish 入口已拦），
+    # 此处分支只服务「已存在 v1 在途 journal 的 recover」（recover 不经过 prepared）。
+    input_abs: Path | None = None
     if m["manifest_version"] == 2:
         input_abs = _workspace_resolved(project, m["author_input_rel"], m["run_id"], "author_input")
         checks_abs = _workspace_resolved(project, m["candidate_checks_rel"], m["run_id"], "candidate_checks")
         if not input_abs.is_file() or not checks_abs.is_file():
-            raise PublicationError("v2 清单的 author_input/candidate_checks 必须为 R 内真实文件")
+            raise PublicationError("v2 publish 的 author_input/candidate_checks 必须为 R 内真实文件（先跑 preview 生成证据）")
         _verify_author_input(project, m, input_abs, candidate_sha256_full)
         gathered = _rerun_candidate_chain(
             project, m,
@@ -2479,10 +2664,13 @@ def _stage_prepared(project: Path, m: dict[str, Any], tx_bytes: bytes) -> dict[s
     # §6.4 纯内存完整预演（normalize→merge→render_delta→render_views），异常在写盘前抛出。
     sim = simulate_transaction(state, json.loads(tx_bytes.decode("utf-8")))
     next_state = sim["next_state"]
+    _assert_targets_agree(m, sim["transaction"])
     for w in sim.get("warnings", []):
         emit(f"提醒（不阻断）：{w}", error=True)
 
     _check_baseline(project, m["baseline"])
+    if m["manifest_version"] == 2 and input_abs is not None:
+        _check_baseline_v2(project, m, input_abs)
     if m["run_json_rel"]:
         run_json = _resolve_under(project, m["run_json_rel"], "run_json")
         if run_json.is_file():
@@ -2506,17 +2694,69 @@ def _stage_prepared(project: Path, m: dict[str, Any], tx_bytes: bytes) -> dict[s
 
     archive = _archive_old_prose(project, destination, m["chapter"]) if m["mode"] == "revision" else None
 
-    # §7.3.2 追踪产物 before/after 计划（after 在 tracking 提交时回填，并暂存字节）。
+    # §7.3.2 G-3：安装正文前在 R 固化全部预期字节（state/逐章记录/派生视图/指纹库/意象）。
     delta_rel = delta_path(tracking_root(project), m["chapter"]).relative_to(project.resolve()).as_posix()
-    artifact_rels = ["追踪/_tracking-state.json", delta_rel, *sorted(sim["views"].keys())]
-    tracking_plan = {
-        "artifacts": [
-            {"path": rel,
-             "before_sha256": (sha256_file(project / rel) if (project / rel).is_file() else None),
-             "after_sha256": None, "staged_path": None}
-            for rel in artifact_rels
-        ],
+    stage_dir = project / WORKSPACE_REL / m["run_id"] / "publication" / "artifacts"
+    stage_dir.mkdir(parents=True, exist_ok=True)
+
+    def _stage_after(rel: str, payload: str) -> tuple[str | None, str | None]:
+        """把预期 after 字节原子暂存进 R；返回 (after_sha256, staged_rel)。"""
+        staged = stage_dir / rel.replace("/", "__")
+        staged.write_bytes(payload.encode("utf-8"))
+        return hashlib.sha256(payload.encode("utf-8")).hexdigest(), staged.relative_to(project.resolve()).as_posix()
+
+    tracking_after: dict[str, str] = {
+        "追踪/_tracking-state.json": sim["next_state_payload"],
+        delta_rel: sim["delta_payload"],
+        # 指纹库/意象台账由指纹阶段按实际扫描产生，不在跟踪视图暂存里重复（否则双条目 after 冲突）。
+        **{f"追踪/{rel}": text for rel, text in sim["views"].items() if rel not in FP_ARTIFACT_RELS},
     }
+    artifacts: list[dict[str, Any]] = []
+    for rel, after_text in tracking_after.items():
+        after_sha, staged_rel = _stage_after(rel, after_text)
+        artifacts.append({
+            "path": rel,
+            "before_sha256": (sha256_file(project / rel) if (project / rel).is_file() else None),
+            "after_sha256": after_sha, "staged_path": staged_rel,
+        })
+    # 指纹库/意象视图：after 由指纹阶段实际扫描产生（revision 必须替换旧章），此处只固化 before。
+    for fp_rel in ("追踪/段落指纹库.json", "追踪/意象台账.md"):
+        artifacts.append({
+            "path": fp_rel,
+            "before_sha256": (sha256_file(project / fp_rel) if (project / fp_rel).is_file() else None),
+            "after_sha256": None, "staged_path": None,
+        })
+    tracking_plan = {"artifacts": artifacts}
+
+    # G-4：journal 固化 input/审读/机器证据/来源的完整 SHA-256（不只候选/事务 hash12）。
+    frozen: dict[str, Any] = {
+        "candidate": {"rel": candidate.relative_to(project.resolve()).as_posix(),
+                      "sha256": candidate_sha256_full, "hash12": candidate_hash},
+        "transaction": {"rel": tx_path.relative_to(project.resolve()).as_posix(),
+                        "sha256": hashlib.sha256(tx_bytes).hexdigest()},
+        "review_evidence": [],
+        "check_evidence_md": [],
+    }
+    if m["manifest_version"] == 2 and input_abs is not None:
+        frozen["author_input"] = {"rel": input_abs.relative_to(project.resolve()).as_posix(),
+                                  "sha256": sha256_file(input_abs)}
+        frozen["candidate_checks"] = {"rel": m["candidate_checks_rel"],
+                                      "sha256": sha256_file(project / m["candidate_checks_rel"])}
+        input_doc2 = json.loads(input_abs.read_text(encoding="utf-8-sig"))
+        frozen["sources"] = []
+        for src in input_doc2.get("sources", []):
+            if isinstance(src, dict) and src.get("kind") == "file":
+                sp = _resolve_under(project, str(src.get("path", "")).replace("\\", "/"), "input source")
+                frozen["sources"].append({"rel": sp.relative_to(project.resolve()).as_posix(),
+                                          "sha256": sha256_file(sp)})
+    for ref in m["evidence"]:
+        rp = _resolve_under(project, ref, "review evidence")
+        frozen["review_evidence"].append({"rel": rp.relative_to(project.resolve()).as_posix(),
+                                          "sha256": sha256_file(rp)})
+    for ref in m["check_evidence"]:
+        rp = _resolve_under(project, ref, "check evidence")
+        frozen["check_evidence_md"].append({"rel": rp.relative_to(project.resolve()).as_posix(),
+                                            "sha256": sha256_file(rp)})
 
     journal: dict[str, Any] = {
         "schema_version": m["manifest_version"],
@@ -2529,6 +2769,7 @@ def _stage_prepared(project: Path, m: dict[str, Any], tx_bytes: bytes) -> dict[s
             "transaction": {"rel": tx_path.relative_to(project.resolve()).as_posix(), "hash12": hash12_bytes(tx_bytes)},
             "destination": dest_rel,
         },
+        "frozen": frozen,
         "archive": archive,
         "tracking_plan": tracking_plan,
         "steps": {"prepared": {"at": _now_iso(), "state_revision": state["state_revision"]}},
@@ -2575,6 +2816,46 @@ def _write_prose(project: Path, journal: dict[str, Any]) -> None:
     _pause_after("prose_written", journal)
 
 
+def _plan_artifacts(journal: dict[str, Any]) -> list[dict[str, Any]]:
+    return (journal.get("tracking_plan") or {}).get("artifacts", [])
+
+
+def _classify_plan_state(project: Path, journal: dict[str, Any]) -> str:
+    """按 tracking_plan 把当前盘面对每个产物分类：all_before/all_after/mixed/third。
+
+    指纹库/意象属指纹阶段（after 在该阶段才产生），跟踪阶段不纳入，避免 None=None 误判。
+    T35：v1 旧账本的 tracking_plan 条目不固化 after/staged（after_sha256=None）——
+    它们不是任何方向的证据，一律不投票；归属证明改由 steps 记录承担（见 _commit_tracking）。
+    """
+    states = set()
+    for art in _plan_artifacts(journal):
+        if art.get("path") in FP_ARTIFACT_RELS:
+            continue
+        # v1 未固化条目：无 after 可比，跳过（旧账本兼容；v2 prepared 会固化全部跟踪产物）。
+        if not art.get("after_sha256"):
+            continue
+        # 本阶段内容不变的产物（before==after）不投票：它天然满足目标，不能造成假性 mixed。
+        if art.get("before_sha256") == art.get("after_sha256"):
+            continue
+        pp = project / art["path"]
+        cur = sha256_file(pp) if pp.is_file() else None
+        if cur == art.get("after_sha256"):
+            states.add("after")
+        elif cur == art.get("before_sha256"):
+            states.add("before")
+        else:
+            states.add("third")
+    if not states:
+        return "all_before"  # 全部产物本就不变：视为无需写入的干净起点（幂等）
+    if "third" in states:
+        return "third"
+    if states == {"after"}:
+        return "all_after"
+    if states == {"before"}:
+        return "all_before"
+    return "mixed"
+
+
 def _commit_tracking(project: Path, journal: dict[str, Any]) -> None:
     chapter = journal["target"]["chapter"]
     tx_rel = journal["inputs"]["transaction"]["rel"]
@@ -2583,61 +2864,106 @@ def _commit_tracking(project: Path, journal: dict[str, Any]) -> None:
         raise PublicationError("事务 JSON 缺失或已被改动——prepared 后只做机械推进，改事务须重建发布")
 
     done = journal["steps"].get("tracking_committed")
-    state = load_state(project)
+    plan_state = _classify_plan_state(project, journal)
+
     if done is not None:
-        # 崩溃在 journal 落盘后：核验已提交成果，不重复 append。
+        # journal 已记录 tracking_committed：只接受全盘 after；第三态/半成品零新增写入（G-3/G-4）。
+        if plan_state != "all_after":
+            raise PublicationError(
+                f"tracking 已标记提交但产物状态={plan_state}（非全部 after）——第三态/半成品现场，"
+                "停用户裁决，不重 append、不覆盖、不回滚")
+        state = load_state(project)
         if state["state_revision"] != done["state_revision"]:
             raise PublicationError(
                 f"state_revision={state['state_revision']} 与发布记录 {done['state_revision']} 不符"
-                "——追踪被外部改动，停用户裁决，禁止强行回滚"
-            )
+                "——追踪被外部改动，停用户裁决，禁止强行回滚")
         if hash12_file(state_path(project)) != done["state_hash12"]:
             raise PublicationError("_tracking-state.json 哈希与发布记录不符——外部改动，停用户裁决")
-        views = render_views(state)
-        for rel, digest in done["views"].items():
-            actual = hash12_bytes(views[rel].encode("utf-8"))
-            if actual != digest:
-                raise PublicationError(f"派生视图 {rel} 与发布记录不符——停用户裁决")
-        # §7.3.3：tracking 已提交后，逐产物核验 before/after——第三种内容（外部改动）即阻断。
-        plan = journal.get("tracking_plan")
-        if plan:
-            for art in plan.get("artifacts", []):
-                p = project / art["path"]
-                cur = sha256_file(p) if p.is_file() else None
-                allowed = {art.get("before_sha256"), art.get("after_sha256")}
-                if cur not in allowed:
-                    raise PublicationError(
-                        f"追踪产物 {art['path']} 既非 before 也非 after（第三种内容，外部改动）"
-                        "——停用户裁决，不回滚、不覆盖")
         return
 
-    # 同一事务经现行唯一通道提交（apply_transaction 内含 expected revision 与全量校验）。
-    next_state = apply_transaction(project, json.loads(tx_path.read_text(encoding="utf-8")))
-    views = render_views(next_state)
-    # §7.3.2 固化 after 字节到 R/publication/artifacts/，并回填 tracking_plan。
-    stage_dir = project / WORKSPACE_REL / journal["run_id"] / "publication" / "artifacts"
-    stage_dir.mkdir(parents=True, exist_ok=True)
-    plan = journal.get("tracking_plan") or {"artifacts": []}
-    for art in plan.get("artifacts", []):
-        rel = art["path"]
-        if rel == "追踪/_tracking-state.json":
-            after_bytes = (state_path(project)).read_bytes()
-        elif rel in views:
-            after_bytes = views[rel].encode("utf-8")
+    # journal 尚未记录（含「state 已写、journal 未更新」精确崩溃窗口，G-3/T29）。
+    if plan_state == "all_after":
+        next_state = load_state(project)
+    elif plan_state == "all_before":
+        # 干净未提交：纯内存预演复核（与 apply 同一套规则），按暂存字节安装，state 最后原子落盘。
+        state = load_state(project)
+        require(
+            state["state_revision"] == journal["expected_state_revision"],
+            f"expected_state_revision={journal['expected_state_revision']} 与当前 {state['state_revision']} 不符"
+            "——基线已变，重建发布",
+        )
+        sim = simulate_transaction(state, json.loads(tx_path.read_text(encoding="utf-8")))
+        next_state = sim["next_state"]
+        delta_rel = delta_path(tracking_root(project), chapter).relative_to(project.resolve()).as_posix()
+        expected = {"追踪/_tracking-state.json": sim["next_state_payload"]}
+        for rel, text in sim["views"].items():
+            if rel in FP_ARTIFACT_RELS:
+                continue
+            expected[f"追踪/{rel}"] = text
+        expected[delta_rel] = sim["delta_payload"]
+        plan_arts = [a for a in _plan_artifacts(journal) if a.get("path") not in FP_ARTIFACT_RELS]
+        filled = [a for a in plan_arts if a.get("after_sha256")]
+        if plan_arts and len(filled) == len(plan_arts):
+            for art in plan_arts:
+                rel = art["path"]
+                if rel in expected and hashlib.sha256(expected[rel].encode("utf-8")).hexdigest() != art.get("after_sha256"):
+                    raise PublicationError(f"暂存预期字节与当前预演不一致：{rel}——prepared 计划已失效，重建发布")
+            for art in plan_arts:
+                rel = art["path"]
+                if rel == "追踪/_tracking-state.json" or rel not in expected:
+                    continue
+                target_p = project / rel
+                target_p.parent.mkdir(parents=True, exist_ok=True)
+                atomic_write_text(target_p, expected[rel])
+            atomic_write_text(state_path(project), expected["追踪/_tracking-state.json"])
+            # T29 故障注入：state 已原子落盘、journal 尚未更新——真实终止独立子进程（非异常/非 exit3）。
+            if os.environ.get("GUYIN_PUBLISH_CRASH_AFTER") == "state_write":
+                os._exit(9)
+        elif not filled:
+            # T35 旧版（v1）在途账本：计划条目 after 全未固化（或无计划）。能走到 all_before 已证明
+            # state 仍停在 expected_state_revision（追踪提交从未落地、无重章），故按本次纯内存预演
+            # 补齐每件 after 哈希，再原子重放整套产物、state 最后写。旧协议无 after 证据，第三态视图
+            # 无从核验——这是旧账本固有风险窗口；state 已推进（提交归属不可证明）由上面校验拒绝。
+            for art in plan_arts:
+                if art["path"] in expected:
+                    art["after_sha256"] = hashlib.sha256(
+                        expected[art["path"]].encode("utf-8")).hexdigest()
+            for rel, payload in expected.items():
+                if rel == "追踪/_tracking-state.json":
+                    continue
+                target_p = project / rel
+                target_p.parent.mkdir(parents=True, exist_ok=True)
+                atomic_write_text(target_p, payload)
+            atomic_write_text(state_path(project), expected["追踪/_tracking-state.json"])
         else:
-            after_bytes = (project / rel).read_bytes()
-        staged_name = rel.replace("/", "__")
-        staged = stage_dir / staged_name
-        staged.write_bytes(after_bytes)
-        art["after_sha256"] = hashlib.sha256(after_bytes).hexdigest()
-        art["staged_path"] = staged.relative_to(project.resolve()).as_posix()
-    journal["tracking_plan"] = plan
+            raise PublicationError(
+                "tracking_plan 只有部分产物固化 after（计划形状损坏）——不允许半套提交，停用户裁决")
+    elif plan_state == "mixed":
+        def _art_state(a: dict[str, Any]) -> str:
+            pp = project / a["path"]
+            cur = sha256_file(pp) if pp.is_file() else None
+            if cur == a.get("after_sha256"):
+                return "after"
+            if cur == a.get("before_sha256"):
+                return "before"
+            return "third"
+        detail = ", ".join(f"{a.get('path')}={_art_state(a)}" for a in _plan_artifacts(journal))
+        raise PublicationError(f"tracking 产物部分已写部分未写（mixed 现场：{detail}）——不允许半套提交，停用户裁决")
+    else:
+        raise PublicationError(
+            "tracking 产物出现第三种内容（既非 before 也非 after）——外部改动，停用户裁决，"
+            "不回滚、不覆盖、不重 append")
+
+    if _classify_plan_state(project, journal) != "all_after":
+        raise PublicationError("内部错误：tracking 写入后产物未全部等于 after——保留现场，停人工核对")
     journal["stage"] = "tracking_committed"
     journal["steps"]["tracking_committed"] = {
         "at": _now_iso(),
         "state_revision": next_state["state_revision"],
         "state_hash12": hash12_file(state_path(project)),
-        "views": {rel: hash12_bytes(text.encode("utf-8")) for rel, text in views.items()},
+        "views": {art["path"]: art["after_sha256"] for art in _plan_artifacts(journal)
+                  if art["path"].startswith("追踪/") and art["path"] != "追踪/_tracking-state.json"
+                  and art["path"] not in ("追踪/段落指纹库.json", "追踪/意象台账.md")},
         "chapter": chapter,
     }
     save_publication(project, journal)
@@ -2663,65 +2989,146 @@ def _library_parse_ok(project: Path) -> bool:
     return isinstance(doc, dict) and isinstance(doc.get("entries"), list)
 
 
+FP_ARTIFACT_RELS = ("追踪/段落指纹库.json", "追踪/意象台账.md")
+
+
+def _fp_plan_artifacts(journal: dict[str, Any]) -> list[dict[str, Any]]:
+    return [a for a in _plan_artifacts(journal) if a.get("path") in FP_ARTIFACT_RELS]
+
+
+def _fp_classify(project: Path, journal: dict[str, Any]) -> str:
+    """指纹库/意象两产物的当前盘面分类（任一第三态即 third）。"""
+    states = set()
+    for art in _fp_plan_artifacts(journal):
+        pp = project / art["path"]
+        cur = sha256_file(pp) if pp.is_file() else None
+        after = art.get("after_sha256")
+        if after is None:
+            states.add("pending")  # 尚未产生 after（首次未跑到指纹阶段）
+        elif cur == after:
+            states.add("after")
+        elif cur == art.get("before_sha256"):
+            states.add("before")
+        else:
+            states.add("third")
+    if "third" in states:
+        return "third"
+    if states == {"after"}:
+        return "all_after"
+    return "not_after"
+
+
+def _run_fp_commit(project: Path, journal: dict[str, Any]) -> None:
+    """机械固化：同章替换（revision 也必跑，不看章号在否）。"""
+    chapter = journal["target"]["chapter"]
+    destination = project / journal["inputs"]["destination"]
+    proc = _run_node(
+        "guyin-check-repetition.js",
+        ["--commit", "--fail-on=hard", "--project", str(project), "--under-lock",
+         "--unit", str(chapter), str(destination)],
+        stage="fingerprint_committed",
+    )
+    if proc.returncode != 0:
+        raise PublicationError(
+            f"指纹固化失败（exit {proc.returncode}）——发布停留本阶段，recover 只补指纹不重写正文。\n"
+            + (proc.stdout or proc.stderr or "").strip()[:800]
+        )
+
+
+def _stage_fp_after(project: Path, journal: dict[str, Any]) -> None:
+    """读盘上实际指纹产物，暂存进 R 并回填 tracking_plan 的 after/staged。"""
+    # T35：v1 旧账本可能到指纹阶段才有 tracking_plan——就地初始化，只记录此后产物。
+    if not isinstance(journal.get("tracking_plan"), dict):
+        journal["tracking_plan"] = {"artifacts": []}
+    stage_dir = project / WORKSPACE_REL / journal["run_id"] / "publication" / "artifacts"
+    stage_dir.mkdir(parents=True, exist_ok=True)
+    for art in _fp_plan_artifacts(journal):
+        rel = art["path"]
+        pp = project / rel
+        if not pp.is_file():
+            # 意象台账在无比喻时仍由 commit 渲染（通常存在）；确实无文件时 after=before=null 合法。
+            if art.get("before_sha256") is not None:
+                raise PublicationError(f"指纹阶段后产物缺失：{rel}——保留现场，停人工核对")
+            art["after_sha256"] = None
+            art["staged_path"] = None
+            continue
+        data = pp.read_bytes()
+        staged = stage_dir / rel.replace("/", "__")
+        staged.write_bytes(data)
+        art["after_sha256"] = hashlib.sha256(data).hexdigest()
+        art["staged_path"] = staged.relative_to(project.resolve()).as_posix()
+    journal["tracking_plan"]["artifacts"] = [
+        a for a in _plan_artifacts(journal) if a.get("path") not in FP_ARTIFACT_RELS
+    ] + _fp_plan_artifacts(journal)
+
+
+def _verify_fp_owner(project: Path, journal: dict[str, Any]) -> None:
+    """B-3：库内目标章条目必须全部由当前正式稿（固化候选）生成。"""
+    chapter = journal["target"]["chapter"]
+    destination = project / journal["inputs"]["destination"]
+    proc = _run_node(
+        "guyin-check-repetition.js",
+        ["--verify-owner", "--json", "--project", str(project),
+         "--unit", str(chapter), str(destination)],
+        stage="fingerprint verify-owner",
+    )
+    if proc.returncode != 0:
+        raise PublicationError(
+            "指纹归属核验失败：库内目标章存在不由当前候选生成的条目（revision 必须替换旧指纹）；"
+            f"输出：{(proc.stdout or proc.stderr or '').strip()[:500]}"
+        )
+
+
 def _commit_fingerprint(project: Path, journal: dict[str, Any], *, recovery_mode: bool) -> None:
     chapter = journal["target"]["chapter"]
-    done = journal["steps"].get("fingerprint_committed")
-    if done is not None:
-        lib_path = tracking_root(project) / FINGERPRINT_LIB_REL
-        if not lib_path.is_file() or hash12_file(lib_path) != done["library_hash12"]:
-            raise PublicationError("段落指纹库与发布记录不符——外部改动，停用户裁决")
-        return
-
-    if not _library_parse_ok(project):
-        if not recovery_mode:
-            raise PublicationError(
-                "段落指纹库损坏无法解析：「只补指纹」不成立——中断后用 recover 走受保护恢复"
-                "（隔离损坏库＋基线重放＋复检），不得静默重建"
-            )
-        # F1 短篇单元号：destination 不带「第N章」文件名（单短篇项目固定单元 1）时，
-        # 全量重放会漏收篇名文件——按清单里的显式目标文件 + --unit 重放这一篇；
-        # 长篇（destination 文件名带章号）仍从 正文/ 全量重放。
-        destination = project / journal["inputs"]["destination"]
-        if re.search(r"第\s*0*\d+\s*章", destination.name):
-            replay_target = project / "正文"
-            replay_args = ["--recover-library", "--project", str(project), "--under-lock", str(replay_target)]
-        else:
-            replay_args = [
-                "--recover-library", "--project", str(project), "--under-lock",
-                "--unit", str(chapter), str(destination),
-            ]
-        proc = _run_node(
-            "guyin-check-repetition.js",
-            replay_args,
-            stage="fingerprint recover",
-        )
-        if proc.returncode != 0:
-            raise PublicationError(
-                "指纹库受保护恢复失败（exit %d）——恢复不把检测失败冒充通过；输出：\n%s"
-                % (proc.returncode, (proc.stdout or proc.stderr or "").strip()[:800])
-            )
-
-    if not _library_has_chapter(project, chapter):
-        destination = project / journal["inputs"]["destination"]
-        # 机械步：advisory/verify 复读裁决在 prepared 前的候选检查已完成（未决台账为空），
-        # 此处只固化，不重开语义门（--fail-on=hard；commit 模式欠账门本就跳过）。
-        # --unit 显式传目标单元号（F1：短篇篇名文件无章号，不靠文件名反解）。
-        proc = _run_node(
-            "guyin-check-repetition.js",
-            ["--commit", "--fail-on=hard", "--project", str(project), "--under-lock",
-             "--unit", str(chapter), str(destination)],
-            stage="fingerprint_committed",
-        )
-        if proc.returncode != 0:
-            raise PublicationError(
-                f"指纹固化失败（exit {proc.returncode}）——发布停留本阶段，recover 只补指纹不重写正文。\n"
-                + (proc.stdout or proc.stderr or "").strip()[:800]
-            )
-        if not _library_has_chapter(project, chapter):
-            raise PublicationError("指纹固化退出成功但库中无本章条目——机械结果矛盾，停用户裁决")
-
     lib_path = tracking_root(project) / FINGERPRINT_LIB_REL
     imagery_path = tracking_root(project) / IMAGERY_VIEW_REL
+    done = journal["steps"].get("fingerprint_committed")
+
+    if done is not None:
+        # journal 已记录：库/意象必须等于记录，且全部 tracking_plan 产物为 after——不重跑、零新增。
+        if not lib_path.is_file() or hash12_file(lib_path) != done["library_hash12"]:
+            raise PublicationError("段落指纹库与发布记录不符——外部改动，停用户裁决")
+        img_now = hash12_file(imagery_path) if imagery_path.is_file() else None
+        if img_now != done.get("imagery_hash12"):
+            raise PublicationError("意象台账与发布记录不符——外部改动，停用户裁决")
+        if _classify_plan_state(project, journal) != "all_after" or _fp_classify(project, journal) != "all_after":
+            raise PublicationError("指纹阶段已标记完成但追踪/指纹产物非全部 after——第三态，停用户裁决")
+        return
+
+    fp_state = _fp_classify(project, journal)
+    if fp_state == "all_after":
+        # 指纹实际已写完、journal 未更新（精确崩溃窗口）：只补记，零写入。
+        pass
+    elif fp_state == "not_after":
+        # 库损坏时的受保护恢复（仅 recover 路径允许重放；新发布阶段损坏一律阻断）。
+        if not _library_parse_ok(project):
+            if not recovery_mode:
+                raise PublicationError(
+                    "段落指纹库损坏无法解析：中断后用 recover 走受保护恢复"
+                    "（隔离损坏库＋基线重放＋复检），不得静默重建")
+            destination = project / journal["inputs"]["destination"]
+            if re.search(r"第\s*0*\d+\s*章", destination.name):
+                replay_args = ["--recover-library", "--project", str(project), "--under-lock",
+                               str(project / "正文")]
+            else:
+                replay_args = ["--recover-library", "--project", str(project), "--under-lock",
+                               "--unit", str(chapter), str(destination)]
+            proc = _run_node("guyin-check-repetition.js", replay_args, stage="fingerprint recover")
+            if proc.returncode != 0:
+                raise PublicationError(
+                    "指纹库受保护恢复失败（exit %d）——不冒充通过；输出：\n%s"
+                    % (proc.returncode, (proc.stdout or proc.stderr or "").strip()[:800]))
+        # B-3：无论首装还是 revision 都执行同章替换（旧逻辑的「章号存在即跳过」已废除）。
+        _run_fp_commit(project, journal)
+        _stage_fp_after(project, journal)
+    else:
+        raise PublicationError(
+            "指纹库/意象台账出现第三种内容（既非 before 也非固化 after）——外部改动，停用户裁决")
+
+    # 归属核验：目标章条目必须由当前候选生成（revision 旧稿指纹不得残留）。
+    _verify_fp_owner(project, journal)
+
     journal["stage"] = "fingerprint_committed"
     journal["steps"]["fingerprint_committed"] = {
         "at": _now_iso(),
@@ -2730,6 +3137,38 @@ def _commit_fingerprint(project: Path, journal: dict[str, Any], *, recovery_mode
     }
     save_publication(project, journal)
     _pause_after("fingerprint_committed", journal)
+
+
+
+def _verify_frozen_inputs(project: Path, journal: dict[str, Any]) -> None:
+    """G-4：任何恢复写入前，统一核验 journal 固化的 input/证据/来源与本 run 一致。
+
+    v1 旧账本无 frozen 段时跳过（旧协议能证明的阶段照旧恢复，缺证据窗口保留现场）。
+    """
+    frozen = journal.get("frozen")
+    if not frozen:
+        return
+    groups = [
+        ("candidate", frozen.get("candidate")),
+        ("author_input", frozen.get("author_input")),
+        ("transaction", frozen.get("transaction")),
+        ("candidate_checks", frozen.get("candidate_checks")),
+    ]
+    for label, item in groups:
+        if not item:
+            continue
+        p = project / item["rel"]
+        want = item.get("sha256")
+        if not p.is_file() or (want and sha256_file(p) != want):
+            raise PublicationError(
+                f"恢复冻结核验：{label} 缺失或与本 run 固化哈希不符（{item.get('rel')}）"
+                "——不重新创作、不换稿，停用户裁决/重建发布")
+    for key in ("review_evidence", "check_evidence_md", "sources"):
+        for item in frozen.get(key, []):
+            p = project / item["rel"]
+            if not p.is_file() or sha256_file(p) != item.get("sha256"):
+                raise PublicationError(
+                    f"恢复冻结核验：{key} 文件缺失或被改动（{item.get('rel')}）——停用户裁决")
 
 
 def _finalize(project: Path, journal: dict[str, Any], *, check_pending: bool) -> None:
@@ -2760,8 +3199,15 @@ def _finalize(project: Path, journal: dict[str, Any], *, check_pending: bool) ->
     lib_path = tracking_root(project) / FINGERPRINT_LIB_REL
     if not lib_path.is_file() or hash12_file(lib_path) != fp_done["library_hash12"]:
         raise PublicationError("最终核验：段落指纹库缺失或与发布记录不符")
+    imagery_path = tracking_root(project) / IMAGERY_VIEW_REL
+    img_now = hash12_file(imagery_path) if imagery_path.is_file() else None
+    if img_now != fp_done.get("imagery_hash12"):
+        raise PublicationError("最终核验：意象台账与发布记录不符")
     if not _library_has_chapter(project, chapter):
         raise PublicationError("最终核验：指纹库无本章条目")
+    # G-3/G-4：complete 前全部 tracking_plan 产物必须等于固化 after（第三态绝不放行）。
+    if _classify_plan_state(project, journal) != "all_after":
+        raise PublicationError("最终核验：追踪/指纹产物未全部等于固化 after——保留现场，停人工核对")
 
     if check_pending:
         _assert_no_pending(project, stage="complete")
@@ -2779,6 +3225,11 @@ def _finalize(project: Path, journal: dict[str, Any], *, check_pending: bool) ->
 
 def _drive_publication(project: Path, journal: dict[str, Any], *, recovery_mode: bool) -> dict[str, Any]:
     """按已固化 journal 机械推进；每个已完成阶段先核验再跳过（不越步）。"""
+    # G-4：任何新增写入前统一核验已固化输入/证据（v2）；第三态由各阶段零写入阻断。
+    _verify_frozen_inputs(project, journal)
+    # T35：v1 旧账本可能没有 steps 段——内存归一为空表，随阶段推进补记；不猜写历史阶段。
+    if not isinstance(journal.get("steps"), dict):
+        journal["steps"] = {}
     stage_index = PUBLISH_STAGES.index(journal["stage"])
     if stage_index < PUBLISH_STAGES.index("prose_written"):
         _write_prose(project, journal)
@@ -2810,6 +3261,12 @@ def publish(project: Path, manifest_path: Path) -> dict[str, Any]:
         if existing is not None and existing.get("run_id") == m["run_id"]:
             # 同一 run 已 complete：幂等返回，不重复存档/不重建发布。
             return load_state(project)
+        # G-1：能走到这里都是「新发起」（在途在上面 recover 分支、complete 在上面幂等返回）。
+        # 新发起一律 v2；v1 只用于读取/恢复既有在途账本，不允许借 v1 绕过 v2 校验。
+        if m["manifest_version"] == 1:
+            raise PublicationError(
+                "新发起发布只接受 schema_version=2 清单（author_input+candidate_checks）；"
+                "v1 仅用于恢复既有在途账本（用 recover 子命令），不补发/不新建 v1 发布")
         tx_path = _resolve_under(project, m["transaction_rel"], "transaction")
         if not tx_path.is_file():
             raise PublicationError(f"事务 JSON 不存在：{m['transaction_rel']}")
@@ -2829,9 +3286,17 @@ def recover(project: Path) -> dict[str, Any] | None:
 
 
 def preview(project: Path, manifest_path: Path) -> tuple[dict[str, Any], int]:
-    """v4 §6.4 纯内存预演：不写正文/追踪/账本；授权可为 null；返回 (结果, exit_code)。"""
+    """v4 §6.4 纯内存预演：不写正文/追踪/账本；授权可为 null；返回 (结果, exit_code)。
+
+    B-5：首次 preview 时 candidate_checks 证据允许尚不存在——真实重跑检查链后把机器结果
+    原子写到清单指定的 R 内路径（只生成机器证据，不代写审读，不碰正式正文/追踪/账本）。
+    """
     document = read_json(manifest_path)
     m = _normalize_manifest(document)
+    # G-1：preview 是新发起动作，同样只接受 v2。
+    if m["manifest_version"] != 2:
+        raise PublicationError(
+            f"preview 只接受 schema_version=2 清单（当前 {m['manifest_version']}）；v1 不走预演")
     state = load_state(project)
     require(
         state["state_revision"] == m["expected_revision"],
@@ -2841,11 +3306,8 @@ def preview(project: Path, manifest_path: Path) -> tuple[dict[str, Any], int]:
     if not candidate.is_file():
         raise PublicationError(f"候选正文不存在：{m['candidate_rel']}")
     candidate_sha256_full = sha256_file(candidate)
-    destination = _resolve_under(project, m["destination_rel"], "destination")
-    if m["mode"] == "append" and destination.exists():
-        raise PublicationError(f"append 目标已存在：{m['destination_rel']}")
-    if m["mode"] == "revision" and not destination.exists():
-        raise PublicationError(f"revision 目标不存在：{m['destination_rel']}")
+    # G-2：destination 磁盘冲突规则与 prepared 完全一致（预演先发现，不留到安装阶段）。
+    destination = _resolve_destination(project, m)
     tx_path = _resolve_under(project, m["transaction_rel"], "transaction")
     if not tx_path.is_file():
         raise PublicationError(f"事务 JSON 不存在：{m['transaction_rel']}")
@@ -2858,39 +3320,47 @@ def preview(project: Path, manifest_path: Path) -> tuple[dict[str, Any], int]:
     _evidence_bound(project, m["evidence"], hash12_file(candidate), "审读证据")
     _evidence_bound(project, m["check_evidence"], hash12_file(candidate), "检查证据")
 
-    chain = {"rerun": None, "status": "not_required"}
-    exit_code = 0
-    if m["manifest_version"] == 2:
-        input_abs = _workspace_resolved(project, m["author_input_rel"], m["run_id"], "author_input")
-        checks_abs = _workspace_resolved(project, m["candidate_checks_rel"], m["run_id"], "candidate_checks")
-        if not input_abs.is_file() or not checks_abs.is_file():
-            raise PublicationError("v2 清单的 author_input/candidate_checks 文件不存在")
-        # preview 允许 publish=null（试演）：有授权则校验其形状/来源，缺授权不报错。
-        input_doc = json.loads(input_abs.read_text(encoding="utf-8-sig"))
-        pub = ((input_doc.get("authorization") or {}).get("publish"))
-        if pub is not None:
-            _verify_author_input(project, m, input_abs, candidate_sha256_full)
-        gathered = _rerun_candidate_chain(
-            project, m,
-            input_abs.relative_to(project.resolve()).as_posix(),
-            tx_path.relative_to(project.resolve()).as_posix(), candidate)
-        chain = {"rerun": "completed", "status": gathered.get("status"),
-                 "non_pass": [{"name": c.get("name"), "status": c.get("status"), "reason": c.get("reason")}
-                              for c in gathered.get("checks", []) if c.get("status") != "pass"]}
-        if gathered.get("status") != "pass":
-            exit_code = 1
-        # 预演只比对证据版本（不要求重跑结果等于文件？）——证据文件若存在也核对一遍。
-        if checks_abs.is_file():
-            try:
-                _verify_candidate_checks(project, m, checks_abs, candidate_sha256_full, gathered)
-            except PublicationError:
-                # preview 阶段证据尚未汇总/已过期不是阻断：报告给调用方。
-                chain["evidence_match"] = False
-            else:
-                chain["evidence_match"] = True
+    input_abs = _workspace_resolved(project, m["author_input_rel"], m["run_id"], "author_input")
+    checks_abs = _workspace_resolved(project, m["candidate_checks_rel"], m["run_id"], "candidate_checks")
+    if not input_abs.is_file():
+        raise PublicationError("v2 preview 的 author_input 必须为 R 内真实文件")
+    # preview 允许 publish=null（试演）：有授权则校验其形状/来源，缺授权不报错（publish 时再强制）。
+    input_doc = json.loads(input_abs.read_text(encoding="utf-8-sig"))
+    pub = ((input_doc.get("authorization") or {}).get("publish"))
+    if pub is not None:
+        _verify_author_input(project, m, input_abs, candidate_sha256_full)
+    # v2 强基线（state/逐正文/来源内容哈希）——预演与发布同一把尺。
+    _check_baseline_v2(project, m, input_abs)
+
+    gathered = _rerun_candidate_chain(
+        project, m,
+        input_abs.relative_to(project.resolve()).as_posix(),
+        tx_path.relative_to(project.resolve()).as_posix(), candidate)
+    chain: dict[str, Any] = {"rerun": "completed", "status": gathered.get("status"),
+                            "non_pass": [{"name": c.get("name"), "status": c.get("status"), "reason": c.get("reason")}
+                                         for c in gathered.get("checks", []) if c.get("status") != "pass"]}
+    exit_code = 0 if gathered.get("status") == "pass" else 1
+
+    # B-5：证据不存在＝首次 preview，原子生成到 R 指定路径；已存在则核对（过期/被改不阻断预演，
+    # 但如实报告 evidence_match=false，调用方须重新处置，prepared 仍会再次重跑核验）。
+    if not checks_abs.exists():
+        checks_abs.parent.mkdir(parents=True, exist_ok=True)
+        atomic_write_text(checks_abs, json_payload(gathered))
+        chain["evidence_generated"] = str(checks_abs.relative_to(project.resolve()).as_posix())
+        chain["evidence_match"] = True
+    else:
+        try:
+            _verify_candidate_checks(project, m, checks_abs, candidate_sha256_full, gathered)
+        except PublicationError as exc:
+            chain["evidence_match"] = False
+            chain["evidence_mismatch"] = str(exc)[:300]
+        else:
+            chain["evidence_match"] = True
 
     RENDER_WARNINGS.clear()
     sim = simulate_transaction(state, json.loads(tx_bytes.decode("utf-8")))
+    # G-1/T28：三处目标一致（manifest/事务），merge 出的标题/章号/模式对不上即预演失败。
+    _assert_targets_agree(m, sim["transaction"])
     result = {
         "ok": exit_code == 0,
         "command": "preview",
@@ -2900,7 +3370,7 @@ def preview(project: Path, manifest_path: Path) -> tuple[dict[str, Any], int]:
         "next_state_revision": sim["next_state"]["state_revision"],
         "warnings": sim.get("warnings", []),
         "candidate_checks": chain,
-        "writes": [],
+        "writes": ([chain["evidence_generated"]] if chain.get("evidence_generated") else []),
     }
     return result, exit_code
 

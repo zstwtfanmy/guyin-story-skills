@@ -89,6 +89,8 @@ function collectFiles(input) {
 }
 
 const CH_TITLE = /^#{1,2}\s*第[0-9一二三四五六七八九十百千零两]+章/;
+// 短篇篇名标题（# 追妻）：唯一一级标题合法；「## 声线锚」第二字符是 #，不匹配，仍拦。
+const SHORT_TITLE = /^#\s+\S/;
 const ANY_HEADING = /^\s*#{1,6}\s+\S/;
 const CARRYOVER = /承接[：:]?\s*第/;
 // 工序词表（跨书通用；「卷\d」带案/宗白名单——查案题材正当词）
@@ -151,7 +153,7 @@ for (const { abs, display } of inputFiles) {
   let titleSeen = false;
   for (const { line, no } of bodyLines) {
     if (!ANY_HEADING.test(line)) continue;
-    if (CH_TITLE.test(line) && !titleSeen) {
+    if ((CH_TITLE.test(line) || SHORT_TITLE.test(line)) && !titleSeen) {
       titleSeen = true;
       continue;
     }
@@ -194,7 +196,10 @@ try {
 }
 
 if (options.json) {
-  process.stdout.write(`${JSON.stringify({ findings: allFindings }, null, 2)}\n`);
+  process.stdout.write(`${JSON.stringify({
+    findings: allFindings,
+    files_scanned: inputFiles.map((f) => f.abs),
+  }, null, 2)}\n`);
 } else {
   for (const f of allFindings) {
     console.log(`${f.file}:${f.line}:${f.column}: [${handling.label(f)}] ${f.type}: ${f.message}`);

@@ -1,0 +1,191 @@
+﻿== guyin-check-wordcount ==
+  PASS  短章 blocking 报警
+  PASS  正常章通过
+  PASS  超长章 advisory 报警（editorial，默认门 exit 0）
+  PASS  超长章 editorial 触发 --fail-on=all exit 1（审计门）
+  PASS  目录模式只扫 第*.md
+  PASS  目录里非 第*.md 文件被忽略
+== guyin-check-degeneration ==
+  PASS  复读打转报警
+  PASS  干净正文通过
+  PASS  工程词泄漏报警
+== guyin-check-ai-patterns ==
+  PASS  不是A而是B 命中 2 处（editorial，默认门 exit 0）
+  PASS  引号内台词豁免
+  PASS  干净正文通过
+== guyin-check-ai-patterns L1-L3（三腔 advisory，黄金样本回归） ==
+  PASS  ch61 三腔坏样本必报 explain-tic（科普腔，editorial 默认门 exit 0）
+  PASS  ch61 三腔坏样本必报 mid-trailer（段中预告腔，editorial 默认门 exit 0）
+  PASS  ch61 三腔坏样本必报 aphorism-tic（金句腔，editorial 默认门 exit 0）
+  PASS  ch36 修复版 explain/mid 静默（零误报）
+  PASS  ch36 修复版 aphorism 仅 1 处功能性命中（「表是死的，人是活的。」）
+== guyin-check-integrity（F1 落盘前格式门，黄金样本回归） ==
+  PASS  ch39 塌缩样本必报 avg-line-collapse
+  PASS  ch39 塌缩样本代词叠复「他他」报 doubled-char
+  PASS  ch59 错字风暴样本必报 char-storm
+  PASS  正常样本 ch36-正文_全盘否定初稿.md 静默
+  PASS  正常样本 ch36-正文_修复版.md 静默
+  PASS  引号失衡报 quote-mismatch
+  PASS  引号配对正常静默（正常章零误报）
+== guyin-check-outline-verdict（G1 细纲三档声明仲裁，黄金样本回归） ==
+  PASS  ch36 冲突细纲必报档位冲突
+  PASS  ch36 冲突细纲必报缺声明（机械判档 2）
+  PASS  ch36 修复版定性静默（判档 1）
+  PASS  翻转句+既往引用缺声明报 blocking
+  PASS  无引用无翻转细纲静默（无声明也不报）
+  PASS  声明档 1 与机械判档一致静默
+  PASS  声明低于机械判档报 advisory
+  PASS  verdict-tier-suspect → verify（默认门 exit 1）
+  PASS  档 2 缺补偿声明报 advisory
+  PASS  G3 契约越界：叠加契约 × 否定定性报 advisory
+  PASS  G3 正向细纲（档 1 重估）对叠加契约零误报
+  PASS  G3 命中否定契约方向一致放行（无 contract findings）
+  PASS  G3 未登记契约：否定定性零命中提醒补录 advisory
+  PASS  G3 矩阵自动发现（大纲/ 同级 追踪/）
+== guyin-check-narrative-asset（G2 事件定性共现检测，黄金样本回归） ==
+  PASS  G2 ch36 初稿对 V027 共现必报（「一场戏/人家排的」×拆神）
+  PASS  G2 ch36 修复版静默（「从头到尾」不进否定词表，档 1 重估同形不误报）
+  PASS  G2 兑付当章建立资产不报
+  PASS  G2 nullified 资产不再报
+  PASS  G2 档位声明（档 1）静默
+  PASS  G2 双层共现：单层命中（否定模式或关键词各自单独出现）不报
+  PASS  G2 无 state 静默（fail-open）
+  PASS  G2 narrative-asset → verify（默认门 exit 1）
+  PASS  G2 事件名引用自动发现：翻转句×拆神无声明报 blocking
+  PASS  G2 事件名引用已声明档 1 静默
+  PASS  G2 --state 显式指定事件名引用生效
+== guyin-check-consistency（T1/T2 物证·能力·地理章检，黄金样本回归） ==
+  PASS  T2 方向冲突必报 direction-conflict（ch2「顺水往南往通州」型）
+  PASS  T1 销毁物证仍使用必报 evidence-status-conflict
+  PASS  T1 能力空降必报 capability-unregistered
+  PASS  T2 新地名提示必报 place-unregistered
+  PASS  T2 已登记地名到达句零误报
+  PASS  T1/T2 无 state 静默（fail-open）
+== guyin-check-beat（P1 连续场景/整章确定性预检，语义审读归 4a） ==
+  PASS  beat 工程词泄漏报 meta-leak-beat
+  PASS  beat 禁止项报 ban-violation
+  PASS  beat --min 已废除，传入按未知参数退 2（无字数桶）
+  PASS  beat 跳写报 skip-write
+  PASS  beat 连续对话报 dialogue-run（advisory，默认 exit 0）
+  PASS  beat 心理独白超限报 mono-count（advisory，默认 exit 0）
+  PASS  beat 干净正文静默
+  PASS  beat editorial 不触发默认门（block）
+  PASS  beat 时间压缩词报 advisory skip-write（默认 exit 0）
+  PASS  beat 时间压缩词 --fail-on=all exit 1（观测全拦须显式）
+  PASS  beat 同行动作对白不报 dialogue-run
+  PASS  beat summary 指向 drafted 全文回看且无编号题残留
+== guyin-tracking-commit.py G2 事件定性实体（行为断言） ==
+  PASS  init 登记 verdicts：state v7 + 资产视图
+  PASS  init 后 check 一致
+  PASS  backfill 未来章 verdict 拒绝（chapter > last_committed）
+  PASS  backfill v4 存量自动升级 v7 并登记 verdicts
+  PASS  backfill 后 check 一致
+  PASS  commit verdict_changes：重估+新登记，逐章记录含事件定性段
+  PASS  commit 后 check 一致
+== guyin-tracking-commit.py T1/T2 实体（evidence/geo，行为断言） ==
+  PASS  init 登记 evidence/geo：state v7 + 双台账视图
+  PASS  init 后 check 一致（v7）
+  PASS  backfill 未来章 evidence 拒绝（chapter > last_committed）
+  PASS  backfill v5 存量自动升级 v7 并登记 evidence/geo
+  PASS  backfill 后 check 一致（v7）
+  PASS  commit evidence_changes/geo_changes：流转+新登记，逐章记录含双变化段
+  PASS  commit 后 check 一致（v7）
+== guyin-tracking-commit.py P4 场景台账（scenes，行为断言） ==
+  PASS  init 登记 scenes：state v7 + 场景台账视图
+  PASS  P4 init 后 check 一致
+  PASS  commit scene_changes：变迁链 + 逐章记录场景变化段
+  PASS  P4 commit 后 check 一致
+== guyin-tracking-commit.py P2 执行偏差回填提醒（stderr） ==
+  PASS  P2 前置：init 成功
+  PASS  P2 细纲缺执行偏差区 → stderr 提醒且不阻断
+  PASS  P2 前置：乙 init 成功
+  PASS  P2 细纲含执行偏差区 → stderr 静默
+  PASS  R1 前置：丙 init 成功
+  PASS  R1 未落实缺顺延章号 → stderr 提醒且不阻断
+== guyin-tracking-commit.py S1 时滞预检（check 子命令） ==
+  PASS  S1 前置：init 成功（last_committed=1）
+  PASS  S1 正文第3章落盘未提交 → check 退 2 报时滞
+== D1 状态契约（任务书 §2.5：模板 v7 往返 / 长度契约 / 运行记录分离） ==
+  PASS  D1 模板 state 为 v7 现行字段形状（无 open_threads/summary 旧键）
+  PASS  D1 hook 接受 state schema 4-7（v7 项目不再被 stateProblem 误拦）
+  PASS  D1 模板 上下文.md 为七区段派生形状（无 open_threads 悬置线头旧节）
+  PASS  D1 模板部署后 check 通过（v7 空态与派生视图逐字一致）
+  PASS  D1 模板空态上首章 commit 通过（无 init 依赖）
+  PASS  D1 首章 commit 后 check 通过
+  PASS  D1 修订重提交不覆盖运行记录、只重写逐章记录
+  PASS  D1 修订后 check 通过
+  PASS  D1 长度契约前置：init 成功
+  PASS  D1 ≈300字（888字节）result 通过且三处同额入库
+  PASS  D1 超限 result（915字节 > 900）在任何写入前拒绝
+== guyin-check-hook-rotation (P4 钩子轮换/蓄力成对) ==
+  PASS  钩子坍缩：连续 3 章悬念钩报 hook-run（editorial，默认门 exit 0）
+  PASS  爆发无蓄力报 burst-without-charge（第5章）
+  PASS  蓄力+爆发成对静默（第8章不报）
+  PASS  summary 统计已标注/未标注章
+  PASS  类型轮换正常零报警
+== guyin-check-repetition (P6 段落指纹库) ==
+  PASS  首章 commit：库建立且台词段不入库
+  PASS  换词复读报 para-repeat-pattern（雪段 vs 雨段）
+  PASS  全新段落零误报（山峦段不报）
+  PASS  近乎照抄报 para-repeat-near（改写卡路径）
+  PASS  重 commit 幂等（同章先清后插）
+== guyin-check-repetition P6-2 意象台账 ==
+  PASS  同域比喻密度报 imagery-domain-run（第3章窗口自然×3，editorial 默认门 exit 0）
+  PASS  比喻句入库且角色就近归属（周砚）
+  PASS  意象台账视图含域统计与明细
+== guyin-check-repetition N1 复读雷达 ==
+  PASS  N1 ch1 ×2 同章复读报 phrase-echo-inline（SP1 docs/11 §一：ECHO_INLINE_RUN=2，旧 ×2 静默口径已废止；editorial 默认门 exit 0）
+  PASS  N1 跨章窗口必报 phrase-echo-cross（库2+本章1=3，editorial 默认门 exit 0）
+  PASS  N1 角色短语静默（燕衡的算盘 实体过滤）
+  PASS  N1 phrases 沉淀（ch1+ch6 合并 total=3、last=6）
+  PASS  N2 台账扩域：意象台账视图含复读短语节
+  PASS  N1 章尾复读报 phrase-echo-ending（本章×2 且末次落章尾 20%，子串归并报最长形；editorial 默认门 exit 0）
+  PASS  N1 ending 短语同步沉淀 phrases（total=2、last=7）
+== guyin-check-repetition B3 比喻域固化 ==
+  PASS  B3 主导域连续 5 章固化报 metaphor-domain-stale（自然域 run=5>4，editorial 默认门 exit 0）
+  PASS  B3 断链不报（第3章切身体域，第5章 run=2）
+  PASS  B3 --domain-stale=2 收紧后 run=5 必报（editorial 默认门 exit 0）
+== guyin-check-repetition U3 同族去重 ==
+  PASS  U3 同族只存最长形（8字 tic 的 4-7 字子串不另立行，SP1 同章复读不影响去重逻辑）
+  PASS  U3 独立短语照常入库（去重不误伤异族）
+== guyin-check-pending U1 待审台账阻断门（D3 八列契约） ==
+  PASS  D3 待审/空行 open，占位行跳过，修复/顺延证据齐全闭合（2 open / 共 4 行）
+  PASS  D3 --through 61 只查 ≤61 章（62/63 行出界，1 行开放）
+  PASS  D3 终态严格完整匹配：未修复/修复中/部分豁免均 open（unknown-state，E16）
+  PASS  Fw-07/D3 升级作者=等待态：「已裁决：」不转结，3 行全 open（awaiting-author）
+  PASS  Fw-07/D3 用户决定转结五终态＋证据后闭合 exit 0
+  PASS  D3 证据规则：修复缺版本/缺复检、豁免缺台账、契约修订缺偏差、顺延缺章号、不适用缺理由均 open
+  PASS  D3 editorial 行入台账=数据异常 exit 2（editorial 留审读记录）
+  PASS  D3 处置类别缺分类 exit 2（不能默认降为建议）
+  PASS  D3 --project 版本比对：匹配在册、不匹配 superseded 不阻塞、空/章缺失保守在册（3 open/1 superseded/共 4 在册）
+  PASS  D3 正文版本非法格式 exit 2（须 hash12，--hash 生成）
+  PASS  D3 损坏行（列数≠8）exit 2 不静默跳过
+  PASS  D3 旧五列台账缺列 exit 2（引导按模板迁移）
+  PASS  D3 章号非纯数字 exit 2
+  PASS  D3 台账缺失且父目录不存在 exit 0（非写作项目不误拦）
+  PASS  D3 已部署项目缺台账 exit 2（报告停靠，不 fail-open）
+== D2 发布契约（任务书 §2.6：隔离工作区 / publish 状态机 / 项目锁 / 受保护恢复） ==
+  FAIL  D2 happy publish exit 0（prepared→prose→tracking→fingerprint→complete） — status=2 err=ERROR: tracking_plan 只有部分产物固化 after（计划形状损坏）——不允许半套提交，停用户裁决
+  FAIL  D2 happy：正文=候选、state 至第1章 rev1、journal=complete、锁已释放 — st=0/0 pub=prose_written
+  FAIL  D2 happy：指纹库收录第1章、意象台账已渲染 — chapters=null
+node : D:\readbook-wpace\guyin-skills\tests\run-tests.js:1845
+At line:15 char:4424
++ ... pgrep\bin'; node tests/run-tests.js > arena/rect-v4-20260921/logs/r6g ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (D:\readbook-wpa...n-tests.js:1845:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+        throw new Error(`stagePublish preview 未通过：${(pv.stderr || pv.stdout || '').trim().slice(0, 1500)}`);
+        ^
+
+Error: stagePublish preview 未通过：ERROR: expected_state_revision=1 与当前 0 不符——基线已变
+    at stagePublish (D:\readbook-wpace\guyin-skills\tests\run-tests.js:1845:15)
+    at Object.<anonymous> (D:\readbook-wpace\guyin-skills\tests\run-tests.js:1899:23)
+    at Module._compile (node:internal/modules/cjs/loader:1469:14)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1548:10)
+    at Module.load (node:internal/modules/cjs/loader:1288:32)
+    at Module._load (node:internal/modules/cjs/loader:1104:12)
+    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:174:12)
+    at node:internal/main/run_main_module:28:49
+
+Node.js v20.17.0

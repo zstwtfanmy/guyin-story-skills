@@ -97,7 +97,10 @@ try {
 }
 
 if (options.json) {
-  process.stdout.write(`${JSON.stringify({ findings: allFindings }, null, 2)}\n`);
+  process.stdout.write(`${JSON.stringify({
+    findings: allFindings,
+    files_scanned: options.files.map((f) => require('path').resolve(f)),
+  }, null, 2)}\n`);
 } else {
   for (const f of allFindings) {
     console.log(`${f.file}:${f.line}:${f.column}: [${handling.label(f)}] ${f.type}: ${f.message} (${f.excerpt})`);

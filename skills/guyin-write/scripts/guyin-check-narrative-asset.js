@@ -39,7 +39,7 @@ const VERDICT_TIER = /资产影响档位[^\d]{0,6}([0-2])/;
 // 被检文件章号（文件名优先）：正文/第036章_标题.md 与 大纲/细纲_第036章.md 皆命中。
 const CHAPTER_IN_NAME = /第\s*0*(\d+)\s*章/;
 
-const options = { json: false, files: [], failOn: 'block', state: null };
+const options = { json: false, files: [], failOn: 'block', state: null, chapter: null };
 
 for (let i = 2; i < process.argv.length; i += 1) {
   const arg = process.argv[i];
@@ -53,15 +53,22 @@ for (let i = 2; i < process.argv.length; i += 1) {
     }
   } else if (arg.startsWith('--state=')) {
     options.state = arg.slice('--state='.length);
+  } else if (arg === '--chapter' || arg === '--unit') {
+    options.chapter = Number(process.argv[++i]);
+  } else if (arg.startsWith('--chapter=')) {
+    options.chapter = Number(arg.slice('--chapter='.length));
   } else if (arg === '-h' || arg === '--help') {
     process.stdout.write(`${USAGE}\n`);
     process.exit(0);
-  } else if (arg.startsWith('-')) {
+  } else if (arg === '--project' || arg === '--boundary' || arg === '--transaction' || arg === '--outline' || arg === '--title') {
+    i += 1; // 候选链统一参数：本脚本不用，消费掉值不报错
+  } else if (arg.startsWith('--')) {
     die(`Unknown option: ${arg}`);
   } else {
     options.files.push(arg);
   }
 }
+if (options.chapter !== null && !Number.isInteger(options.chapter)) die('--chapter 必须是整数');
 
 if (options.files.length === 0) die('No files provided');
 
@@ -89,7 +96,10 @@ try {
 }
 
 if (options.json) {
-  process.stdout.write(`${JSON.stringify({ findings: allFindings }, null, 2)}\n`);
+  process.stdout.write(`${JSON.stringify({
+    findings: allFindings,
+    files_scanned: options.files.map((f) => require('path').resolve(f)),
+  }, null, 2)}\n`);
 } else {
   for (const f of allFindings) {
     console.log(`${f.file}:${f.line}:${f.column}: [${handling.label(f)}] ${f.type}: ${f.message} (${f.excerpt})`);
@@ -165,9 +175,9 @@ function scanChapter(input, fullPath) {
     }
   }
 
-  // 被检文件章号（文件名优先）：解析不出则全按既往资产处理（fail-safe 宁报不漏）。
+  // 被检文件章号：显式 --chapter 优先（深层候选无章号文件名），其次文件名；都没有则全按既往资产（fail-open）。
   const nameMatch = CHAPTER_IN_NAME.exec(path.basename(fullPath));
-  const fileChapter = nameMatch ? Number(nameMatch[1]) : null;
+  const fileChapter = options.chapter !== null ? options.chapter : (nameMatch ? Number(nameMatch[1]) : null);
 
   const findings = [];
   for (let i = 0; i < lines.length; i += 1) {

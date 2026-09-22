@@ -193,6 +193,9 @@ for (let i = 2; i < process.argv.length; i += 1) {
     options.prepublish = true;
   } else if (arg === '--recover-library') {
     options.recoverLibrary = true;
+  } else if (arg === '--verify-owner') {
+    // B-3：只读核验——库中目标章指纹必须全部由当前正式稿（=发布候选）扫描生成。
+    options.verifyOwner = true;
   } else if (arg === '--under-lock') {
     options.underLock = true;
   } else if (arg.startsWith('--unit=')) {
@@ -712,7 +715,7 @@ for (const file of files) {
         },
       });
     }
-    if (options.commit || options.recoverLibrary) {
+    if (options.commit || options.recoverLibrary || options.verifyOwner) {
       pending.push({
         chapter,
         para: chapterPara,
@@ -906,14 +909,25 @@ function renderImageryView(imagery, phrases) {
 }
 
 // ---------- --commit：同章旧指纹/旧意象先清再插，写盘 + 台账视图（N1 含 phrases 合并） ----------
-
+// B-3：--commit 始终按「显式 --unit ＋ 实际扫到章」整章替换；revision 合法空指纹也清旧条目，
+// 不再「章号存在即跳过」。--recover-library（基线全量重放）维持原有 pending 驱动行为。
+const commitUnits = [];
+if (options.commit) {
+  if (options.unit !== null) commitUnits.push(options.unit);
+  for (const c of scannedChapters) commitUnits.push(c);
+}
+// --recover-library 是基线全量重放：替换实际扫到章（pending>0 时旧逻辑），不用显式 unit 集。
+if (options.recoverLibrary) {
+  for (const c of new Set(pending.map((e) => e.chapter))) commitUnits.push(c);
+}
+const touchedChapters = [...new Set(commitUnits)];
 let committed = 0;
-if ((options.commit || options.recoverLibrary) && pending.length > 0) {
-  const touchedChapters = [...new Set(pending.map((e) => e.chapter))];
+
+if (options.commit || (options.recoverLibrary && pending.length > 0)) {
   library.entries = library.entries.filter((e) => !touchedChapters.includes(e.chapter));
-  library.entries.push(...pending);
+  library.entries.push(...pending.filter((e) => touchedChapters.includes(e.chapter)));
   library.imagery = library.imagery.filter((e) => !touchedChapters.includes(e.chapter));
-  library.imagery.push(...pendingImagery);
+  library.imagery.push(...pendingImagery.filter((e) => touchedChapters.includes(e.chapter)));
   // N1 phrases 三步合并（幂等）：① 清 touched 章旧样本 ② 并入批级聚合（新条目须
   // 复现 ≥2 才建，防膨胀——全量 n-gram 每章上万条，不滤必膨胀）③ 修剪+派生重算：
   // total/last 恒为 recent 的派生值，窗口口径自动一致，重跑同章结果不变。
@@ -962,7 +976,7 @@ if ((options.commit || options.recoverLibrary) && pending.length > 0) {
       // D2：原子临时替换（同目录 rename，半截写盘不产生损坏库）。
       atomicWrite(libraryPath, `${JSON.stringify(library, null, 2)}\n`);
       atomicWrite(path.join(path.dirname(libraryPath), '意象台账.md'), renderImageryView(library.imagery, library.phrases));
-      committed = pending.length;
+      committed = library.entries.filter((e) => touchedChapters.includes(e.chapter)).length;
     } catch (error) {
       failed = true;
       if (!options.json) console.error(`${libraryPath}: unable to write library (${error.message})`);
@@ -971,6 +985,29 @@ if ((options.commit || options.recoverLibrary) && pending.length > 0) {
     failed = true;
     if (!options.json) console.error('--commit requires a project root (use --project or run inside 正文/)');
   }
+}
+
+// ---------- B-3：--verify-owner 只读核验：库内目标章条目必须全部由当前扫描稿生成 ----------
+if (options.verifyOwner) {
+  if (options.unit === null) die('--verify-owner 必须显式 --unit');
+  const ownerUnits = [...new Set([options.unit, ...scannedChapters])];
+  const sig = (e) => `${e.chapter}:${e.para}:${e.file}:${(e.grams || []).join('|')}`;
+  const libSet = new Set(library.entries.filter((e) => ownerUnits.includes(e.chapter)).map(sig));
+  const scanSet = new Set(pending.filter((e) => ownerUnits.includes(e.chapter)).map(sig));
+  const stale = [...libSet].filter((x) => !scanSet.has(x));
+  const missing = [...scanSet].filter((x) => !libSet.has(x));
+  const report = {
+    verify_owner: stale.length === 0 && missing.length === 0,
+    unit: options.unit,
+    library_entries: libSet.size,
+    scanned_entries: scanSet.size,
+    stale: stale.length,
+    missing: missing.length,
+  };
+  if (options.json) console.log(JSON.stringify(report, null, 2));
+  else console.log(report.verify_owner ? `owner-ok: unit ${options.unit} (${libSet.size} entries)`
+    : `owner-mismatch: stale=${stale.length} missing=${missing.length}`);
+  process.exit(report.verify_owner ? 0 : 2);
 }
 
 // ---------- D2：--recover-library 基线重放后的复检（不冒充通过，任务书 §2.6） ----------

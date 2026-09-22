@@ -43,12 +43,23 @@ tk = _load_tracking()
 TrackingError = tk.TrackingError
 emit = tk.emit
 
-PHASES = ("prepared", "drafting", "drafted", "reviewed", "ready", "published")
+PHASES = ("prepared", "drafting", "drafted", "reviewed", "ready", "blocked", "published")
 RUN_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$")
 HEX64_RE = re.compile(r"^[0-9a-f]{64}$")
 SESSION_NAME = "author-session.json"
 EVIDENCE_KEYS = ("review", "transaction", "check_evidence", "plan_patch")
 EVIDENCE_EMBED_KEYS = ("review", "check_evidence")  # 这两类证据正文须内嵌候选 hash12
+# 进入各阶段必须齐备的产物（checkpoint 与 status 共用同一份要求，G-6）：
+# ready 必须有全文回看 review——prepared 直接 ready 的旧旁路已封。
+PHASE_REQUIREMENTS = {
+    "prepared": frozenset(),
+    "drafting": frozenset(("draft",)),
+    "drafted": frozenset(("draft_complete",)),
+    "reviewed": frozenset(("draft_complete", "review")),
+    "ready": frozenset(("draft_complete", "review", "transaction", "check_evidence")),
+    "blocked": frozenset(),
+    "published": frozenset(),
+}
 
 
 class SessionError(ValueError):
@@ -352,8 +363,128 @@ def build_baseline(project: Path, state: dict[str, Any], input_doc: dict[str, An
         if rel in seen:
             continue
         seen.add(rel)
-        baseline["sources"].append({"path": rel, "sha256": raw["sha256"]})
+        fpath = resolve_under(project, raw["path"], "baseline source.path")
+        baseline["sources"].append({"path": rel, "sha256": sha256_file(fpath)})
     return baseline
+
+
+# ---------------- G-6 共享实体/阶段校验（status 与 checkpoint 同源） ----------------
+
+def _under_run(project: Path, run_id: str, rel: str, label: str) -> Path:
+    """证据/候选的非空指针必须落在当前 run 工作区（拒收 R 外路径）。"""
+    abs_path = resolve_under(project, rel, label)
+    rdir = run_dir(project, run_id).resolve(strict=False)
+    try:
+        abs_path.resolve(strict=False).relative_to(rdir)
+    except ValueError as exc:
+        raise SessionError(f"{label} 必须属于当前 run 工作区，拒收 R 外路径：{rel}") from exc
+    return abs_path
+
+
+def _baseline_drift(project: Path, session: dict[str, Any]) -> tuple[bool, list[str]]:
+    """state/prose/sources 相对基线漂移；返回 (state_changed, reasons)。publish 豁免由调用方按账本判定。"""
+    reasons: list[str] = []
+    baseline = session.get("baseline") or {}
+    state_abs = tk.state_path(project)
+    state_sha = (baseline.get("state") or {}).get("sha256")
+    state_changed = bool(state_sha) and (not state_abs.is_file() or sha256_file(state_abs) != state_sha)
+    if state_changed:
+        reasons.append("追踪状态相对本 run 基线被外部改动（先核发布账本/开新 run）")
+    current_prose = {(f["path"], f["sha256"]) for f in list_prose_files(project)}
+    base_prose = {(f["path"], f["sha256"]) for f in (baseline.get("prose") or {}).get("files", [])}
+    # 双向比对：候选只进 .guyin，正文/ 任何成员的新增（publish 外直写）、改动、消失都算漂移。
+    for rel, sha in sorted(base_prose - current_prose):
+        reasons.append(f"正文基线成员变化：{rel}（内容改动或消失；发布外改动先核来源）")
+    for rel, sha in sorted(current_prose - base_prose):
+        reasons.append(f"正文出现基线外新成员：{rel}（正式正文只由 publish 安装；先核来源）")
+    for src in baseline.get("sources", []):
+        p = project / src["path"]
+        if not p.is_file() or sha256_file(p) != src["sha256"]:
+            reasons.append(f"本 run 实际读取来源已变化：{src['path']}（换输入前先重核基线）")
+    return state_changed, reasons
+
+
+def _evidence_problems(project: Path, run_id: str, session: dict[str, Any]) -> list[str]:
+    """逐条核证据：R 归属/存在/哈希/候选绑定/内嵌 hash12。"""
+    reasons: list[str] = []
+    draft = session.get("draft")
+    for key in EVIDENCE_KEYS:
+        e = session.get(key)
+        if not e:
+            continue
+        rel = e.get("path")
+        if not isinstance(rel, str) or not rel:
+            reasons.append(f"{key} 证据指针形状非法")
+            continue
+        try:
+            abs_e = _under_run(project, run_id, rel, key)
+        except SessionError as exc:
+            reasons.append(str(exc))
+            continue
+        if not abs_e.is_file():
+            reasons.append(f"{key} 证据文件缺失：{rel}")
+            continue
+        if sha256_file(abs_e) != e.get("sha256"):
+            reasons.append(f"{key} 证据被外部修改：{rel}")
+            continue
+        if draft and e.get("candidate_sha256") != draft["sha256"]:
+            reasons.append(f"{key} 绑定的是另一候选，不作为本稿证据")
+        if key in EVIDENCE_EMBED_KEYS and draft:
+            text = abs_e.read_text(encoding="utf-8", errors="replace")
+            if draft["sha256"][:12] not in text:
+                reasons.append(f"{key} 正文未嵌入当前候选 hash12")
+    return reasons
+
+
+def _phase_requirement_reasons(session: dict[str, Any], phase: str | None = None) -> list[str]:
+    phase = phase or session.get("phase")
+    reqs = PHASE_REQUIREMENTS.get(phase, frozenset())
+    draft = session.get("draft")
+    reasons: list[str] = []
+    if "draft" in reqs and not draft:
+        reasons.append(f"phase={phase} 须先登记候选稿")
+    if "draft_complete" in reqs and not (draft and draft.get("complete")):
+        reasons.append(f"phase={phase} 要求 complete=true 的完整候选")
+    for key in ("review", "transaction", "check_evidence"):
+        if key in reqs and not session.get(key):
+            reasons.append(f"phase={phase} 缺证据 {key}")
+    return reasons
+
+
+def _evidence_live(project: Path, run_id: str, session: dict[str, Any]) -> set[str]:
+    """磁盘上真实可读且哈希一致的证据键（R 归属/嵌入 hash12 也核）；删了文件不算证据。"""
+    live: set[str] = set()
+    draft = session.get("draft")
+    for key in EVIDENCE_KEYS:
+        e = session.get(key)
+        if not e or not isinstance(e.get("path"), str):
+            continue
+        try:
+            abs_e = _under_run(project, run_id, e["path"], key)
+        except SessionError:
+            continue
+        if not abs_e.is_file() or sha256_file(abs_e) != e.get("sha256"):
+            continue
+        if draft and e.get("candidate_sha256") != draft["sha256"]:
+            continue
+        if key in EVIDENCE_EMBED_KEYS and draft:
+            if draft["sha256"][:12] not in abs_e.read_text(encoding="utf-8", errors="replace"):
+                continue
+        live.add(key)
+    return live
+
+
+def earliest_supported_phase(project: Path, run_id: str, session: dict[str, Any]) -> str:
+    """blocked 解除时凭磁盘上实际产物能回到的最早未完成阶段（不靠 phase 字符串/空指针）。"""
+    draft = session.get("draft")
+    if not draft or not draft.get("complete"):
+        return "drafting"
+    live = _evidence_live(project, run_id, session)
+    if "review" not in live:
+        return "drafted"
+    if "transaction" not in live or "check_evidence" not in live:
+        return "reviewed"
+    return "ready"
 
 
 def precheck_project(project: Path, run_id: str) -> None:
@@ -409,7 +540,8 @@ def load_session(project: Path, run_id: str) -> dict[str, Any]:
 
 
 def evidence_entry(project: Path, session: dict[str, Any], rel: str, key: str) -> dict[str, Any] | None:
-    abs_path = resolve_under(project, rel, f"{key} 路径")
+    run_id = session["run_id"]
+    abs_path = _under_run(project, run_id, rel, f"{key} 路径")
     draft = session.get("draft")
     if not draft:
         raise SessionError(f"登记 {key} 前必须先登记 draft")
@@ -483,18 +615,6 @@ def _draft_entry(project: Path, rdir: Path, raw: Any) -> dict[str, Any]:
     return {"path": raw["path"].replace("\\", "/"), "complete": complete, "sha256": sha256_bytes(data)}
 
 
-def _artifact_supports(phase: str, draft: dict[str, Any] | None, session: dict[str, Any]) -> bool:
-    if phase in ("prepared", "drafting"):
-        return draft is not None
-    if phase == "drafted":
-        return bool(draft and draft.get("complete"))
-    if phase == "reviewed":
-        return bool(draft and draft.get("complete") and session.get("review"))
-    if phase == "ready":
-        return bool(draft and draft.get("complete") and session.get("transaction") and session.get("check_evidence"))
-    return False
-
-
 def _published_consistent(project: Path, run_id: str, draft: dict[str, Any] | None) -> bool:
     try:
         journal = tk.load_publication(project)
@@ -554,28 +674,22 @@ def cmd_checkpoint(project: Path, run_id: str, cp_input: str) -> dict[str, Any]:
         raise SessionError("draft 不允许显式置 null（用新版本换稿，不删登记）")
     draft = session["draft"]
 
-    # 换稿/后退：四种证据立即失效（无论调用方传什么）
-    moving_back = PHASES.index(new_phase) < PHASES.index(session["phase"])
-    invalidate = False
-    if draft_changed and new_phase in ("drafting", "drafted") and moving_back:
-        invalidate = True
-    if draft_changed and session["phase"] in ("drafted", "reviewed", "ready") and new_phase in ("drafting", "drafted"):
-        invalidate = True
+    # 换稿（任何阶段登记了不同候选）：四种证据立即失效（无论调用方传什么、同阶段也失效）。
+    old_phase = session["phase"]
+    moving_back = PHASES.index(new_phase) < PHASES.index(old_phase)
+    invalidate = draft_changed
     if invalidate:
         for key in EVIDENCE_KEYS:
             session[key] = None
 
-    # 证据登记（未失效才接受）
+    # 证据登记（未失效才接受；显式 null 视为弃用该证据，只能配合回退/换稿）
     for key in EVIDENCE_KEYS:
-        if key not in doc:
-            continue
-        if invalidate:
+        if key not in doc or invalidate:
             continue
         raw = doc[key]
         session[key] = None if raw is None else evidence_entry(project, session, raw, key)
 
-    # 状态机
-    old_phase = session["phase"]
+    # 状态机（blocked 是可达状态；published 只能由发布账本核对一致建立）
     if new_phase != old_phase:
         if new_phase == "published":
             if not _published_consistent(project, run_id, draft):
@@ -583,14 +697,31 @@ def cmd_checkpoint(project: Path, run_id: str, cp_input: str) -> dict[str, Any]:
         elif new_phase == "blocked":
             pass  # 任意非 published 阶段可进 blocked
         elif old_phase == "blocked":
-            if not _artifact_supports(new_phase, draft, session):
-                raise SessionError(f"blocked 解除只能凭实际文件回到支持的阶段：{new_phase} 证据不足")
+            # 解除 blocked：只能凭磁盘实际产物回到被支持的阶段，不允许跳级或 phase 字符串过门。
+            floor = earliest_supported_phase(project, run_id, session)
+            if PHASES.index(new_phase) < PHASES.index(floor):
+                raise SessionError(
+                    f"blocked 解除只能凭实际文件回到 {floor}（或其之后）：{new_phase} 证据不足")
         elif moving_back:
             if new_phase not in ("drafting", "drafted") or not invalidate:
                 raise SessionError(f"非法回退 {old_phase}→{new_phase}：仅换稿可退 drafting/drafted 并失效证据")
-        else:
-            if not _artifact_supports(new_phase, draft, session):
-                raise SessionError(f"前进到 {new_phase} 的产物不齐（complete 稿/回看/事务/机器证据）")
+        # 前进/同阶段的产物要求在下方统一核验。
+
+    # G-6：按【目标阶段】必需产物在每次 checkpoint 后统一核验（status 用同一份要求）；
+    # 证据按磁盘真实可读/哈希一致判定——空指针或文件被删都不算，phase 字符串不能替代证据。
+    missing: list[str] = []
+    if new_phase not in ("blocked", "published"):
+        reqs = PHASE_REQUIREMENTS.get(new_phase, frozenset())
+        live_evidence = _evidence_live(project, run_id, session)
+        if "draft" in reqs and not session.get("draft"):
+            missing.append(f"phase={new_phase} 须先登记候选稿")
+        if "draft_complete" in reqs and not (session.get("draft") and session["draft"].get("complete")):
+            missing.append(f"phase={new_phase} 要求 complete=true 的完整候选")
+        for key in ("review", "transaction", "check_evidence"):
+            if key in reqs and key not in live_evidence:
+                missing.append(f"phase={new_phase} 缺可读证据 {key}")
+    if missing:
+        raise SessionError("；".join(missing))
 
     if "next_action" in doc:
         na = doc["next_action"]
@@ -623,11 +754,15 @@ def _apply_input_revision(project: Path, run_id: str, session: dict[str, Any], n
                     raise SessionError(
                         f"authorization.{field_name} 绑定的候选与当前登记稿不一致：换稿后该授权失效，"
                         "须由用户就新稿重新授权（authorized-target 才可给 null）")
+    # G-6：修订输入前先核完整基线——state revision/hash、正文成员与内容、全部书内来源。
+    if not session.get("baseline"):
+        raise SessionError("基线无法证明（repair 重建的 blocked 会话）：先获准重新取材并另开 run，不在此修订输入")
     state = tk.load_state(project)
     if state["state_revision"] != session["baseline"]["state_revision"]:
         raise SessionError("基线已变化时不能修订输入：先核发布账本/开新 run")
-    if sha256_file(tk.state_path(project)) != session["baseline"]["state"]["sha256"]:
-        raise SessionError("追踪状态文件已被外部修改：blocked，不能修订输入")
+    drift = _baseline_drift(project, session)[1]
+    if drift:
+        raise SessionError("正式基线或实际读取来源已变化，不能修订输入：" + "；".join(drift[:3]))
     digest = sha256_file(new_abs)
     session["input_path"] = new_input_rel.replace("\\", "/")
     session["input_sha256"] = digest
@@ -705,80 +840,65 @@ def cmd_status(project: Path, run_id: str | None) -> dict[str, Any]:
                 "next_action": "guyin-author-session.py repair --project <B> --run " + run_id}
 
     reasons: list[str] = []
-    rdir = run_dir(project, run_id)
 
-    def under_run(rel: str) -> Path:
-        return resolve_under(project, rel, "session 指针")
-
-    input_abs = under_run(session["input_path"])
-    if not input_abs.is_file() or sha256_file(input_abs) != session["input_sha256"]:
+    # input 指针（必须在本 R 内且哈希一致）
+    try:
+        input_abs = _under_run(project, run_id, session["input_path"], "input")
+    except SessionError as exc:
+        reasons.append(str(exc))
+        input_abs = None
+    if input_abs is not None and (not input_abs.is_file() or sha256_file(input_abs) != session["input_sha256"]):
         reasons.append("input 文件缺失或哈希与 session 不符")
 
     draft = session.get("draft")
     if draft:
-        dabs = under_run(draft["path"])
-        if not dabs.is_file():
-            reasons.append(f"已登记稿件不存在：{draft['path']}")
-        elif sha256_file(dabs) != draft["sha256"]:
-            reasons.append(f"已登记稿件被外部修改：{draft['path']}")
+        try:
+            dabs = _under_run(project, run_id, draft["path"], "draft")
+            if not dabs.is_file():
+                reasons.append(f"已登记稿件不存在：{draft['path']}")
+            elif sha256_file(dabs) != draft["sha256"]:
+                reasons.append(f"已登记稿件被外部修改：{draft['path']}")
+        except SessionError as exc:
+            reasons.append(str(exc))
 
-    for key in EVIDENCE_KEYS:
-        e = session.get(key)
-        if not e:
-            continue
-        abs_e = under_run(e["path"])
-        if not abs_e.is_file():
-            reasons.append(f"{key} 证据文件缺失：{e['path']}")
-        elif sha256_file(abs_e) != e["sha256"]:
-            reasons.append(f"{key} 证据被修改：{e['path']}")
-        elif draft and e.get("candidate_sha256") != draft["sha256"]:
-            reasons.append(f"{key} 绑定的是另一候选，证据失效")
+    # 证据：R 归属/存在/哈希/候选绑定（与 checkpoint 同一核验函数）
+    reasons.extend(_evidence_problems(project, run_id, session))
 
-    # 发布账本
+    # 发布账本：本 run 在途只 recover；损坏停人工；另一 run 在途也不允许本 run 继续。
     publication: dict[str, Any] | None = None
     try:
         publication = tk.load_publication(project)
     except TrackingError as exc:
         reasons.append(f"发布账本损坏：{exc}")
-    if publication and publication.get("run_id") == run_id and publication.get("stage") != "complete":
-        reasons.append(f"本 run 发布在途（{publication.get('stage')}）：只走 tracking-commit recover")
+    if publication and publication.get("stage") != "complete":
+        if publication.get("run_id") == run_id:
+            reasons.append(f"本 run 发布在途（{publication.get('stage')}）：只走 tracking-commit recover")
+        else:
+            reasons.append(f"另一 run 发布在途（{publication.get('run_id')}@{publication.get('stage')}）：先 recover，不开本 run 发布")
 
-    # baseline：state 变化须能由本 run 的 complete 发布解释，否则是外部改动
+    # baseline：state/prose/sources 漂移须能由本 run 的 complete 发布解释。
     baseline = session.get("baseline") or {}
-    state_changed = False
-    state_abs = tk.state_path(project)
-    if state_abs.is_file() and sha256_file(state_abs) != (baseline.get("state") or {}).get("sha256"):
-        state_changed = True
+    state_changed, drift_reasons = _baseline_drift(project, session)
     explained_by_publish = state_changed and _published_consistent(project, run_id, draft)
-    if state_changed and not explained_by_publish:
-        reasons.append("baseline 追踪状态相对本 run 已变化且无本 run complete 发布可解释：外部改动，blocked")
-
-    # 正文成员基线
-    current_prose = list_prose_files(project)
-    base_prose = {(f["path"], f["sha256"]) for f in (baseline.get("prose") or {}).get("files", [])}
-    current_set = {(f["path"], f["sha256"]) for f in current_prose}
     if not explained_by_publish:
-        for item in sorted(current_set - base_prose):
-            reasons.append(f"正文出现基线外/被改成员：{item[0]}")
-        for item in sorted(base_prose - current_set):
-            reasons.append(f"正文基线成员消失：{item[0]}")
+        reasons.extend(drift_reasons)
 
-    # 书内来源文件
-    for src in baseline.get("sources", []):
-        abs_src = project / src["path"]
-        if not abs_src.is_file() or sha256_file(abs_src) != src["sha256"]:
-            reasons.append(f"本 run 实际读取的书内来源已变化：{src['path']}")
+    # 阶段必需产物（与 checkpoint 同一份要求）：phase 字符串不能替代证据。
+    if session.get("phase") != "published":
+        reasons.extend(_phase_requirement_reasons(session))
 
     orphans = _orphan_drafts(project, session)
     if orphans:
         reasons.append("存在未登记孤立新稿（显式登记或弃用，不自动按新旧选稿）：" + "、".join(orphans))
 
-    blocked = bool([r for r in reasons if "在途" not in r and "孤立新稿" not in r]) or any(
-        "在途" in r for r in reasons)
-    status = "blocked" if (reasons and blocked) else ("resumable" if orphans or session["phase"] != "ready" else "ok")
-    if not reasons and session["phase"] == "ready":
+    hard = [r for r in reasons if "孤立新稿" not in r]
+    if hard:
+        status = "blocked"
+    elif orphans:
+        status = "resumable"
+    elif session["phase"] == "ready":
         status = "ok"
-    elif not reasons:
+    else:
         status = "resumable"
     return {
         "status": status, "run_id": run_id, "phase": session["phase"],
@@ -831,60 +951,73 @@ def cmd_repair(project: Path, run_id: str, input_rel: str | None, draft_rel: str
         raise SessionError(f"另一 run（{journal.get('run_id')}）发布在途：先 recover，不重建本 run")
 
     (rdir / "drafts").mkdir(exist_ok=True)
-    draft_entry: dict[str, Any] | None = None
-    if draft_rel:
-        d_abs = resolve_under(project, draft_rel, "repair draft")
-        if d_abs.resolve(strict=False).relative_to(rdir.resolve(strict=False)).parts[0] != "drafts":
-            raise SessionError("repair --draft 必须指向 R/drafts/ 内版本")
-        draft_entry = {"path": draft_rel.replace("\\", "/"), "complete": False, "sha256": sha256_file(d_abs)}
-
-    phase = "drafting"
     note: list[str] = []
     if preserved:
         note.append(f"损坏原文已存 {preserved.name}")
+
+    def make_draft_entry(rel: str, complete: bool) -> dict[str, Any]:
+        d_abs = resolve_under(project, rel, "repair draft")
+        if d_abs.resolve(strict=False).relative_to(rdir.resolve(strict=False)).parts[0] != "drafts":
+            raise SessionError("repair --draft 必须指向 R/drafts/ 内版本")
+        return {"path": rel.replace("\\", "/"), "complete": complete, "sha256": sha256_file(d_abs)}
+
+    # --- 分支一：本 run 有 complete 发布账本——按固化目标/候选/正文核验重建 published ---
     if journal and journal.get("stage") == "complete" and journal.get("run_id") == run_id:
-        phase = "published"
-        dest = (journal.get("inputs") or {}).get("destination") or journal.get("destination_rel")
-        chosen = None
-        for p in sorted((rdir / "drafts").glob("v*.md")):
-            if dest and (project / dest).is_file() and sha256_file(project / dest) == sha256_file(p):
-                chosen = p
-                break
-        if chosen and not draft_entry:
-            draft_entry = {"path": work_rel(project, chosen), "complete": True, "sha256": sha256_file(chosen)}
-        note.append("按 complete 发布账本重建 published")
-    elif journal and journal.get("run_id") == run_id:
+        inputs = journal.get("inputs") or {}
+        cand_rel = (inputs.get("candidate") or {}).get("rel")
+        cand_h12 = (inputs.get("candidate") or {}).get("hash12")
+        dest_rel = inputs.get("destination")
+        if not cand_rel or not cand_h12 or not dest_rel:
+            raise SessionError("complete 发布账本缺固化 candidate/destination，不凭猜测重建 published")
+        cand_abs = resolve_under(project, cand_rel, "journal candidate")
+        if not cand_abs.is_file():
+            raise SessionError(f"固化候选缺失：{cand_rel}——不凭碰巧同哈希的文件拼 published")
+        if sha256_file(cand_abs)[:12] != cand_h12:
+            raise SessionError("固化候选内容与账本 hash12 不符：不伪造 published，停人工核对")
+        dest_abs = project / dest_rel
+        if not dest_abs.is_file() or sha256_file(dest_abs) != sha256_file(cand_abs):
+            raise SessionError(f"正式正文 {dest_rel} 与固化候选不一致：不伪造 after，停人工核对")
+        tgt = journal.get("target") or {}
+        if input_doc.get("target", {}).get("chapter") != tgt.get("chapter") \
+                or input_doc.get("target", {}).get("mode") != tgt.get("mode"):
+            raise SessionError("repair input.target 与发布账本固化 target 不一致：不拼 published")
+        draft_entry = make_draft_entry(cand_rel, True)
+        session = {
+            "schema_version": 1, "run_id": run_id,
+            "input_path": input_rel.replace("\\", "/"), "input_sha256": digest,
+            "phase": "published", "baseline": None,
+            "draft": draft_entry,
+            "review": None, "transaction": None, "check_evidence": None, "plan_patch": None,
+            "next_action": "published 终态：核对后续章/规划补丁",
+            "repaired": True,
+            "repair_note": note + ["按 complete 发布账本固化候选/目标核验重建 published"],
+        }
+        atomic_write_json(spath, session)
+        return {"repaired": run_id, "phase": "published", "baseline": None,
+                "draft": draft_entry["path"], "note": session["repair_note"]}
+
+    if journal and journal.get("run_id") == run_id:
         raise SessionError("本 run 发布在途：只用 tracking-commit recover，repair 不重建在途状态")
 
-    def ev_if_bound(key: str, fname: str, embed: bool) -> dict[str, Any] | None:
-        if not draft_entry:
-            return None
-        p = rdir / fname
-        if not p.is_file():
-            return None
-        if embed and draft_entry["sha256"][:12] not in p.read_text(encoding="utf-8", errors="replace"):
-            return None
-        return {"path": f".guyin/work/{run_id}/{fname}", "sha256": sha256_file(p),
-                "candidate_sha256": draft_entry["sha256"]}
-
+    # --- 分支二：无 complete 账本——基线不可证明，一律 blocked、complete=false、证据全清；
+    # 不猜最新稿：--draft 只登记用户明确指向的版本并标未完成，获准重新取材后另开 run。
+    draft_entry = make_draft_entry(draft_rel, False) if draft_rel else None
+    if draft_entry:
+        note.append(f"登记候选 {draft_entry['path']}（complete=false，不猜最新稿）")
     session = {
         "schema_version": 1, "run_id": run_id,
         "input_path": input_rel.replace("\\", "/"), "input_sha256": digest,
-        "phase": phase,
-        "baseline": None,  # 无法从旧记录证明基线；published 终态由发布账本兜底
+        "phase": "blocked",
+        "baseline": None,
         "draft": draft_entry,
-        "review": ev_if_bound("review", "review.md", True),
-        "transaction": ev_if_bound("transaction", "transaction.json", False),
-        "check_evidence": ev_if_bound("check_evidence", "check-evidence.json", True),
-        "plan_patch": None,
-        "next_action": ("published 终态：核对后续章/规划补丁" if phase == "published"
-                        else "baseline 无法证明：请用户确认后从 drafting/drafted 继续"),
+        "review": None, "transaction": None, "check_evidence": None, "plan_patch": None,
+        "next_action": "基线无法证明：获准重新取材后另开 run；或补齐可核验产物后从 blocked 解除",
         "repaired": True,
-        "repair_note": note,
+        "repair_note": note + ["无 complete 发布账本：建 blocked/baseline=null/complete=false，旧证据未复用"],
     }
     atomic_write_json(spath, session)
-    return {"repaired": run_id, "phase": phase, "baseline": None,
-            "draft": draft_entry and draft_entry["path"], "note": note}
+    return {"repaired": run_id, "phase": "blocked", "baseline": None,
+            "draft": draft_entry and draft_entry["path"], "note": session["repair_note"]}
 
 
 # ---------------- CLI ----------------

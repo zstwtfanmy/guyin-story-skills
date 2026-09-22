@@ -1,0 +1,35 @@
+﻿热路径文档预算
+----------------------------------------------------------------------
+  用量 /   预算  余量  文件
+    1286 /   1310     24  skills/guyin-story/SKILL.md  [ok]
+    5378 /   5300    -78  skills/guyin-write/SKILL.md  [OVER]
+    2501 /   2500     -1  skills/guyin-short-write/SKILL.md  [OVER]
+    1628 /   1640     12  skills/guyin-analyze/SKILL.md  [ok]
+    1217 /   1230     13  skills/guyin-short-analyze/SKILL.md  [ok]
+    2668 /   2670      2  skills/guyin-review/SKILL.md  [ok]
+    1499 /   1540     41  skills/guyin-deslop/SKILL.md  [ok]
+    1795 /   1800      5  skills/guyin-pitch/SKILL.md  [ok]
+     974 /   1000     26  skills/guyin-write/cards/README.md  [ok]
+     618 /    700     82  skills/guyin-write/cards/写作卡.md  [ok]
+     847 /    900     53  skills/guyin-write/cards/自检卡.md  [ok]
+     763 /    800     37  skills/guyin-write/cards/改写卡.md  [ok]
+     375 /    400     25  skills/guyin-write/cards/发散卡.md  [ok]
+     513 /    600     87  skills/guyin-write/cards/分诊卡.md  [ok]
+     855 /    900     45  skills/guyin-write/cards/摘要卡.md  [ok]
+    1591 /   1600      9  skills/guyin-setup/templates/long/AGENTS.md  [ok]
+    7891 /   7700   -191  skills/guyin-write/references/默认叙事风格.md  [OVER]
+
+路径合计（一次会话真正付的量）
+----------------------------------------------------------------------
+   13269 /  13000   -269  长篇写章热路径（当前会话单模型自主执笔：SKILL＋默认文风文件；profile 实际仅加载所选段，全文件称重为保守上界）  [OVER]
+
+FAIL: 热路径文档超预算
+  - skills/guyin-write/SKILL.md 超预算 78 字（5378 > 5300）：长篇任一场景无条件加载；2026-09-20 创作优先 v4（P1.1）由 8840 降至 5300：单模型自主执笔取代编排/执行双层——writer/checker 委派、solo 菜单、逐 beat 组卡、气卡占位门、私人切口债、批次五查与默认 git 提交全部退役；新增内容为授权三分、phase 六阶段门、稿件失效、中断恢复、显式候选检查链与 v2 发布指针。方法论细节留冷路径 references，本文件只留顺序与契约。历史调账见 git 历史
+  - skills/guyin-short-write/SKILL.md 超预算 1 字（2501 > 2500）：短篇任一场景无条件加载；2026-09-20 创作优先 v4（P1.1）锁至 2500：改为单模型自主执笔差异文件，保留固定单元 1 显式贯穿、继承/不继承、短篇 E1；气卡占位门与四卡下发退役。历史调账见 git 历史
+  - skills/guyin-write/references/默认叙事风格.md 超预算 191 字（7891 > 7700）：2026-09-20 v4（P1.2）新增登记：默认审美单一来源（11 profile 可加载定义＋选择规则＋机读路由表）。每次写章实际只加载路由与所选单个 profile 段（约 300-500 字），工具按全文件称重是保守上界；书名字/教材/负面清单不随章加载，见文件内加载边界
+  - 路径「长篇写章热路径（当前会话单模型自主执笔：SKILL＋默认文风文件；profile 实际仅加载所选段，全文件称重为保守上界）」超预算 269 字（13269 > 13000）
+
+处理顺序：① 先找同一文件里能删的旧文本（重复指令、已被脚本确定性拦住的规则、
+设计理由旁白、只在极少数场景才用得上的分支），删等量再提交；
+② 确实是必须加的新规则，就在 scripts/doc-budget.json 调高 budget，
+并在提交说明里写清为什么这段值得每个用户每次会话都付。

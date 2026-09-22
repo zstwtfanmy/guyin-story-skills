@@ -13,13 +13,21 @@
 //   1. 确定性边界：只做存在性 / schema / 字数 / 极短 / mtime 同步性五类确定性信号；毒句式、
 //      AI 句式、细纲照搬等规则权威在 skills/guyin-write/scripts/ 五个 guyin-check 脚本，本核零重复实现。
 //   2. fail-open：解析失败、非隐笔项目、任何不确定一律放行——宁可漏拦不可误伤。
-//   3. 注入面纪律：session 只注入结构状态（追踪/上下文、state、git 进度），
+//   3. 注入面纪律：session 只注入结构状态（追踪/上下文、state、run 指针、git 进度），
 //      作者性/ 目录（气卡等）永不注入——气不进自动流。
-//   4. 豁免权在台账：细纲/骨架缺失没有豁免通道，只能补纲；章检报警的豁免一律走
+//   4. 豁免权在台账：章检报警的豁免一律走
 //      追踪/豁免台账.md（五测试），本核不认正文内标记。
+//   5. 正文只由 publish 安装（v4）：guard 不再以细纲/骨架/快照为直写许可——对正式章/篇的
+//      直接 Write/Edit 一律拦，指引「先候选（.guyin/work/<run>/drafts/）、后 publish」。
+//      publish 的文件安装不经 Write/Edit hook，本核也不提供可伪造的放行行标志。
 //
 // 书项目判定：目标文件父目录为「正文」，且其上级存在 大纲/ 或 追踪/ 目录——
 // 非隐笔项目（目录名恰好叫"正文"的普通文件夹）静默放行。
+//
+// session 书根解析（v4，防宿主自动注入带偏）：
+//   显式 --project <B> [--run <ID>] ＞ hook 自身部署锚（__dirname/../..，且锚下有
+//   追踪/_tracking-state.json）＞ CLAUDE_PROJECT_DIR ＞ cwd；显式根/run 不存在即报告，
+//   不静默回退另一本书；多个 run 只列候选不擅选。
 
 const fs = require('fs');
 const path = require('path');
@@ -84,19 +92,6 @@ function payloadTarget(raw) {
 function chapterNum(base) {
   const m = /^第0*(\d+)章.*\.md$/.exec(base);
   return m ? parseInt(m[1], 10) : null;
-}
-
-// 大纲/ 下按整数章号匹配 细纲_第N章*.md（容忍补零差异与标题后缀）。
-function hasOutlineFor(bookDir, num) {
-  try {
-    return fs.readdirSync(path.join(bookDir, '大纲'))
-      .some((name) => {
-        const m = /^细纲_第0*(\d+)章.*\.md$/.exec(name);
-        return m !== null && parseInt(m[1], 10) === num;
-      });
-  } catch (e) {
-    return false;
-  }
 }
 
 function readState(bookDir) {
@@ -270,28 +265,6 @@ function pendingBlockers(bookDir, num) {
   return { count, error: null };
 }
 
-// U4 覆盖门：Write/Edit 已存在的章文件时，正文/_archive/ 须有该章快照且其 mtime ≥
-// 目标文件当前 mtime——裸奔覆盖式重写两次（v1、v3 稿永久丢失）的确定性封堵。
-// 规则零语义判断（只比 mtime）：快照命名 第N章_vK_时间戳.md（同章号即认）；
-// 每次连续改稿都要重新快照上一版＝「每一版都不许无存档消失」的语义。
-function hasFreshSnapshot(bookDir, targetAbs, num) {
-  try {
-    const targetMtime = fs.statSync(targetAbs).mtimeMs;
-    const archiveDir = path.join(bookDir, '正文', '_archive');
-    return fs.readdirSync(archiveDir).some((n) => {
-      const m = /^第0*(\d+)章.*\.md$/.exec(n);
-      if (!m || parseInt(m[1], 10) !== num) return false;
-      try {
-        return fs.statSync(path.join(archiveDir, n)).mtimeMs >= targetMtime;
-      } catch (e) {
-        return false;
-      }
-    });
-  } catch (e) {
-    return false; // _archive 缺失 → 无快照
-  }
-}
-
 // ---------------------------------------------------------- guard（阻断守卫）
 function guard() {
   const target = payloadTarget(readStdin());
@@ -300,7 +273,7 @@ function guard() {
   if (path.basename(path.dirname(abs)) !== '正文') process.exit(0);
   const bookDir = path.dirname(path.dirname(abs));
   if (!isBookDir(bookDir)) process.exit(0); // 非隐笔项目防误伤
-  // D2 发布门（首建与覆盖共用）：在途/损坏发布未恢复前，正文一律不可动。
+  // D2 发布门（最高优先）：在途/损坏发布未恢复前，正文一律不可动。
   const publication = publicationBlocker(bookDir);
   if (publication) {
     if (publication.broken) {
@@ -312,74 +285,55 @@ function guard() {
     }
     process.exit(2);
   }
+
   const base = path.basename(abs);
   const num = chapterNum(base);
-  const exists = fs.existsSync(abs);
 
+  // 状态门（章号文件）：state 缺失/schema 不符、章序跳跃都不允许动正式章。
   if (num !== null) {
-    if (!exists) {
-      // 细纲门：首建第 N 章须有第 N 章细纲（对应 guyin-write 停靠纪律：开书停在细纲交付）。
-      if (!hasOutlineFor(bookDir, num)) {
-        console.error(`⛔ 写正文被拦截：第 ${num} 章缺细纲（大纲/细纲_第${String(num).padStart(3, '0')}章.md）。`);
-        console.error('   先走 guyin-write 补纲场景补建细纲，再写正文（不允许跳过细纲直接写作）。');
-        process.exit(2);
-      }
-      // state 门：上一章追踪事务须已提交（落盘即提交追踪是项目不变式）。
-      const st = readState(bookDir);
-      if (stateProblem(st)) {
-        console.error('⛔ 写正文被拦截：追踪状态缺失或 schema 不符（追踪/_tracking-state.json）。');
-        console.error('   先完成项目初始化，或运行 scripts/guyin-tracking-commit.py 提交上一章事务。');
-        process.exit(2);
-      }
-      if (st.last_committed_chapter < num - 1) {
-        console.error(`⛔ 写正文被拦截：上一章（第 ${num - 1} 章）追踪事务未提交（last_committed_chapter=${st.last_committed_chapter}）。`);
-        console.error('   先完成上一章的追踪提交与章检，再开新章。');
-        process.exit(2);
-      }
-      // U1 待审门（D3）：更早章、版本匹配当前正文的未决 finding 阻塞开新章——检测必有终态，
-      // 无声消失零成本是根因五；台账缺失/损坏同样拦截（不静默放行）。
-      const pending = pendingBlockers(bookDir, num);
-      if (pending.error) {
-        console.error(`⛔ 写正文被拦截：待审台账异常——${pending.error}。`);
-        console.error('   台账是阻断账本，损坏不得静默跳过；修复后重试（guyin-check-pending.js 核查）。');
-        process.exit(2);
-      }
-      if (pending.count > 0) {
-        console.error(`⛔ 写正文被拦截：待审台账有 ${pending.count} 行未决（章号 < ${num}，版本匹配当前正文）。`);
-        console.error('   先消费回填：终态五选一＋决定依据（修复=新版本+复检／豁免=豁免台账／契约修订=偏差／顺延=伏笔+章号／不适用=位置+理由）。');
-        console.error('   「升级作者」是等待态——仅用户真实决定转结（终态列改五选一＋证据）；「已裁决：」字样不解除。');
-        console.error('   正文改版后旧行只记录不阻塞；当前版本须有自己的处置（guyin-check-pending.js --project 核查）。');
-        process.exit(2);
-      }
-    } else {
-      // 续写/改稿：细纲门不适用，只校验 state 自身合规。
-      if (stateProblem(readState(bookDir))) {
-        console.error('⛔ 写正文被拦截：追踪状态缺失或 schema 不符（追踪/_tracking-state.json）。');
-        console.error('   先修复追踪状态（scripts/guyin-tracking-commit.py），再续写。');
-        process.exit(2);
-      }
-      // U4 覆盖门：动刀已存在章须先快照——裸奔覆盖 = 版本永久丢失（v1/v3 稿两代实证）。
-      if (num !== null && !hasFreshSnapshot(bookDir, abs, num)) {
-        console.error(`⛔ 覆盖已存在章被拦截：第 ${num} 章正文将被动刀，但 正文/_archive/ 无不早于现稿的快照。`);
-        console.error('   先拷 `正文/_archive/第N章_vK_时间戳.md` 再动刀（每一版都不许无存档消失，U4）。');
-        process.exit(2);
-      }
+    const st = readState(bookDir);
+    if (stateProblem(st)) {
+      console.error('⛔ 写正文被拦截：追踪状态缺失或 schema 不符（追踪/_tracking-state.json）。');
+      console.error('   先完成项目初始化，或运行 guyin-tracking-commit.py 处理在途发布/前章事务。');
+      process.exit(2);
     }
-  } else if (!exists && !/^[._]/.test(base)) {
-    // 骨架门：正文/ 下首建非章文件（短篇 {篇名}.md 等）时，大纲/ 须已有骨架件
-    // （长篇细纲 / 短篇情节节点皆算）。跳过 . 开头与 _ 开头的工程文件。
-    let hasSkeleton = false;
-    try {
-      hasSkeleton = fs.readdirSync(path.join(bookDir, '大纲')).some((n) => n.endsWith('.md'));
-    } catch (e) {
-      hasSkeleton = false;
-    }
-    if (!hasSkeleton) {
-      console.error('⛔ 写正文被拦截：大纲/ 为空，正文前须先有骨架（长篇细纲 / 短篇情节节点）。');
-      console.error('   先走 guyin-write（补纲）或 guyin-short-write（骨架三件）流程，再写正文。');
+    if (Number.isInteger(st.last_committed_chapter) && st.last_committed_chapter < num - 1) {
+      console.error(`⛔ 写正文被拦截：上一章（第 ${num - 1} 章）追踪未发布（last_committed_chapter=${st.last_committed_chapter}）。`);
+      console.error('   正式章按 last_committed+1 由 publish 顺序安装；先完成前章候选与发布（或 recover 在途发布），不靠直写建章。');
       process.exit(2);
     }
   }
+
+  // U1 待审门（章号文件，新建/修订都查）：更早章、版本匹配当前正文的未决 finding 阻塞动章。
+  if (num !== null) {
+    const pending = pendingBlockers(bookDir, num);
+    if (pending.error) {
+      console.error(`⛔ 写正文被拦截：待审台账异常——${pending.error}。`);
+      console.error('   台账是阻断账本，损坏不得静默跳过；修复后重试（guyin-check-pending.js 核查）。');
+      process.exit(2);
+    }
+    if (pending.count > 0) {
+      console.error(`⛔ 写正文被拦截：待审台账有 ${pending.count} 行未决（章号 < ${num}，版本匹配当前正文）。`);
+      console.error('   先消费回填：终态五选一＋决定依据（修复=新版本+复检／豁免=豁免台账／契约修订=偏差／顺延=伏笔+章号／不适用=位置+理由）。');
+      console.error('   「升级作者」是等待态——仅用户真实决定转结（终态列改五选一＋证据）；「已裁决：」字样不解除。');
+      console.error('   正文改版后旧行只记录不阻塞；当前版本须有自己的处置（guyin-check-pending.js --project 核查）。');
+      process.exit(2);
+    }
+  }
+
+  // v4 唯一正文通道：正式章/篇（正文/ 直接下属的章号文件或篇名 .md）一律不许直写。
+  // 工程文件（README、. / _ 开头）放行；_archive/ 不在「正文」直接层，本核不管。
+  // 补细纲、补快照都不是直写许可——没有可由调用方伪造的 publish 放行标志。
+  const isChapterFile = num !== null;
+  const isStoryFile = !isChapterFile && base.endsWith('.md')
+    && base !== 'README.md' && !/^[._]/.test(base);
+  if (isChapterFile || isStoryFile) {
+    console.error('⛔ 写正式正文被拦截：正式章/篇只由 tracking-commit.py publish 安装（先候选、后 publish）。');
+    console.error('   先在 .guyin/work/{run_id}/drafts/ 写候选 vNNNN.md，跑候选检查链＋全文回看，拿到显式发布授权后 publish；');
+    console.error('   修旧章/去味走 revision 候选（mode=revision）→重检→publish，不补细纲/快照直写，不原位覆盖正式稿。');
+    process.exit(2);
+  }
+
   process.exit(0);
 }
 
@@ -429,9 +383,136 @@ function postWrite() {
 }
 
 // ---------------------------------------------------------- session（恢复注入）
+
+// 书根解析：显式 --project ＞ 部署锚（hook 位于 B/.claude/hooks/，锚下有 state 才算书）
+// ＞ CLAUDE_PROJECT_DIR ＞ cwd。显式根非法要报告，不静默换一本书注入。
+function parseSessionArgs(argv) {
+  const out = { project: null, run: null };
+  for (let i = 0; i < argv.length; i += 1) {
+    if (argv[i] === '--project') {
+      out.project = argv[i + 1] || null;
+      i += 1;
+    } else if (argv[i].startsWith('--project=')) {
+      out.project = argv[i].slice('--project='.length);
+    } else if (argv[i] === '--run') {
+      out.run = argv[i + 1] || null;
+      i += 1;
+    } else if (argv[i].startsWith('--run=')) {
+      out.run = argv[i].slice('--run='.length);
+    }
+  }
+  return out;
+}
+
+function looksLikeBook(dir) {
+  try {
+    return isBookDir(dir) && fs.statSync(path.join(dir, '追踪', '_tracking-state.json')).isFile();
+  } catch (e) {
+    return false;
+  }
+}
+
+function resolveSessionRoot(explicit) {
+  if (explicit) {
+    const dir = path.resolve(explicit);
+    if (!looksLikeBook(dir)) {
+      return { root: null, explicitError: dir };
+    }
+    return { root: dir, explicit: true };
+  }
+  // 部署锚：__dirname = B/.claude/hooks
+  const anchor = path.resolve(__dirname, '..', '..');
+  if (looksLikeBook(anchor)) return { root: anchor, explicit: false, anchored: true };
+  const envRoot = process.env.CLAUDE_PROJECT_DIR || process.cwd();
+  if (looksLikeBook(envRoot)) return { root: envRoot, explicit: false, anchored: false };
+  return { root: null, explicit: false };
+}
+
+function discoverRuns(root) {
+  const base = path.join(root, '.guyin', 'work');
+  let names = [];
+  try {
+    names = fs.readdirSync(base, { withFileTypes: true })
+      .filter((d) => d.isDirectory() && fs.existsSync(path.join(base, d.name, 'author-session.json')))
+      .map((d) => d.name)
+      .sort();
+  } catch (e) {
+    return [];
+  }
+  return names;
+}
+
+function readRunSummary(root, runId) {
+  const file = path.join(root, '.guyin', 'work', runId, 'author-session.json');
+  try {
+    const doc = JSON.parse(fs.readFileSync(file, 'utf8'));
+    return {
+      run_id: runId,
+      phase: typeof doc.phase === 'string' ? doc.phase : '?',
+      draft: doc.draft && doc.draft.path ? path.basename(doc.draft.path) : null,
+      complete: Boolean(doc.draft && doc.draft.complete),
+      review: Boolean(doc.review),
+      transaction: Boolean(doc.transaction),
+      check_evidence: Boolean(doc.check_evidence),
+      plan_patch: Boolean(doc.plan_patch),
+      next_action: typeof doc.next_action === 'string' ? doc.next_action : null,
+    };
+  } catch (e) {
+    return null;
+  }
+}
+
 function session() {
-  const root = process.env.CLAUDE_PROJECT_DIR || process.cwd();
+  const args = parseSessionArgs(process.argv.slice(3));
+  const resolved = resolveSessionRoot(args.project);
+  if (resolved.explicitError) {
+    console.log('=== 隐笔会话恢复 ===');
+    console.log(`⚠️ 显式 --project 指向的书根不可用：${resolved.explicitError}`);
+    console.log('   需要含 追踪/_tracking-state.json 的隐笔书根；未注入任何其他目录的状态，请核对 -project 后重试。');
+    process.exit(0);
+  }
+  const root = resolved.root;
+  if (!root) process.exit(0); // 非书项目/模板开发态：完全静默
+
   const lines = [];
+
+  // 在途发布最先报：恢复动作只能是 recover，不能被「先补追踪提交」误导。
+  const publication = publicationBlocker(root);
+  if (publication) {
+    if (publication.broken) {
+      lines.push('⚠️ 追踪/_publication.json 损坏：停人工核查，再 guyin-tracking-commit.py recover；不要另写一稿绕过。');
+    } else {
+      lines.push(`⚠️ 发布在途（阶段=${publication.stage}，run_id=${publication.runId || '未知'}）：先 tracking-commit.py recover 收尾，禁止开新 run。`);
+    }
+  }
+
+  // run 指针：显式 --run 校验存在性；未指定时只列候选，多个不擅选。
+  const runs = discoverRuns(root);
+  let chosenRun = null;
+  if (args.run) {
+    if (!runs.includes(args.run)) {
+      lines.push(`⚠️ 显式 --run ${args.run} 不存在（${runs.length ? '候选：' + runs.join('、') : '本书无 run'}）；未自动选择其他 run。`);
+    } else {
+      chosenRun = args.run;
+    }
+  } else if (runs.length === 1) {
+    chosenRun = runs[0];
+  } else if (runs.length > 1) {
+    lines.push(`存在多个未完成 run，须显式指定不擅选：${runs.join('、')}`);
+    lines.push('   guyin-author-session.py status --project <B> --run <ID> 核对后再继续。');
+  }
+  if (chosenRun) {
+    const s = readRunSummary(root, chosenRun);
+    if (!s) {
+      lines.push(`run ${chosenRun} 的 author-session.json 不可读：repair 前不自动猜恢复点。`);
+    } else {
+      const ev = [`review ${s.review ? '✓' : '✗'}`, `transaction ${s.transaction ? '✓' : '✗'}`,
+        `check-evidence ${s.check_evidence ? '✓' : '✗'}`].join('，');
+      lines.push(`当前 run：${s.run_id}（phase=${s.phase}，稿=${s.draft || '无'}${s.complete ? '/完整' : ''}；${ev}）`);
+      if (s.next_action) lines.push(`下一动作：${s.next_action}`);
+    }
+  }
+
   const ctx = path.join(root, '追踪', '上下文.md');
   if (fs.existsSync(ctx)) {
     try {
@@ -445,8 +526,7 @@ function session() {
   if (st && Number.isInteger(st.last_committed_chapter)) {
     lines.push(`追踪：已提交至第 ${st.last_committed_chapter} 章（state revision ${Number.isInteger(st.state_revision) ? st.state_revision : '?'}）。`);
     // G5 同步性扫描（fail-open）：已提交章正文 mtime 晚于 state（改动未进账本）→ 提醒走大修重
-    // 提交；已落盘章未提交（落盘与提交之间的中断）→ 提醒先补提交。git 同步等工具 touch 全库
-    // 会整体误报——只提醒不拦截，诚实边界见 docs/05-实战护栏路线图.md §2 G5。
+    // 提交；已落盘章未提交（落盘与提交之间的中断）→ 在途发布优先 recover，否则提醒补提交。
     try {
       const stateMtime = fs.statSync(path.join(root, '追踪', '_tracking-state.json')).mtimeMs;
       const stale = [];
@@ -463,10 +543,10 @@ function session() {
         }
       }
       if (stale.length > 0) {
-        lines.push(`追踪脱节：第 ${stale.join('、')} 章正文改动晚于最近追踪提交——若为 S 级修复，走 guyin-write 大修场景完成 tracking-commit 重提交。`);
+        lines.push(`追踪脱节：第 ${stale.join('、')} 章正文改动晚于最近追踪提交——走 revision 候选＋tracking-commit 重提交/发布，不直写正式稿。`);
       }
-      if (untracked.length > 0) {
-        lines.push(`第 ${untracked.join('、')} 章已落盘但追踪未提交（last_committed_chapter=${st.last_committed_chapter}）——先跑 guyin-tracking-commit.py 补提交再续写。`);
+      if (untracked.length > 0 && !publication) {
+        lines.push(`第 ${untracked.join('、')} 章候选已就绪但未发布（last_committed_chapter=${st.last_committed_chapter}）——正式正文只由 publish 安装，先核 run 与授权。`);
       }
     } catch (e) {
       /* 正文/ 不在或读失败则跳过这一节 */
@@ -478,10 +558,10 @@ function session() {
   } catch (e) {
     /* git 不在场则跳过 */
   }
-  if (lines.length === 0) process.exit(0); // 非书项目完全静默
+  if (lines.length === 0) process.exit(0); // 有书根但无信息：静默
   console.log('=== 隐笔会话恢复 ===');
   console.log(lines.join('\n'));
-  console.log('先读 追踪/上下文.md 与 AGENTS.md 恢复状态再继续写作（compact / 新会话后必做）。');
+  console.log('先读 追踪/上下文.md、本 run input 与 AGENTS.md 恢复状态再继续写作（compact / 新会话后必做）。');
   process.exit(0);
 }
 
