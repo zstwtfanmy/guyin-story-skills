@@ -1,0 +1,68 @@
+{
+  "schema_version": 1,
+  "date": "2026-09-24",
+  "route": "Y",
+  "authorization": {
+    "user_quote": "指定封存包不满足同路线双原创题条件，那你先帮我处理这个然后再进行G2/G3",
+    "scope": [
+      "独立原创封题",
+      "必要定向研究和G2校准",
+      "冻结实验方案X",
+      "G3两题四章到ready",
+      "本地隔离沙盒及实验记录"
+    ],
+    "acceptance_timing": "成果齐备后由用户统一阅读；未预先通过文学质量门",
+    "not_authorized": [
+      "正式源码接入",
+      "安装或权限变更",
+      "既有小说修改",
+      "publish",
+      "git commit",
+      "git push",
+      "G6连续作品"
+    ],
+    "budget_basis": "生成/修订/篇幅沿用获准执行规格的默认上限；下面调用与时间为执行者自限，不冒称用户逐项给过数字"
+  },
+  "caps": {
+    "all_tool_calls_including_workers": 600,
+    "g0_minutes": 30,
+    "g2_minutes": 180,
+    "g3_minutes": 180,
+    "additional_source_research_minutes": 20,
+    "additional_source_research_tool_calls": 25,
+    "g2_initial_drafts": 6,
+    "g2_revision_drafts": 6,
+    "g2_body_han_per_draft": [
+      1000,
+      1800
+    ],
+    "g3_initial_drafts": 4,
+    "g3_revision_drafts": 4,
+    "g3_body_han_per_draft": [
+      2500,
+      3500
+    ],
+    "revision_rounds_per_draft": 1,
+    "user_required_reading": "先提供G3四份匿名最终稿，至多14000汉字；G2与初稿供可选追溯，不要求追加必读量",
+    "on_limit": "停止并保留全部产物；不改run名、不另建批次清零"
+  },
+  "design": {
+    "g2_comparison": "A/C2：同brief、同完整候选profile和篇幅/POV，简约直写对完整候选工作流；并非C0/C1的纯流程净效应",
+    "reason": "当前用户授权是在已完成C2候选补丁基础上继续G2/G3；检验实际候选相对无框架负担的表现，不另做全排列",
+    "g2_order": "先相处一对，评读后判断是否继续补受阻交锋和事后反应，不等待用户逐次读稿",
+    "g2_framework_changes_planned": false,
+    "g3": "冻结同一个X后才向四个独立生成会话分别解封各自题面；A/X同题材料相同",
+    "gate": "G1工程字节已核验；真实阅读对照由G2完成；F08长期消费仍未测，不外推到G3独立首章",
+    "wordcount": "去首个标题行后的正文Unicode Script=Han码点数，不含标点；另报正文非空白字符数和框架计量。生成前固定，不因偏短后改口径",
+    "model": "所有会话沿用当前宿主默认，未主动更换；工具未暴露实际型号/temperature/seed等参数，记unknown而不声称严格同一模型已核实",
+    "isolation": "create_chat_session不继承本会话历史；共享本地文件及宿主隐藏提示/自动项目上下文不可完全隔离，不宣传严格双盲；白名单及实际读取另记",
+    "review": "原生成会话各自至多一次有假说的修订；主会话不单边精修；模型审读与用户验收分账"
+  },
+  "seal_session_id": "b97edd14-8d2e-41c8-b0a4-b6a925dbeacf",
+  "g0_status": "passed_with_disclosed_limits",
+  "g2_status": "preparing_first_pair",
+  "g3_status": "not_started",
+  "quality_level": null,
+  "user_acceptance": null,
+  "g2_started_at": "2026-09-24T07:23:35.776789+00:00"
+}

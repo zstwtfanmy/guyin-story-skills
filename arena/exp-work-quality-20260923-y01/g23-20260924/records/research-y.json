@@ -1,0 +1,311 @@
+{
+  "schema_version": "1.0",
+  "record_id": "g23-20260924-research-y",
+  "purpose": "G2评读侧定向原文研究：核查《踢馆》之后共同生活的持续变化，以及压力后果如何进入后续相处。不是小说生成、技能修改或本批稿件评审。",
+  "audience": "仅本批评读侧；不得作为本批生成侧输入",
+  "status": "analysis_complete_passed_final_validation",
+  "isolation": {
+    "sealed_completed_at_utc_user_reported": "2026-09-24T07:18:36Z",
+    "sealed_completion_independently_verified": false,
+    "sealed_or_brief_or_new_drafts_read": false,
+    "profile_or_skill_modified": false,
+    "network_used": false,
+    "packages_installed": false,
+    "other_books_read": false,
+    "repository_outputs": ["D:/readbook-wpace/guyin-skills/arena/exp-work-quality-20260923-y01/g23-20260924/records/research-y.json"],
+    "note": "封题时间仅登记用户提供的信息，不为核验封题而访问封题文件。加载拆文技能后只采用转化性分析纪律，不执行备份原文、全书拆解、生成接口或额外落盘。"
+  },
+  "source": {
+    "path": "D:/readbook-wpace/guyin-skills/linkbook/隐杀 (愤怒的香蕉) (Z-Library).mobi",
+    "title_from_filename": "隐杀",
+    "author_verified_in_mobi_exth_100": "愤怒的香蕉",
+    "sha_algorithm": "SHA-256",
+    "sha256": "9c74d8a25d08fb50c83056978c1bea246394a2c61e0ad3d175615a8e34e35d42",
+    "size_bytes": 11415800,
+    "mtime_utc_observed": "2024-05-21T07:45:16+00:00",
+    "sha256_first_verified_at_utc": "2026-09-24T07:22:55.898749+00:00",
+    "sha256_reverified_at_utc": "2026-09-24T07:27:00.803656+00:00",
+    "hashes_equal": true,
+    "authority_limit": "文学文本可证明人物、叙述和情节怎样写，不能充当搏击、医学、心理学、爆炸物、野外生存或现实社会事实的专业权威。本记录不核证、不传授相关实操。"
+  },
+  "prior_research": {
+    "path": "D:/readbook-wpace/guyin-skills/arena/exp-work-quality-20260923-y01/W1-research-y03.md",
+    "use": "只帮助定位第四节及其余波，所有结论重新对照本次提取的原文；不将旧摘要视为原文。",
+    "old_internal_locator": "mobi8/Text/part0004.xhtml#sigil_toc_id_4",
+    "old_internal_locator_independently_verified": false,
+    "boundary_correction": "本次实际读取MOBI6兼容文本层。第四节止于擂台上怀沙的喊叫；赛后家明的内心总结、怀沙入馆和晨练变化实际在第五节开头。不得因旧研究把它们合并讨论，就把旧覆盖算作第五节完整阅读。",
+    "old_professional_claim_not_adopted": "旧研究所谓能力经得起专业复核，本次只确认小说叙述者作了这种说明，不将其提升为外部专业验证。"
+  },
+  "extraction": {
+    "python": "D:/software/python3/python.exe",
+    "available_packages": ["bs4", "lxml"],
+    "unavailable_packages": ["mobi", "kindleunpack", "ebooklib"],
+    "project_tool_lookup": "仅按文件名查找项目内*mobi*.py及scripts内*extract*，均无匹配；未读取其他研究、配置或稿件。",
+    "method": "使用系统temp内自建Python脚本按Palm Database记录表读取MOBI6文本层，处理PalmDOC压缩及MOBI尾部附加数据，再用BeautifulSoup进行HTML文本化。未安装软件。",
+    "pdb_record_count": 3679,
+    "record0_source_byte_offset": 29512,
+    "mobi_version": 6,
+    "palmdoc_compression": 2,
+    "mobi_extra_record_data_flags": 3,
+    "encoding": "UTF-8",
+    "strict_decode_final": true,
+    "replacement_characters_final": 0,
+    "record_index_convention": "PDB记录索引从0开始；记录0为头部，记录1起为本层正文记录。",
+    "mechanical_scan_disclosure": "第一次结构探测在内存机械解压记录1—64，只输出标题等定位信息，没有输出或阅读范围外正文。最终提取缩至记录1—23，在第八节标题足以界定第七节结尾时停止。整文件读取仅用于二进制寻址和完整SHA，不是全文阅读或全文输出。",
+    "final_text_record_window_inclusive": [1, 23],
+    "section_boundary_method": "以原始HTML中的h1—h4标签正则匹配保留原始字符坐标，目标节从自身h2起至下一节h2前结束；标题经HTML解析核对，不按关键词摘取正文。",
+    "normalization_for_line_citations": "对各节HTML片段执行BeautifulSoup(fragment, html.parser).get_text(换行, strip=True)，逐行strip，删除空行，以LF连接并添加末尾LF；UTF-8保存。行号来自此次规范化文本，不是MOBI原生页码。",
+    "offset_convention": "HTML字符范围与解压字节范围均从本MOBI6层首个正文记录开头计数，零基、左闭右开；源文件字节范围覆盖所属压缩记录，可能含相邻节边缘。",
+    "temp_directory": "C:/Users/PC/AppData/Local/Temp/g23-research-y-tfrt42zz",
+    "temporary_files": ["extract_target.py", "metadata.json", "section_03.txt", "section_04.txt", "section_05.txt", "section_06.txt", "section_07.txt"],
+    "raw_chapter_text_saved_in_repository": false,
+    "cleanup_status": "passed",
+    "parser_failure_and_recovery": "初版未剥离记录尾部附加数据，触发PalmDOC无效回指并停止；按本文件flags=3剥离索引尾数据及多字节尾数据后成功。另修正Windows标准输出编码和HTML序列化导致的定位潜在不一致；最终用原始HTML匹配，不以BeautifulSoup重序列化文本反查。"
+  },
+  "coverage": {
+    "full_sections_read": [5, 6, 7],
+    "context_sections_partially_read": [3, 4],
+    "distinct_narrative_sections_read": 5,
+    "full_target_text_characters_including_titles_and_lf": 7738,
+    "context_lines_read": {"3": [17, 41], "4": [16, 47]},
+    "outside_scope": "未读第三节1—16行、第四节1—15行、第一二节正文、第八节及以后正文；不声称全书结论。第八节标题只用于边界确认。",
+    "sections": [
+      {
+        "id": "S3",
+        "title": "第三节 柳怀沙",
+        "next_heading": "第四节 踢馆",
+        "coverage": "仅L17—41前情回查",
+        "normalized_lines": 41,
+        "normalized_characters_with_lf": 2818,
+        "normalized_text_sha256": "15d159ca6342f866baa67c91288ef60669925b0b4a1eebf2b003e421667464b1",
+        "html_character_range": [20688, 27624],
+        "decompressed_byte_range": [35294, 47794],
+        "pdb_record_range_inclusive": [9, 12],
+        "source_record_byte_span": [57639, 67440],
+        "heading_id": null
+      },
+      {
+        "id": "S4",
+        "title": "第四节 踢馆",
+        "next_heading": "第五节 三人行",
+        "coverage": "仅L16—47前情回查，不再完整拆解踢馆",
+        "normalized_lines": 47,
+        "normalized_characters_with_lf": 2469,
+        "normalized_text_sha256": "591d721772574d815c8c11e78c5941b478036aa32ef6821d1094b18831b8c880",
+        "html_character_range": [27624, 34823],
+        "decompressed_byte_range": [47794, 59847],
+        "pdb_record_range_inclusive": [12, 15],
+        "source_record_byte_span": [64903, 74313],
+        "heading_id": null
+      },
+      {
+        "id": "S5",
+        "title": "第五节 三人行",
+        "next_heading": "第六节 张雅涵",
+        "coverage": "L1—28完整阅读",
+        "normalized_lines": 28,
+        "normalized_characters_with_lf": 3044,
+        "normalized_text_sha256": "ff9e12e0685791801be14247cf4af3550ce9a98b4d2131bca64e669446ec958d",
+        "html_character_range": [34823, 40659],
+        "decompressed_byte_range": [59847, 71663],
+        "pdb_record_range_inclusive": [15, 18],
+        "source_record_byte_span": [71871, 82101],
+        "heading_id": null
+      },
+      {
+        "id": "S6",
+        "title": "第六节 张雅涵",
+        "next_heading": "第七节 夏令营",
+        "coverage": "L1—31完整阅读",
+        "normalized_lines": 31,
+        "normalized_characters_with_lf": 2304,
+        "normalized_text_sha256": "b88763ad4ef138125de8a4813b69bb9a9b172ca4dac0927a16538e9c58a82369",
+        "html_character_range": [40659, 46061],
+        "decompressed_byte_range": [71663, 81621],
+        "pdb_record_range_inclusive": [18, 20],
+        "source_record_byte_span": [79506, 87203],
+        "heading_id": null
+      },
+      {
+        "id": "S7",
+        "title": "第七节 夏令营",
+        "next_heading": "第八节 交换",
+        "coverage": "L1—25完整阅读；交换请求为本节结尾，不是提取截断",
+        "normalized_lines": 25,
+        "normalized_characters_with_lf": 2390,
+        "normalized_text_sha256": "64bf745f3a7eebdefcf08bee7bf75630f98c3be945e7f47a9630e55fd54a91a5",
+        "html_character_range": [46061, 50937],
+        "decompressed_byte_range": [81621, 91217],
+        "pdb_record_range_inclusive": [20, 23],
+        "source_record_byte_span": [84629, 95023],
+        "heading_id": null
+      }
+    ]
+  },
+  "necessary_context": [
+    {
+      "evidence": ["S3:L17—24", "S3:L30—40"],
+      "paraphrase": "家明仍利用灵静挡在前面，面对她被同伴羞辱时有旁观孩子闹剧的心态，同时打算必要时带她逃跑。怀沙因他的被保护位置而轻视他，却与灵静结识并获得来武馆学习的邀请。",
+      "why_needed": "建立被保护位置与后来主动接近危险的对照，也说明怀沙进入生活并非一次胜负直接换来崇拜。不能说家明前情中全然不保护灵静。"
+    },
+    {
+      "evidence": ["S4:L16—23", "S4:L30—47", "S5:L3—5"],
+      "paraphrase": "擂台上家明以逃跑应付，最终压制怀沙却不击打；怀沙的当场反应是羞怒。入馆、仇敌定位、反复练习靶子和三人晨练要到第五节才得到明示。",
+      "why_needed": "只核事件与余波的连接，不复做武戏动作拆解。第四节尾部不能独立证明后续共同生活已被持续消费。"
+    }
+  ],
+  "main_continuous_chain": {
+    "name": "从被卷入的三人日常，到持续互助、共同出游，再到关系承受危险",
+    "claim": "第五至七节不是仅补一句三人成为朋友：反复照顾改变随身物品，学习互助改变入学许可与出游资源，既有习惯随后在行程与分工中被实际使用；第五节还明确改写了家明对灵静的自我理解。第七节末把已有关系推入高压，但尚未给出营救后果。",
+    "links": [
+      {
+        "id": "C1",
+        "evidence": ["S4:L38—47", "S5:L4—7"],
+        "observed_change": "擂台羞怒没有立刻兑换认可。怀沙继续练功并拿家明练手，晨练由两人变三人，早餐付款转到家明，生日又有来自两个女孩的不同礼物。",
+        "authorial_selection": "选择频率、人数、付钱和送礼这些日常变量承接比赛，不用实力排名为事件结算。",
+        "reading_effect_inference": "冲突留下反复见面的理由，关系同时有摩擦与来往；不是一场打完就归零，也不是一赢就被收编。",
+        "causality_strength": "比赛后的入馆和日常变化有直接叙述连接；送礼是继续相处的证据，不能单独证明怀沙已完全改变评价。"
+      },
+      {
+        "id": "C2",
+        "evidence": ["S5:L8—23"],
+        "observed_change": "灵静受同伴羞辱后，家明的成人式安慰误触她对姐姐身份的坚持。两人的冷战让晨练接人、放学同行、进门吃饭这些惯例失效。家明误把不来叫人当成清静；灵静却在等待他修好。恢复一起跑步并道歉后，他承认灵静已从伪装生活的掩护变为重要的人。",
+        "authorial_selection": "先写双方对同一缺席的不同理解及重复落空，再直接交代家明的理解转变。",
+        "reading_effect_inference": "读者看见这段关系不只是主角方便的装置；依赖不是靠单个感动动作宣布，而是由日常断供暴露，再被心理概括命名。",
+        "causality_strength": "冷战与自我认识变化为文本明示；不能把童年亲密直接解释为已成熟的恋爱关系。"
+      },
+      {
+        "id": "C3",
+        "evidence": ["S5:L24—27"],
+        "observed_change": "怀沙几次带伤来找两人，原本回武馆取药的往返逐渐变成家明书包常备药物。她留级后，灵静带动三人复习；成绩改善促成父亲允许她与两人选择同校，先前的成绩奖励又提供了三人夏令营费用。",
+        "authorial_selection": "用跨学年的概述保留改变下一步选择的节点：重复麻烦、物品调整、共同投入、家长许可、费用来源。",
+        "reading_effect_inference": "互助变成可持续安排，不只是一次热心；共同出游来自已有关系和资源条件，不像独立的新冒险被硬接上来。",
+        "causality_strength": "药物常备、复习到成绩、奖励到费用均有明示连接。不能把学业改善全部归功于家明，更不能称之为医学或教学方法验证。"
+      },
+      {
+        "id": "C4",
+        "evidence": ["S5:L7", "S5:L27—28", "S6:L9", "S6:L13", "S6:L21", "S6:L28—31", "S7:L4", "S7:L11—13"],
+        "observed_change": "第五节敲定出游并购物，第六节家明把旅行包带回家，随后三人取消当天晨跑改在武馆集合。怀沙送的球棒仍留在家明房里；第七节明确拿出灵静所赠的收音机共用耳机。做饭时怀沙知道另外两人已有的做饭经验，因此坚持三人自组一队，任务随即落实到拾柴、淘米和摘菜。",
+        "authorial_selection": "让物品、习惯和彼此所知在新地点继续工作，而不只重复朋友标签。第六节家明还在晚饭看电视时借问灵静试题来校准自己的失误，使熟悉生活成为发现问题的渠道。",
+        "reading_effect_inference": "相处时间被转化成选择依据与默契，营地不是把三个人重新介绍一遍。",
+        "causality_strength": "第七节收音机的赠送者有明示；第六节桌上拆开的收音机是否为同一台未明确，不作同一物断言。做饭分工证明熟悉与协作，不证明每项能力都由此前事件训练而成。"
+      },
+      {
+        "id": "C5",
+        "evidence": ["S7:L13—25"],
+        "observed_change": "日常收听的广播成为识别来人危险的现场媒介。灵静被挟持后看向家明；两人因相处久而能理解简单唇语，但安慰没有解除恐惧。怀沙也在他上前时带着哭意喊他回来。家明最终提出由自己交换人质。",
+        "authorial_selection": "既有物件从亲密用品转为危机媒介；以恐惧、目光、默契仍不足以安慰及主动迈步转换关系的重量，不先安排围观认证。",
+        "reading_effect_inference": "前面累积的日常使读者知道他可能失去什么，关注点不只是他能否炫技。",
+        "causality_strength": "长久相处支持唇语理解是明示；第五节的重视与此处主动靠近危险相互印证，但文本没有声明冷战是交换决定的唯一原因。交换是否成功、能力是否暴露、救人后的相处均未覆盖。"
+      }
+    ],
+    "conditions_for_effect": [
+      "读者确实经历过至少一次惯例形成、失效或被调用，不能只从关系名词推断深厚感情。",
+      "配角有自己的愿望与限制：灵静在意身份和被羞辱，怀沙想同校并受父亲许可与成绩限制；她们不是只为主角能力作证。",
+      "概述仍需保留改变下一步行动的因果节点；不是把若干温馨事项罗列后直接宣布关系升级。",
+      "家明隐藏能力与争取不起眼的生活位置是本段冲突条件，不能把它抽掉以后仍照搬相同误会和反应。"
+    ]
+  },
+  "pressure_aftereffects": {
+    "completed_cross_section_example": {
+      "name": "试卷暴露压力的处理，变成下一节的相处阻力",
+      "evidence": ["S6:L11—15", "S6:L21—27", "S7:L3—8"],
+      "pressure": "家明试图把分数控制在及格附近，却没有校准试题难度。通过询问灵静发现异常，张雅涵随后说明拿错了面向更高年级的卷子；他面对被继续探查的压力。",
+      "choice": "他借粗鲁表现、朋友名誉和对雅涵与黄浩云关系的冒犯，诱使她生气退出谈话。",
+      "immediate_result": "雅涵当晚停止追问并离开。这里只能确认暂时中断探查，不是证明她永久相信了伪装。",
+      "later_interaction": "第七节重遇时她不打招呼，继续以此前恶劣表现判断家明，担心灵静受他影响，并推动领队播放车厢音乐，实际打断两人共听收音机。",
+      "mechanism": "解决眼前信息压力的办法留下关系债；配角的判断记得上一节发生过什么，随后的日常便利因此受损。",
+      "reading_effect_inference": "读者可同时理解家明为什么故意惹人厌，以及雅涵为什么不友好；冲突不必每章重启，也不必立刻用揭示实力消账。",
+      "qualification": "雅涵并非被固定成报复工具：S7:L17—20仍是她先去扶护受撞的灵静，继而自己受挟持。此前不悦与保护儿童可以同时成立。"
+    },
+    "earlier_pressure_aftereffects": "S4擂台冲突到S5入馆、练手和三人晨练，为另一组已出现的余波；之后照料、复习与出游则让这段新增关系持续被使用。",
+    "not_completed": "S7劫持只读到家明提出交换，不得把营救成功、众人改观或事后疗愈写成已验证结果。S5:L3对未来波澜的预告也不能替代后续正文证据。"
+  },
+  "counterexample": {
+    "type": "直接心理说明在铺垫后有效；反对一律只展示不解释",
+    "evidence": ["S5:L18—21", "S5:L22—23"],
+    "paraphrase": "在晨练失约、门外离去和女孩主动修好之后，叙述直接回顾家明此前把她当作掩护生活的存在，并明确说出她已成为重要的人。",
+    "why_effective": "说明命名了已有缺席与修复所暴露的变化，读者不必仅靠一个含混动作猜测关键关系转向。它不是替代过程的空洞结论，而是把前后心态的差异确定下来。",
+    "conditions": [
+      "先有具体惯例及其断裂，否则同样的心理说明可能只是作者代人物发言。",
+      "本段叙述允许进入不同人物内心。若迁移到严格单一有限视角，不得同时照搬灵静的等待与家明不知情的两套心理信息。"
+    ],
+    "limit": "这只反驳直接心理必然无效，不证明所有心理总结都好，也不证明全文都采用相同比例。连续链中的时间概述已另有证据，不为满足分类而再凑三个反例。"
+  },
+  "transfer_boundaries": {
+    "may_transfer_as_evaluation_questions": [
+      "压力处理是否改变之后见面时的态度、便利、义务或成本，而不是当场事件结束即清零？",
+      "关系变化是否有跨场景重复使用的惯例、资源或对彼此的认识，而非单靠宣言？",
+      "日常细节在后续是否参与选择或引出代价，而不是只作温馨陈列？",
+      "直接心理、概述、场景行动各自有没有完成必要功能，不能按形式标签直接判优劣？"
+    ],
+    "must_not_transfer": [
+      "人物姓名、武馆、伪装身份设定、童年亲密框架、家族帮派背景、同类道具及具体包袱的套用。",
+      "把所有压力写成笑料，或把所有成功写成围观认可；本段自身就有明确心理说明、时间概述及未获安慰的恐惧。",
+      "把小说关于动作、药物、野外食物或危险处理的描写当现实专业依据。",
+      "以本研究替未读的本批稿件打分，或将观察点变成生成侧必须逐项装配的模板。"
+    ],
+    "effect_status": "所有阅读效果均为本研究者基于原文的解释，不是独立读者实验、统计结果或质量保证。"
+  },
+  "gaps": [
+    "第八节及后续未读，因此最强危险事件的解决和事后关系变化仍是缺口，不用第四节或第五节预告代填。",
+    "研究只证明第五至七节之间的局部连续消费，不能推广为全书稳定机制或后期文风结论。",
+    "本次读取MOBI6层，未独立解包并逐字比对旧研究使用的MOBI8 XHTML；提供真实PDB记录与解压偏移替代未核锚点。",
+    "完成UTF-8严格解码、章节前后边界和顺读检查，但没有第二套独立解析器校对，也没有原版排版页码。",
+    "第三、第四节仅回查指定行段，旧研究涉及的第二节前情及第四节开头不在本次原文核验范围。",
+    "没有读取封题、brief或新稿，不提供与本批实际产物的对应评价。",
+    "精确API费用、token数和首次工具调用的墙钟时间不可取得；不虚构成本数值。"
+  ],
+  "process": {
+    "date_utc": "2026-09-24",
+    "first_observed_timestamp_utc": "2026-09-24T07:22:55.898749+00:00",
+    "analysis_and_source_recheck_at_utc": "2026-09-24T07:27:00.803656+00:00",
+    "steps": [
+      {"tool_calls": [1, 2, 3, 4, 5, 6], "at_utc": null, "time_note": "步骤1—4早于首次带时间戳输出；步骤5输出2026-09-24T07:22:55.898749+00:00；步骤6随后。", "action": "核父目录与可用包，加载限定范围的分析方法，读允许的旧研究定位，按文件名找本地解析器，并完整计算原书SHA。py命令不存在；不安装、不联网。"},
+      {"tool_calls": [7, 8, 9, 10, 11, 12, 13, 14], "started_at_utc": "2026-09-24T07:23:36.961528+00:00", "ended_at_utc": "2026-09-24T07:25:44.668694+00:00", "action": "创建专用系统temp目录；实现并修正PalmDOC记录尾处理及定位；完成五节的临时定向提取和边界、哈希登记。原章不入仓库。"},
+      {"tool_calls": [15, 16, 17, 18, 19], "at_utc": null, "time_window_utc": ["2026-09-24T07:25:44.668694+00:00", "2026-09-24T07:27:00.803656+00:00"], "action": "顺序完整阅读第五、六、七节，再回查第三节17—41行、第四节16—47行；区分已兑现余波与未完成劫持事件。"},
+      {"tool_calls": [20], "at_utc": "2026-09-24T07:27:00.803656+00:00", "action": "写入前再次ls唯一产物父目录，确认目标不存在，复核完整来源SHA和作者EXTH元数据。"},
+      {"tool_calls": [21], "at_utc": null, "action": "只写本JSON分析性转述，登记连续链、压力余波、有效反例、迁移边界和缺口。"},
+      {"tool_calls": [22], "at_utc": null, "action": "JSON可解析且原书SHA一致；验证章节文件时误把Windows物理CRLF文件哈希与已定义的LF规范化哈希比较，断言失败，当次未执行清理。"},
+      {"tool_calls": [23], "at_utc": "2026-09-24T07:32:00.171303+00:00", "action": "按LF规范化定义重新核验五节哈希、行数、标题与偏移，全部通过；再次确认原书SHA未变。核对临时目录仅含自建七文件且无符号链接后，删除该目录并确认不存在。"},
+      {"tool_calls": [24, 25], "at_utc": null, "time_note": "在07:32:00.171303+00:00校验完成之后进行，未单独取墙钟。", "action": "仅回填本JSON的完成状态、校验结果、真实成本及失败恢复记录；第25次调用后停止，不追加工具。"}
+    ],
+    "cost": {
+      "time_budget_minutes": 20,
+      "tool_call_budget": 25,
+      "tool_calls_used_through_initial_write": 21,
+      "tool_calls_total": 25,
+      "full_target_sections": 3,
+      "partial_context_sections": 2,
+      "source_files_used_as_primary_evidence": 1,
+      "allowed_old_research_files_read": 1,
+      "paid_network_requests": 0,
+      "installed_packages": 0,
+      "elapsed_seconds_from_first_observed_timestamp_to_validation": 544.273,
+      "exact_elapsed_from_task_start_seconds": null,
+      "exact_api_cost": null,
+      "exact_tokens": null,
+      "tool_budget_limit_reached": true,
+      "budget_exhausted": true,
+      "budget_stop_reason": "研究、校验和清理完成，回填本记录时达到25次工具上限，立即停止；未因预算而虚称读过更多章节。首次工具调用时间未采集，精确总耗时不虚报。"
+    },
+    "final_validation": {
+      "completion_status": "complete_with_declared_scope_gaps",
+      "validated_at_utc": "2026-09-24T07:32:00.171303+00:00",
+      "json_parse": "passed_before_final_status_and_process_metadata_updates",
+      "source_sha256_unchanged": true,
+      "source_sha256": "9c74d8a25d08fb50c83056978c1bea246394a2c61e0ad3d175615a8e34e35d42",
+      "five_section_normalized_hashes_titles_lines_and_offsets": "passed",
+      "target_complete_text_characters": 7738,
+      "normalization_clarification": "临时txt由Windows文本模式保存，物理换行为CRLF；本记录章节哈希和字符数始终指UTF-8、LF规范化文本，不是物理临时文件的原始字节哈希。重新按该定义复核全部一致。原书SHA则为完整原始文件字节哈希。",
+      "parser_sha256_before_cleanup": "b903952e81f7d47c3703826fb411f21ea8bca37427d64bb62b51377bb4001cc0",
+      "own_temp_directory_deleted": true,
+      "deleted_directory": "C:/Users/PC/AppData/Local/Temp/g23-research-y-tfrt42zz",
+      "repository_chapter_text_created": false,
+      "other_files_modified": false,
+      "post_metadata_edit_reread": false,
+      "post_metadata_edit_reread_note": "最后两次仅由Edit回填本记录的元数据；遵守不重复读刚编辑文件和工具预算要求，不追加读取。"
+    }
+  },
+  "conclusion": "第五至七节确有连续消费：练手关系发展出常备药、共同复习、同校许可与出游，并在营地分工和危机默契中继续起作用；冷战还明确改变了家明的关系理解。试卷压力留下的恶感在下一节实际干扰相处。直接心理总结是有效反例；劫持后的解决与相处未读，不作成功断言。"
+}

@@ -1,0 +1,5 @@
+{
+  "first_recorded_at": "2026-09-24T07:26:30.721956+00:00",
+  "conversation_start_at": null,
+  "conversation_start_note": "首次工具前时刻不可核实；此时间早于 init/start，晚于输入读取与首次只读目录检查。"
+}

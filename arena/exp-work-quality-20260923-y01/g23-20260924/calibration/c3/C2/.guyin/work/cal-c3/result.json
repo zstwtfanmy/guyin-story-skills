@@ -1,0 +1,370 @@
+{
+  "schema_version": 1,
+  "run": "cal-c3",
+  "book_root": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c3\\C2",
+  "framework_root": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\framework\\skills",
+  "target": {
+    "kind": "long",
+    "chapter": 1,
+    "title": "面要趁热",
+    "mode": "append"
+  },
+  "phase": "reviewed",
+  "author_status": "resumable",
+  "result_scope": "G2独立原创短场景；真实init/start/drafted/全文review/reviewed已完成；不要求ready，未发布。",
+  "versions": [
+    {
+      "path": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c3\\C2\\.guyin\\work\\cal-c3\\drafts\\v0001.md",
+      "sha256": "4282127fd56c7683f42a3b3286e754e898b72e3bda19531828fbde625fd736b7",
+      "bytes": 4503,
+      "han": 1219,
+      "non_whitespace": 1464,
+      "measured_at": "2026-09-24T07:41:41.673Z"
+    }
+  ],
+  "selected_draft": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c3\\C2\\.guyin\\work\\cal-c3\\drafts\\v0001.md",
+  "selection_meaning": "执行者选择用于实验展示，不是用户选稿或质量验收。",
+  "revision": {
+    "substantive_revisions": 0,
+    "v0002": null,
+    "net_benefit": "未证明修订净收益，保留初稿。",
+    "tradeoff": "保留离场动作/钱款指代略急，以及返听中听见肚响的夸张；不以补解释和磨平俏皮换取表面齐整。"
+  },
+  "review": {
+    "path": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c3\\C2\\.guyin\\work\\cal-c3\\review.md",
+    "sha256": "27ac6326455ada8edc29249bc7af2400ab9210667db3a18ab9a730013eea26e6",
+    "bytes": 6170,
+    "loaded_sections": "当前会话阅读全文后自写",
+    "role": "证据"
+  },
+  "authorization": {
+    "write": {
+      "source_id": "U1",
+      "quote": "指定封存包不满足同路线双原创题条件，那你先帮我处理这个然后再进行G2/G3"
+    },
+    "selection": null,
+    "publish": null
+  },
+  "locks": [],
+  "profile": {
+    "id": "relationship-payoff",
+    "version": 2,
+    "selection_basis": "framework-default",
+    "frozen_characters": 537,
+    "exact_match_to_input_file": true,
+    "input": {
+      "path": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c3\\C2\\.guyin\\work\\cal-c3\\input.json",
+      "sha256": "f09236c8d7ebde8bebafce5dcbe7865d5f8150cd045489aae1fedabe8ec17059",
+      "bytes": 5970,
+      "loaded_sections": "全文被冻结并经start校验",
+      "role": "边界"
+    }
+  },
+  "measurement": {
+    "han_rule": "移除首行Markdown标题，只数正文Unicode Script=Han码点；Node原生Unicode属性正则。",
+    "han_interval": [
+      1000,
+      1800
+    ],
+    "non_whitespace_rule": "移除首行标题，按Unicode码点排除空白。",
+    "engineering_threshold": [
+      1000,
+      2400
+    ],
+    "framework_wordcount": {
+      "exit_code": 0,
+      "findings": [],
+      "files_scanned": [
+        "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c3\\C2\\.guyin\\work\\cal-c3\\drafts\\v0001.md"
+      ],
+      "reported_visible_count": null,
+      "note": "CLI的JSON仅返回findings及扫描路径，不返回数值；不将独立1464计数冒充CLI数值。",
+      "raw_stdout": "evidence/05-v0001-wordcount.stdout.txt"
+    }
+  },
+  "lifecycle": {
+    "preflight": "evidence/preflight.json",
+    "init_state_revision": 0,
+    "start_completed_at": "2026-09-24T07:40:31.335224+00:00",
+    "draft_file_mtime": "2026-09-24T07:41:31.843777+00:00",
+    "start_succeeded_before_prose": true,
+    "draft_checkpoint": "evidence/06-drafted.command.json",
+    "review_checkpoint": "evidence/07-reviewed.command.json",
+    "separate_checkpoints": true,
+    "final_status": "evidence/09-status.stdout.txt",
+    "formal_prose_files": [],
+    "publication_journal": null,
+    "candidate_context": "not_run; G2不要求ready",
+    "transaction": null,
+    "preview": null
+  },
+  "sources": [
+    {
+      "path": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c3\\C2\\inputs\\brief.txt",
+      "sha256": "ea70575d1be0a11c40ef0717e5c6dc01e40e02add919ff4d1b7aaf64afb0a103",
+      "bytes": 1681,
+      "loaded_sections": "Read全文：1–12",
+      "role": "派发输入"
+    },
+    {
+      "path": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c3\\C2\\inputs\\profile.txt",
+      "sha256": "2e442886becb6aeefecd9e987d70bff2daed226e98bfd5c1aeda7f5147fbd48a",
+      "bytes": 1613,
+      "loaded_sections": "Read全文：1–2；正文537字符，不计行尾",
+      "role": "派发输入"
+    },
+    {
+      "path": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c3\\C2\\inputs\\generation-protocol.txt",
+      "sha256": "f739fbf03ee2e12c998cb84cf2cc21dccb93580046cb70bcff7d26f2700ec432",
+      "bytes": 3354,
+      "loaded_sections": "Read全文：1–19",
+      "role": "派发输入"
+    },
+    {
+      "path": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c3\\C2\\inputs\\framework-protocol.txt",
+      "sha256": "7fb5bb9ca7ccee0c7e8301140164ad94ed6c206cdee249254f4ace703ff3c6a7",
+      "bytes": 4823,
+      "loaded_sections": "Read全文：1–22",
+      "role": "派发输入"
+    },
+    {
+      "path": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\framework\\skills\\guyin-write\\SKILL.md",
+      "sha256": "fb2a2b9a84ba4042b7e000644dc2d1e7ee81f3ec5c81206767d13c5ac4927e25",
+      "bytes": 11493,
+      "loaded_sections": "Read全文1–92",
+      "role": "显式候选规范；未Invoke安装版Skill"
+    },
+    {
+      "path": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\framework\\skills\\guyin-write\\references\\consult\\tracking-transaction.md",
+      "sha256": "49603f9bdc4aca3a4e2411509bae65f3ec6c70537fe4537438736939f9316d6d",
+      "bytes": 40217,
+      "loaded_sections": "Read全文1–368；工具实际还返回370–383（续写状态卡）。所需段落：运行17–44、run/input/checkpoint46–123、preview125–164、init166–196、逐章事务230–328。",
+      "role": "显式候选规范；未Invoke安装版Skill"
+    },
+    {
+      "path": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\framework\\skills\\guyin-review\\SKILL.md",
+      "sha256": "0b0e07108f8a0d88ed50ec266a0f4f55eb89556b57a6b0cb6ab33641d4f3178a",
+      "bytes": 5988,
+      "loaded_sections": "review阶段Read全文1–77",
+      "role": "显式候选规范；未Invoke安装版Skill"
+    },
+    {
+      "path": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\framework\\skills\\guyin-review\\references\\quality-rubric.md",
+      "sha256": "fd202073b9c84d9315146522bd744c85273fc42a4b7d3481b17305943c8bd929",
+      "bytes": 6280,
+      "loaded_sections": "review阶段Read全文1–58",
+      "role": "显式候选规范；未Invoke安装版Skill"
+    },
+    {
+      "path": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c3\\C2\\追踪\\上下文.md",
+      "sha256": "fb7c2f8c789f6c95aca7c8dc6ce5e8a379dd2976e044ee1e92c700050831d0a4",
+      "bytes": 1456,
+      "loaded_sections": "起笔前Read全文1–32",
+      "role": "init真实派生视图"
+    },
+    {
+      "path": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c3\\C2\\追踪\\角色状态\\赵禾.md",
+      "sha256": "ec15563ff9716dec3d8dbf31f9948d19540c2fe7a6ae90e6505cee59732d4ef8",
+      "bytes": 920,
+      "loaded_sections": "起笔前Read全文1–26",
+      "role": "init真实派生视图"
+    },
+    {
+      "path": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c3\\C2\\追踪\\角色状态\\苏笛.md",
+      "sha256": "ce4979b3acb643bd76edf2c6c60540ddfa63caa02bd4975711acd88cf0cd8853",
+      "bytes": 668,
+      "loaded_sections": "起笔前Read全文1–24",
+      "role": "init真实派生视图"
+    },
+    {
+      "path": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c3\\C2\\追踪\\角色状态\\莫圆.md",
+      "sha256": "5c3580c34b790a441f20289103791470967d6a26ea29bbb05bce3a7ef1085cd1",
+      "bytes": 662,
+      "loaded_sections": "起笔前Read全文1–23",
+      "role": "init真实派生视图"
+    },
+    {
+      "path": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c3\\C2\\大纲\\批次公约.md",
+      "sha256": "8069170e621259a43845f9f8623aa76bf53d91afc3f2c4f750cfc359656f5bf9",
+      "bytes": 620,
+      "loaded_sections": "生成/冻结及脚本校验全文件；不是额外Read全文",
+      "role": "本run来源与基线"
+    },
+    {
+      "path": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c3\\C2\\设定\\题材定位.md",
+      "sha256": "1bcd16903b6fe6789daa5dd23e067cb6844e937ed1c3683c24fd425fd717f464",
+      "bytes": 1929,
+      "loaded_sections": "生成/冻结及脚本校验全文件；不是额外Read全文",
+      "role": "本run来源与基线"
+    },
+    {
+      "path": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c3\\C2\\追踪\\_tracking-state.json",
+      "sha256": "8a10ac08cf004127b6fcda7dc9c40a2c837e091ba8bc2a186d271ebc52c6c256",
+      "bytes": 3678,
+      "loaded_sections": "生成/冻结及脚本校验全文件；不是额外Read全文",
+      "role": "本run来源与基线"
+    },
+    {
+      "path": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c3\\C2\\追踪\\待审台账.md",
+      "sha256": "3a77c509cd450e3b91a5666381f9dcf8d9c3f5a9d9a509a1aee829dac997df28",
+      "bytes": 172,
+      "loaded_sections": "生成/冻结及脚本校验全文件；不是额外Read全文",
+      "role": "本run来源与基线"
+    },
+    {
+      "path": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\framework\\skills\\guyin-write\\scripts\\guyin-author-session.py",
+      "sha256": "7f1a39f826908868b55abc90306db58852017677aa5d6775d7213f0f701fb737",
+      "bytes": 52096,
+      "loaded_sections": "定向Grep返回43–61、483–517、1026–1046；执行start/checkpoint/status入口，未语义通读全文件",
+      "role": "接口核查/真实执行"
+    },
+    {
+      "path": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\framework\\skills\\guyin-write\\scripts\\guyin-check-pending.js",
+      "sha256": "41a3ccef8a5315318f1c920a0fa5a4891c09001d64deb503eda95165bff01849",
+      "bytes": 16016,
+      "loaded_sections": "两次定向Grep；接口说明/台账缺失与CLI片段（含26–30、232–244），第一次输出被截断且未读宿主落盘副本；执行pending",
+      "role": "接口核查/真实执行"
+    },
+    {
+      "path": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\framework\\skills\\guyin-write\\scripts\\guyin-check-wordcount.js",
+      "sha256": "780e5bda98ace9210c9dc02643fce2d28efbc853ba60cb261ab7b0464c07cf21",
+      "bytes": 12818,
+      "loaded_sections": "两次定向Grep；可见字符口径及CLI参数片段（含11–16、32–43、67–96、132–135），非全文；执行wordcount",
+      "role": "接口核查/真实执行"
+    },
+    {
+      "path": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\framework\\skills\\guyin-write\\scripts\\guyin-tracking-commit.py",
+      "sha256": "cff01c2a49e9bf703cd05d191d973bded05583f4d8258a2c771cf0e1b44637a1",
+      "bytes": 175010,
+      "loaded_sections": "仅运行init/check；未作为文学材料读取源代码",
+      "role": "接口核查/真实执行"
+    },
+    {
+      "path": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c3\\C2\\.guyin\\work\\cal-c3\\drafts\\v0001.md",
+      "sha256": "4282127fd56c7683f42a3b3286e754e898b72e3bda19531828fbde625fd736b7",
+      "bytes": 4503,
+      "loaded_sections": "初稿保存并计量后，Read全文1–98；仅本会话自稿",
+      "role": "全文自由审读对象"
+    },
+    {
+      "path": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c3\\C2\\.guyin\\work\\cal-c3\\review.md",
+      "sha256": "27ac6326455ada8edc29249bc7af2400ab9210667db3a18ab9a730013eea26e6",
+      "bytes": 6170,
+      "loaded_sections": "当前会话生成全文；checkpoint读取核hash12",
+      "role": "审读证据"
+    }
+  ],
+  "source_limits": {
+    "source_hash_time": "result生成时核完整SHA；input文件来源另由start冻结并经最终status复核未漂移。",
+    "runtime_transitive_imports": "unknown：未对Python/Node传递依赖作加载插桩；这里只列显式查读文件与真实执行入口，不声称枚举所有运行时依赖。",
+    "host_automatic_context": "unknown：宿主自动注入内容的完整路径/hash/字节数无法核实；未主动读取或写入长期记忆，未使用其他实验/旧稿材料。",
+    "additional_consult": [],
+    "network_access": false,
+    "delegation": false
+  },
+  "commands": [
+    {
+      "record": "evidence\\01-init.command.json",
+      "exit_code": 0,
+      "elapsed_seconds": 0.18799999996554106
+    },
+    {
+      "record": "evidence\\02-pending.command.json",
+      "exit_code": 0,
+      "elapsed_seconds": 0.07800000009592623
+    },
+    {
+      "record": "evidence\\03-start.command.json",
+      "exit_code": 0,
+      "elapsed_seconds": 0.32900000002700835
+    },
+    {
+      "record": "evidence\\04-v0001-metrics.command.json",
+      "exit_code": 0,
+      "elapsed_seconds": 0.07800000009592623
+    },
+    {
+      "record": "evidence\\05-v0001-wordcount.command.json",
+      "exit_code": 0,
+      "elapsed_seconds": 0.0779999999795109
+    },
+    {
+      "record": "evidence\\06-drafted.command.json",
+      "exit_code": 0,
+      "elapsed_seconds": 0.1410000000614673
+    },
+    {
+      "record": "evidence\\07-reviewed.command.json",
+      "exit_code": 0,
+      "elapsed_seconds": 0.15600000007543713
+    },
+    {
+      "record": "evidence\\08-tracking-check.command.json",
+      "exit_code": 0,
+      "elapsed_seconds": 0.14000000001396984
+    },
+    {
+      "record": "evidence\\09-status.command.json",
+      "exit_code": 0,
+      "elapsed_seconds": 0.14099999994505197
+    }
+  ],
+  "raw_evidence": "evidence/*.command.json保存实际argv、cwd、起止UTC、耗时、原始stdout/stderr路径及SHA/字节数和退出码；stdout/stderr按子进程原始字节保存，无覆盖。初次ls/os.walk只在宿主工具记录有原始输出，preflight.json明确是转录。",
+  "cost": {
+    "session_started_at": null,
+    "first_clock_observation": "2026-09-24T07:37:44.460553+00:00",
+    "ended_at": "2026-09-24T07:45:58.281366+00:00",
+    "seconds_since_first_clock_observation": 493.820813,
+    "clock_note": "四份输入及两份规范开始读取时未采钟，真实会话起点和阅读耗时无法追溯，不能把首次采钟冒充会话起点。",
+    "tool_calls": {
+      "leaf_calls": 34,
+      "parallel_dispatch_calls": 5,
+      "conservative_total": 39,
+      "scope": "截至本次最终记账Bash调用本身；包括所有Read/Grep/Glob/Write/Bash/Task调用及5个parallel包装调用，不含工具内部9个子进程重复计数。",
+      "limit": 45,
+      "basis": "当前可见会话逐条计数；初次result生成后新增TaskGet、TaskUpdate、TaskList、本次Bash，共4个叶子调用。"
+    },
+    "command_count": 9,
+    "command_seconds": 1.329000000259839,
+    "failed_commands": 0,
+    "failed_tool_calls": 0,
+    "execution_retries": 0,
+    "search_refinements": 1,
+    "search_note": "第一次接口Grep输出截断，缩小模式补查一次；未读取持久化截断输出。",
+    "time_limit_minutes": 45,
+    "tokens": null
+  },
+  "model": {
+    "selection": "当前默认模型，未切换",
+    "model_id": "unknown",
+    "provider": "unknown",
+    "temperature": "unknown",
+    "seed": "unknown",
+    "other_parameters": "unknown"
+  },
+  "unresolved": [
+    {
+      "kind": "editorial",
+      "location": "drafts/v0001.md:81–85",
+      "issue": "离场动作和钱款指代局部含混，未修。",
+      "blocks_reviewed": false
+    },
+    {
+      "kind": "editorial",
+      "location": "drafts/v0001.md:69",
+      "issue": "返听中听见肚响的夸张和叙述重心损失，未修。",
+      "blocks_reviewed": false
+    },
+    {
+      "kind": "user_quality_acceptance",
+      "issue": "统一后置；未获真实用户反馈，不产生文学质量评级。",
+      "blocks_reviewed": false
+    }
+  ],
+  "blockers": [],
+  "ready_claimed": false,
+  "published": false,
+  "deployment": false,
+  "git_used": false,
+  "executor_controls": "本派发的chapter=1、标题、目录、计量和操作记录由执行者落实；不冒作用户原话。用户source只采用generation-protocol.txt第3行原话。"
+}

@@ -1,0 +1,33 @@
+{
+  "recorded_at": "2026-09-24T07:31:47.765128+00:00",
+  "files": {
+    "calibration-c1.txt": {
+      "sha256": "1495cf513ebe7c76833faa9e0ea97a4df6c8d3afb5248c5a9c556e9e62e5b99d",
+      "bytes": 1497
+    },
+    "framework-protocol.txt": {
+      "sha256": "7fb5bb9ca7ccee0c7e8301140164ad94ed6c206cdee249254f4ace703ff3c6a7",
+      "bytes": 4823
+    },
+    "generation-protocol.txt": {
+      "sha256": "f739fbf03ee2e12c998cb84cf2cc21dccb93580046cb70bcff7d26f2700ec432",
+      "bytes": 3354
+    },
+    "profile.txt": {
+      "sha256": "2e442886becb6aeefecd9e987d70bff2daed226e98bfd5c1aeda7f5147fbd48a",
+      "bytes": 1613
+    },
+    "calibration-c2.txt": {
+      "sha256": "c12aa5f387886540fb62a5abbbc8d7c8a50cf9e272082765ec6bacfe6ff2293d",
+      "bytes": 1616
+    },
+    "calibration-c3.txt": {
+      "sha256": "ea70575d1be0a11c40ef0717e5c6dc01e40e02add919ff4d1b7aaf64afb0a103",
+      "bytes": 1681
+    }
+  },
+  "pairs_dispatched": 1,
+  "other_pairs_not_yet_authorized_by_executor_decision": false,
+  "additional_pairs_decision_at": "2026-09-24T07:36:30.038378+00:00",
+  "decision_evidence": "records/calibration-c1-review.json"
+}

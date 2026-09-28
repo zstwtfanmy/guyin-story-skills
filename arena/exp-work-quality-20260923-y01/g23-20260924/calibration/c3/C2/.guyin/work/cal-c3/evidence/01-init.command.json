@@ -1,0 +1,26 @@
+{
+  "command": [
+    "D:\\software\\python3\\python.exe",
+    "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\framework\\skills\\guyin-write\\scripts\\guyin-tracking-commit.py",
+    "init",
+    "--project",
+    "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c3\\C2",
+    "--input",
+    "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c3\\C2\\.guyin\\work\\cal-c3\\init.json"
+  ],
+  "cwd": "D:\\readbook-wpace\\guyin-skills",
+  "started_at": "2026-09-24T07:39:41.052873+00:00",
+  "ended_at": "2026-09-24T07:39:41.239904+00:00",
+  "elapsed_seconds": 0.18799999996554106,
+  "exit_code": 0,
+  "stdout": {
+    "path": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c3\\C2\\.guyin\\work\\cal-c3\\evidence\\01-init.stdout.txt",
+    "sha256": "5e0c22786c6a71701830ef7c99a039f21d755688814084dce3995a7b42713e7c",
+    "bytes": 51
+  },
+  "stderr": {
+    "path": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c3\\C2\\.guyin\\work\\cal-c3\\evidence\\01-init.stderr.txt",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "bytes": 0
+  }
+}

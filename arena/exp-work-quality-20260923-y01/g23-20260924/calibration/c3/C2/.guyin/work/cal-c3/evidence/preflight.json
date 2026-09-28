@@ -1,0 +1,9 @@
+{
+  "observed_at": "2026-09-24T07:37:44.460553+00:00",
+  "observation": "B原有且仅有inputs目录，内为brief.txt/profile.txt/generation-protocol.txt/framework-protocol.txt；完整os.walk未见其他文件或目录。",
+  "publication": "absent",
+  "pending_ledger": "absent; no rows existed",
+  "unknown_runs": [],
+  "original_tool_stdout_archived": false,
+  "note": "初次目录核查原始输出保留于宿主工具记录；此处为可核对转录，不冒充原始stdout。"
+}

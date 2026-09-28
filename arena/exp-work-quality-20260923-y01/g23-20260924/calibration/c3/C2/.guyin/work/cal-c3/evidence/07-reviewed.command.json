@@ -1,0 +1,28 @@
+{
+  "command": [
+    "D:\\software\\python3\\python.exe",
+    "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\framework\\skills\\guyin-write\\scripts\\guyin-author-session.py",
+    "checkpoint",
+    "--project",
+    "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c3\\C2",
+    "--run",
+    "cal-c3",
+    "--input",
+    ".guyin/work/cal-c3/checkpoint-reviewed.json"
+  ],
+  "cwd": "D:\\readbook-wpace\\guyin-skills",
+  "started_at": "2026-09-24T07:43:27.658305+00:00",
+  "ended_at": "2026-09-24T07:43:27.817250+00:00",
+  "elapsed_seconds": 0.15600000007543713,
+  "exit_code": 0,
+  "stdout": {
+    "path": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c3\\C2\\.guyin\\work\\cal-c3\\evidence\\07-reviewed.stdout.txt",
+    "sha256": "34a3a84a1e18fdd5c24e9df562d3d810651a3b74c32fd949d3bb2aece8c6ce8f",
+    "bytes": 108
+  },
+  "stderr": {
+    "path": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c3\\C2\\.guyin\\work\\cal-c3\\evidence\\07-reviewed.stderr.txt",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "bytes": 0
+  }
+}

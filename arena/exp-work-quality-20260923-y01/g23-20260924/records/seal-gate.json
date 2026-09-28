@@ -1,0 +1,30 @@
+{
+  "gate": "G0_original_holdout",
+  "verified_at": "2026-09-24T07:23:35.776789+00:00",
+  "sealed_at": "2026-09-24T07:18:36.392Z",
+  "author_session_id": "b97edd14-8d2e-41c8-b0a4-b6a925dbeacf",
+  "author_tool_calls": 9,
+  "public_register_sha256": "48bc4f9c4259ef7a22e4b88db9443778dd90584d2ee0aa7234558cf67c26abbc",
+  "independent_second_review": "pass；全文核双题、差异、边界和3项SHA；PUBLIC无泄题。记录为主会话general-purpose只读审题调用返回，不冒充原作者自审。",
+  "files": [
+    {
+      "path": "sealed/original-y-20260924/q1/brief.md",
+      "sha256": "8a5d45fbf3ddf578fed86e2d80285a547a8dd928e5ef0a2767ce0559964a92b0",
+      "bytes": 2633
+    },
+    {
+      "path": "sealed/original-y-20260924/q2/brief.md",
+      "sha256": "eb37b3cacfe64d252b00377c2166fd6803797609ed912f8d36196346fd22ef01",
+      "bytes": 2745
+    },
+    {
+      "path": "sealed/original-y-20260924/private-audit.json",
+      "sha256": "0c70120a5dcc16065e85266eda0702cb41263e51e51e7543328151443e739616",
+      "bytes": 7505
+    }
+  ],
+  "main_semantically_read_question_bodies": false,
+  "g2_generation_started_before_sealing": false,
+  "g3_unsealed": false,
+  "limits": "同机非加密；模型和宿主隐藏提示未知；外部全球原创性未证明；时间为本机时间。"
+}

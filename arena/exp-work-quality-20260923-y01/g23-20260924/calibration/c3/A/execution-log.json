@@ -1,0 +1,33 @@
+{
+  "first_clock_observation_at": "2026-09-24T07:38:34.314Z",
+  "session_started_at": null,
+  "session_start_note": "The first four tool calls occurred before this clock observation; their exact timestamps are not available.",
+  "sources": [
+    {
+      "path": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c3\\A\\inputs\\brief.txt",
+      "bytes": 1681,
+      "sha256": "ea70575d1be0a11c40ef0717e5c6dc01e40e02add919ff4d1b7aaf64afb0a103",
+      "loaded": "full text via Read; full bytes via Node for hash"
+    },
+    {
+      "path": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c3\\A\\inputs\\profile.txt",
+      "bytes": 1613,
+      "sha256": "2e442886becb6aeefecd9e987d70bff2daed226e98bfd5c1aeda7f5147fbd48a",
+      "loaded": "full text via Read; full bytes via Node for hash"
+    },
+    {
+      "path": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c3\\A\\inputs\\generation-protocol.txt",
+      "bytes": 3354,
+      "sha256": "f739fbf03ee2e12c998cb84cf2cc21dccb93580046cb70bcff7d26f2700ec432",
+      "loaded": "full text via Read; full bytes via Node for hash"
+    }
+  ],
+  "host_auto_injected_context": {
+    "verification": "unknown",
+    "sha256": null,
+    "used_as_story_source": false
+  },
+  "visible_tool_calls_so_far": 5,
+  "failed_calls": 0,
+  "retries": 0
+}

@@ -1,0 +1,6 @@
+{
+  "run_id": "cal-c2",
+  "phase": "drafted",
+  "draft": "ec10a7aef84b",
+  "invalidated_evidence": true
+}

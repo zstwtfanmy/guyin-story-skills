@@ -1,0 +1,19 @@
+{
+  "name": "12-checkpoint-reviewed",
+  "argv": [
+    "python",
+    "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\framework\\skills\\guyin-write\\scripts\\guyin-author-session.py",
+    "checkpoint",
+    "--project",
+    "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c2\\C2",
+    "--run",
+    "cal-c2",
+    "--input",
+    ".guyin/work/cal-c2/checkpoint-reviewed.json"
+  ],
+  "started_at": "2026-09-24T07:47:20.526859+00:00",
+  "ended_at": "2026-09-24T07:47:20.676459+00:00",
+  "exit_code": 0,
+  "stdout_path": "execution/12-checkpoint-reviewed.stdout.txt",
+  "stderr_path": "execution/12-checkpoint-reviewed.stderr.txt"
+}

@@ -1,0 +1,59 @@
+{
+  "schema_version": 1,
+  "sessions": [
+    {
+      "role": "sealed_original_author",
+      "session_id": "b97edd14-8d2e-41c8-b0a4-b6a925dbeacf",
+      "status": "completed",
+      "tool_calls_observed": 9,
+      "output": "../sealed/original-y-20260924/PUBLIC-REGISTER.json"
+    },
+    {
+      "role": "g2_c1_A",
+      "session_id": "e7e56a70-09c6-479b-8e23-0c8182e2389b",
+      "status": "completed_verified",
+      "book": "calibration/c1/A"
+    },
+    {
+      "role": "g2_c1_C2",
+      "session_id": "7cece5d8-9619-42f7-ad52-5681e88e69f1",
+      "status": "completed_verified",
+      "book": "calibration/c1/C2"
+    },
+    {
+      "role": "g2_c2_A",
+      "session_id": "81fd33d3-3709-4ec4-8f12-06f9c852cea5",
+      "book": "calibration/c2/A",
+      "status": "dispatched"
+    },
+    {
+      "role": "g2_c2_C2",
+      "session_id": "5cc04c4e-a726-4310-8db1-f991e6030a3c",
+      "book": "calibration/c2/C2",
+      "status": "dispatched"
+    },
+    {
+      "role": "g2_c3_A",
+      "session_id": "f315972f-c742-473d-b504-9ec6845eb53a",
+      "book": "calibration/c3/A",
+      "status": "dispatched"
+    },
+    {
+      "role": "g2_c3_C2",
+      "session_id": "570fbb41-a1cd-4a99-8d50-0aba07213a04",
+      "book": "calibration/c3/C2",
+      "status": "dispatched"
+    }
+  ],
+  "independent_audit": {
+    "type": "general-purpose read-only agent",
+    "result": "pass",
+    "reference": "parent conversation Agent tool result after original seal"
+  },
+  "research": {
+    "agent_id": "ageneral-purpose-aa864e0d2701176b",
+    "status": "completed",
+    "scope": "evaluation side only",
+    "tool_calls": 25
+  }
+}

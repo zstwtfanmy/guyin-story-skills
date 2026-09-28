@@ -1,0 +1,814 @@
+﻿== guyin-check-wordcount ==
+  PASS  短章 blocking 报警
+  PASS  正常章通过
+  PASS  超长章 advisory 报警（editorial，默认门 exit 0）
+  PASS  超长章 editorial 触发 --fail-on=all exit 1（审计门）
+  PASS  目录模式只扫 第*.md
+  PASS  目录里非 第*.md 文件被忽略
+== guyin-check-degeneration ==
+  PASS  复读打转报警
+  PASS  干净正文通过
+  PASS  工程词泄漏报警
+== guyin-check-ai-patterns ==
+  PASS  不是A而是B 命中 2 处（editorial，默认门 exit 0）
+  PASS  引号内台词豁免
+  PASS  干净正文通过
+== guyin-check-ai-patterns L1-L3（三腔 advisory，黄金样本回归） ==
+  PASS  ch61 三腔坏样本必报 explain-tic（科普腔，editorial 默认门 exit 0）
+  PASS  ch61 三腔坏样本必报 mid-trailer（段中预告腔，editorial 默认门 exit 0）
+  PASS  ch61 三腔坏样本必报 aphorism-tic（金句腔，editorial 默认门 exit 0）
+  PASS  ch36 修复版 explain/mid 静默（零误报）
+  PASS  ch36 修复版 aphorism 仅 1 处功能性命中（「表是死的，人是活的。」）
+== guyin-check-integrity（F1 落盘前格式门，黄金样本回归） ==
+  PASS  ch39 塌缩样本必报 avg-line-collapse
+  PASS  ch39 塌缩样本代词叠复「他他」报 doubled-char
+  PASS  ch59 错字风暴样本必报 char-storm
+  PASS  正常样本 ch36-正文_全盘否定初稿.md 静默
+  PASS  正常样本 ch36-正文_修复版.md 静默
+  PASS  引号失衡报 quote-mismatch
+  PASS  引号配对正常静默（正常章零误报）
+== guyin-check-outline-verdict（G1 细纲三档声明仲裁，黄金样本回归） ==
+  PASS  ch36 冲突细纲必报档位冲突
+  PASS  ch36 冲突细纲必报缺声明（机械判档 2）
+  PASS  ch36 修复版定性静默（判档 1）
+  PASS  翻转句+既往引用缺声明报 blocking
+  PASS  无引用无翻转细纲静默（无声明也不报）
+  PASS  声明档 1 与机械判档一致静默
+  PASS  声明低于机械判档报 advisory
+  PASS  verdict-tier-suspect → verify（默认门 exit 1）
+  PASS  档 2 缺补偿声明报 advisory
+  PASS  G3 契约越界：叠加契约 × 否定定性报 advisory
+  PASS  G3 正向细纲（档 1 重估）对叠加契约零误报
+  PASS  G3 命中否定契约方向一致放行（无 contract findings）
+  PASS  G3 未登记契约：否定定性零命中提醒补录 advisory
+  PASS  G3 矩阵自动发现（大纲/ 同级 追踪/）
+== guyin-check-narrative-asset（G2 事件定性共现检测，黄金样本回归） ==
+  PASS  G2 ch36 初稿对 V027 共现必报（「一场戏/人家排的」×拆神）
+  PASS  G2 ch36 修复版静默（「从头到尾」不进否定词表，档 1 重估同形不误报）
+  PASS  G2 兑付当章建立资产不报
+  PASS  G2 nullified 资产不再报
+  PASS  G2 档位声明（档 1）静默
+  PASS  G2 双层共现：单层命中（否定模式或关键词各自单独出现）不报
+  PASS  G2 无 state 静默（fail-open）
+  PASS  G2 narrative-asset → verify（默认门 exit 1）
+  PASS  G2 事件名引用自动发现：翻转句×拆神无声明报 blocking
+  PASS  G2 事件名引用已声明档 1 静默
+  PASS  G2 --state 显式指定事件名引用生效
+== guyin-check-consistency（T1/T2 物证·能力·地理章检，黄金样本回归） ==
+  PASS  T2 方向冲突必报 direction-conflict（ch2「顺水往南往通州」型）
+  PASS  T1 销毁物证仍使用必报 evidence-status-conflict
+  PASS  T1 能力空降必报 capability-unregistered
+  PASS  T2 新地名提示必报 place-unregistered
+  PASS  T2 已登记地名到达句零误报
+  PASS  T1/T2 无 state 静默（fail-open）
+== guyin-check-beat（P1 连续场景/整章确定性预检，语义审读归 4a） ==
+  PASS  beat 工程词泄漏报 meta-leak-beat
+  PASS  beat 禁止项报 ban-violation
+  PASS  beat --min 已废除，传入按未知参数退 2（无字数桶）
+  PASS  beat 跳写报 skip-write
+  PASS  beat 连续对话报 dialogue-run（advisory，默认 exit 0）
+  PASS  beat 心理独白超限报 mono-count（advisory，默认 exit 0）
+  PASS  beat 干净正文静默
+  PASS  beat editorial 不触发默认门（block）
+  PASS  beat 时间压缩词报 advisory skip-write（默认 exit 0）
+  PASS  beat 时间压缩词 --fail-on=all exit 1（观测全拦须显式）
+  PASS  beat 同行动作对白不报 dialogue-run
+  PASS  beat summary 指向 drafted 全文回看且无编号题残留
+== guyin-tracking-commit.py G2 事件定性实体（行为断言） ==
+  PASS  init 登记 verdicts：state v7 + 资产视图
+  PASS  init 后 check 一致
+  PASS  backfill 未来章 verdict 拒绝（chapter > last_committed）
+  PASS  backfill v4 存量自动升级 v7 并登记 verdicts
+  PASS  backfill 后 check 一致
+  PASS  commit verdict_changes：重估+新登记，逐章记录含事件定性段
+  PASS  commit 后 check 一致
+== guyin-tracking-commit.py T1/T2 实体（evidence/geo，行为断言） ==
+  PASS  init 登记 evidence/geo：state v7 + 双台账视图
+  PASS  init 后 check 一致（v7）
+  PASS  backfill 未来章 evidence 拒绝（chapter > last_committed）
+  PASS  backfill v5 存量自动升级 v7 并登记 evidence/geo
+  PASS  backfill 后 check 一致（v7）
+  PASS  commit evidence_changes/geo_changes：流转+新登记，逐章记录含双变化段
+  PASS  commit 后 check 一致（v7）
+== guyin-tracking-commit.py P4 场景台账（scenes，行为断言） ==
+  PASS  init 登记 scenes：state v7 + 场景台账视图
+  PASS  P4 init 后 check 一致
+  PASS  commit scene_changes：变迁链 + 逐章记录场景变化段
+  PASS  P4 commit 后 check 一致
+== guyin-tracking-commit.py P2 执行偏差回填提醒（stderr） ==
+  PASS  P2 前置：init 成功
+  PASS  P2 细纲缺执行偏差区 → stderr 提醒且不阻断
+  PASS  P2 前置：乙 init 成功
+  PASS  P2 细纲含执行偏差区 → stderr 静默
+  PASS  R1 前置：丙 init 成功
+  PASS  R1 未落实缺顺延章号 → stderr 提醒且不阻断
+== guyin-tracking-commit.py S1 时滞预检（check 子命令） ==
+  PASS  S1 前置：init 成功（last_committed=1）
+  PASS  S1 正文第3章落盘未提交 → check 退 2 报时滞
+== D1 状态契约（任务书 §2.5：模板 v7 往返 / 长度契约 / 运行记录分离） ==
+  PASS  D1 模板 state 为 v7 现行字段形状（无 open_threads/summary 旧键）
+  PASS  D1 hook 接受 state schema 4-7（v7 项目不再被 stateProblem 误拦）
+  PASS  D1 模板 上下文.md 为七区段派生形状（无 open_threads 悬置线头旧节）
+  PASS  D1 模板部署后 check 通过（v7 空态与派生视图逐字一致）
+  PASS  D1 模板空态上首章 commit 通过（无 init 依赖）
+  PASS  D1 首章 commit 后 check 通过
+  PASS  D1 修订重提交不覆盖运行记录、只重写逐章记录
+  PASS  D1 修订后 check 通过
+  PASS  D1 长度契约前置：init 成功
+  PASS  D1 ≈300字（888字节）result 通过且三处同额入库
+  PASS  D1 超限 result（915字节 > 900）在任何写入前拒绝
+== guyin-check-hook-rotation (P4 钩子轮换/蓄力成对) ==
+  PASS  钩子坍缩：连续 3 章悬念钩报 hook-run（editorial，默认门 exit 0）
+  PASS  爆发无蓄力报 burst-without-charge（第5章）
+  PASS  蓄力+爆发成对静默（第8章不报）
+  PASS  summary 统计已标注/未标注章
+  PASS  类型轮换正常零报警
+== guyin-check-repetition (P6 段落指纹库) ==
+  PASS  首章 commit：库建立且台词段不入库
+  PASS  换词复读报 para-repeat-pattern（雪段 vs 雨段）
+  PASS  全新段落零误报（山峦段不报）
+  PASS  近乎照抄报 para-repeat-near（改写卡路径）
+  PASS  重 commit 幂等（同章先清后插）
+== guyin-check-repetition P6-2 意象台账 ==
+  PASS  同域比喻密度报 imagery-domain-run（第3章窗口自然×3，editorial 默认门 exit 0）
+  PASS  比喻句入库且角色就近归属（周砚）
+  PASS  意象台账视图含域统计与明细
+== guyin-check-repetition N1 复读雷达 ==
+  PASS  N1 ch1 ×2 同章复读报 phrase-echo-inline（SP1 docs/11 §一：ECHO_INLINE_RUN=2，旧 ×2 静默口径已废止；editorial 默认门 exit 0）
+  PASS  N1 跨章窗口必报 phrase-echo-cross（库2+本章1=3，editorial 默认门 exit 0）
+  PASS  N1 角色短语静默（燕衡的算盘 实体过滤）
+  PASS  N1 phrases 沉淀（ch1+ch6 合并 total=3、last=6）
+  PASS  N2 台账扩域：意象台账视图含复读短语节
+  PASS  N1 章尾复读报 phrase-echo-ending（本章×2 且末次落章尾 20%，子串归并报最长形；editorial 默认门 exit 0）
+  PASS  N1 ending 短语同步沉淀 phrases（total=2、last=7）
+== guyin-check-repetition B3 比喻域固化 ==
+  PASS  B3 主导域连续 5 章固化报 metaphor-domain-stale（自然域 run=5>4，editorial 默认门 exit 0）
+  PASS  B3 断链不报（第3章切身体域，第5章 run=2）
+  PASS  B3 --domain-stale=2 收紧后 run=5 必报（editorial 默认门 exit 0）
+== guyin-check-repetition U3 同族去重 ==
+  PASS  U3 同族只存最长形（8字 tic 的 4-7 字子串不另立行，SP1 同章复读不影响去重逻辑）
+  PASS  U3 独立短语照常入库（去重不误伤异族）
+== guyin-check-pending U1 待审台账阻断门（D3 八列契约） ==
+  PASS  D3 待审/空行 open，占位行跳过，修复/顺延证据齐全闭合（2 open / 共 4 行）
+  PASS  D3 --through 61 只查 ≤61 章（62/63 行出界，1 行开放）
+  PASS  D3 终态严格完整匹配：未修复/修复中/部分豁免均 open（unknown-state，E16）
+  PASS  Fw-07/D3 升级作者=等待态：「已裁决：」不转结，3 行全 open（awaiting-author）
+  PASS  Fw-07/D3 用户决定转结五终态＋证据后闭合 exit 0
+  PASS  D3 证据规则：修复缺版本/缺复检、豁免缺台账、契约修订缺偏差、顺延缺章号、不适用缺理由均 open
+  PASS  D3 editorial 行入台账=数据异常 exit 2（editorial 留审读记录）
+  PASS  D3 处置类别缺分类 exit 2（不能默认降为建议）
+  PASS  D3 --project 版本比对：匹配在册、不匹配 superseded 不阻塞、空/章缺失保守在册（3 open/1 superseded/共 4 在册）
+  PASS  D3 正文版本非法格式 exit 2（须 hash12，--hash 生成）
+  PASS  D3 损坏行（列数≠8）exit 2 不静默跳过
+  PASS  D3 旧五列台账缺列 exit 2（引导按模板迁移）
+  PASS  D3 章号非纯数字 exit 2
+  PASS  D3 台账缺失且父目录不存在 exit 0（非写作项目不误拦）
+  PASS  D3 已部署项目缺台账 exit 2（报告停靠，不 fail-open）
+== D2 发布契约（任务书 §2.6：隔离工作区 / publish 状态机 / 项目锁 / 受保护恢复） ==
+  PASS  D2 happy publish exit 0（prepared→prose→tracking→fingerprint→complete）
+  PASS  D2 happy：正文=候选、state 至第1章 rev1、journal=complete、锁已释放
+  PASS  D2 happy：指纹库收录第1章、意象台账已渲染
+  PASS  D2 revision publish exit 0
+  PASS  D2 revision：发布前存档 1 份、state rev2、正文为候选新版
+  PASS  D2 同 run_id complete 重入幂等（不重复存档）
+  PASS  D2 PAUSE=prepared：exit3 且现场正确，recover 续跑 complete
+  PASS  D2 PAUSE=prose_written：exit3 且现场正确，recover 续跑 complete
+  PASS  D2 PAUSE=tracking_committed：exit3 且现场正确，recover 续跑 complete
+  PASS  D2 PAUSE=fingerprint_committed：exit3 且现场正确，recover 续跑 complete
+  PASS  D2 tracking_committed 恢复不重复 append（无第2章、rev 仍为1、journal 记录在案）
+  PASS  D2 损坏库：tracking 中断后 recover 经 --under-lock 受保护恢复并 complete
+  PASS  D2 recover 无在途发布：no-op exit 0
+  PASS  D2 发布门：在途发布拦截 check 与低层 commit（不能绕过）
+  PASS  D2 拒绝：基线变化
+  PASS  D2 拒绝：不符
+  PASS  D2 拒绝：conclusion
+  PASS  D2 拒绝：未决阻断
+  PASS  D2 拒绝：revision 目标不存在
+  PASS  D2 拒绝：隔离工作区
+  PASS  D2 拒绝：append 目标已存在（修订须走 revision）
+  PASS  D2 拒绝：expected_state_revision
+  PASS  D2 废弃候选留在隔离工作区：check 通过、正式状态与正文零变化
+  PASS  D2 活 pid 锁：python commit 与 node --commit 双双互斥
+  PASS  D2 --under-lock 无锁时拒绝（发布器内部接口不空转）
+  PASS  D2 死 pid 陈旧锁：自动挪走后 commit 成功，锁目录清空
+  PASS  D2 损坏库：普通扫描拒绝并指路；--recover-library 隔离+重放+复检成功；健康库 no-op
+  PASS  D2 恢复复检存在近抄阻断时 exit1/recovered=false（不把检测失败冒充恢复成功）
+  PASS  D2 hook：在途拦/损坏拦；无发布与 complete 都不直写正式章（候选目录放行）
+== guyin-check-outline-deliver S3 承诺交付 ==
+  PASS  S3 全履约静默（双术语对白锚定）
+  PASS  S3 锚定戏漏写报 outline-term-missing（火耗）
+  PASS  S3 首现叙述层报 outline-term-unanchored（勘合）
+== guyin-check-outline-deliver R1+K2（docs/08：锚句落地/跨章签名句，四组化） ==
+  PASS  R1 锚句落地静默
+  PASS  R1 锚句未落地报 outline-anchor-missing
+  PASS  K2 跨章签名句提前释放报 outline-signature-preempted（61 说 62 的句）
+  PASS  K2 已声明复用（复沓仪式）静默
+  PASS  四组化残留章尾钩子行零报（钩子规则已废，存量不追溯）
+== guyin-check-strip（K3 成稿剥离门禁） ==
+  PASS  K3 干净正文通过（案卷/卷宗白名单）
+  PASS  K3 多标题报 strip-extra-heading（blocking）
+  PASS  K3 blocking 触发 --fail-on=block
+  PASS  K3 大纲尾巴报 strip-carryover（blocking）
+  PASS  K3 工序词泄漏报 strip-framework-word（advisory）
+  PASS  K3 卷N 自引用命中（卷三形态）
+  PASS  K3 工序词 strip-framework-word → verify（默认门 exit 1）
+  PASS  K3 目录模式扫描全部 第*.md
+== guyin-check-flesh P6-3 人物显影器 ==
+  PASS  卡标果决+反特质×3零正特质报 flesh-trait-break（verify，默认门 exit 1）
+  PASS  无特质卡角色零报警（无卡轴不判，终判归作者）
+  PASS  对话呼吸：引号感知切分+归属继承（「引文」XX说不误归）
+  PASS  --all 戏份概览按句数降序且断裂随报（verify，默认门 exit 1）
+  PASS  P6-4 工具人检测：连续 3 章纯递话报 tool-character（老赵）
+  PASS  P6-4 主角色零误报（林彻/周砚无 tool-character）
+== P5 impact-map + reader-signal ==
+  PASS  P5-1 白银线影响面：悬空债+定性资产+风险双报
+  PASS  P5-1 角色名一级扩散：周砚命中其关联事件
+  PASS  P5-2 掉崖检测+±2章归因表（钩子/推进列）
+  PASS  E1/P5-3 连续无推进不再自动归因弃书点（drop-point 已废除）
+== P7 guyin-check-pitch 开书文案三判据 ==
+  PASS  P7-2 书名十年测试：热词名过滤与干净名区分
+  PASS  P7-2 简介钩子覆盖：期待钩命中、漏覆盖两报（危机可隐/悬念应映射；verify 默认门 exit 1）
+  PASS  P7-2 章节标题三报：抽象词/超长/钩子错位
+== guyin-check-outline-copy ==
+  PASS  细纲照搬报警
+  PASS  无重合通过
+  PASS  P2 执行偏差区变体引用不判誊抄（剥除后比对）
+  PASS  P2 对照：同句写在细纲正文区仍报誊抄（豁免只认偏差区）
+== guyin-normalize-punctuation（B-2：默认逐字只读／--write 仅候选新版本／停顿保留） ==
+  PASS  B-2 默认只读：分隔线 hard exit1 且候选字节不变
+  PASS  B-2 --check 同样逐字只读（停顿/分隔线照报）
+  PASS  B-2 --check --write 互斥 exit2 且零写入
+  PASS  B-2 --write 拒绝原位改正式正文（exit2，零写入）
+  PASS  B-2 --write 候选另存新版本、旧候选字节不动
+  PASS  B-2 功能停顿/打断（……/——）保留、分隔线移除、keep 模式引号不动
+  PASS  B-2 显式 --quote-mode 才转引号（新版本，停顿仍保留）
+  PASS  B-2 无获准确定性修复时不造新版本、exit0
+  PASS  B-2 --write 修不了的 hard（未闭合注释）不被吞：exit1、不造无意义新版本
+  PASS  B-2 ASCII 停顿序列仍检测（editorial；all 口径 exit1，只读不改）
+  PASS  B-2 默认 block 口径 editorial 不阻断但逐字只读
+== guyin-tracking-commit.py (smoke) ==
+  PASS  python 语法编译
+== guyin-tracking-commit.py P2 章节金字塔（chapter_summaries + 派生视图） ==
+  PASS  P2 init 带 chapter_summaries：持久层入库
+  PASS  P2 章节金字塔.md 含章摘要表
+  PASS  P2 commit 入库 chapter_summaries[2]
+  PASS  P2 金字塔视图含两章摘要
+  PASS  P2 check 金字塔视图一致
+== guyin-setup 模板 hook（guyin-hook.js） ==
+  PASS  guard 跳章直写：章序状态门拦截（last_committed 未到）
+  PASS  guard 上一章未发布拦截
+  PASS  B-6 无细纲不再报细纲门：v4 正文门拦直写（先候选后 publish）
+  PASS  B-6 细纲与 state 全齐也不放行直写：v4 正文门拦截
+  PASS  B-6 覆盖已存在章：无快照直写被 v4 正文门拦截（不再引导 _archive 快照）
+  PASS  B-6 有快照仍不放行直写（快照不是 publish 许可）
+  PASS  B-6 短篇篇名直写被 v4 正文门拦截
+  PASS  B-6 工程文件 README.md 直写放行
+  PASS  Fw-07/D3 guard 升级作者=等待态，「已裁决：」不转结仍拦截（hook 侧）
+  PASS  Fw-07/D3 guard 用户转结五终态后待审门通过，但 v4 正文门仍拦直写（hook 侧）
+  PASS  v3-A1/D3 guard 不适用缺证据拦截（hook 侧与 check-pending 一致）
+  PASS  v3-A1/D3 不适用证据齐全不再卡待审门，但 v4 正文门仍拦直写
+  PASS  D3 guard 版本匹配当前正文的未决行拦截（hook 侧）
+  PASS  D3 历史版本行不卡待审门，但 v4 正文门仍拦直写（hook 侧）
+  PASS  D3 guard 台账缺列（旧五列）拦截并报异常（hook 侧）
+  PASS  guard 非正文目标放行
+  PASS  guard 坏负载 fail-open
+  PASS  guard 非隐笔项目防误伤
+  PASS  post-write 极短落盘提醒
+  PASS  post-write 章字数欠账提醒
+  PASS  post-write 正常章静默
+  PASS  post-write 非正文静默
+  PASS  session 注入当前位置
+  PASS  session 追踪脱节提醒（已提交章晚于 state）
+  PASS  session 未发布章提醒（候选/publish 口径，不再叫补提交）
+  PASS  post-write 已提交章改动提醒重提交
+  PASS  session 显式书根无 state 报不可用（不静默回退注入）
+  PASS  B-6 session 显式 --project 压过 cwd（注入书 I 不串书 J）
+  PASS  B-6 session 显式根非法即报告且不注入 cwd 书状态
+  PASS  B-6 session 单 run 注入 phase/稿/下一动作
+  PASS  B-6 session 显式 --run 不存在：报告候选不擅选
+  PASS  B-6 session 多 run 只列候选不擅选
+  PASS  B-6 session 在途发布先提示 recover（不开新 run）
+== R1 入口回流清理（A-1/A-2/A-4/B-6 文档契约） ==
+  PASS  A-1 review 删除 Requested/Effective/Fallback 与 subagent 模式菜单
+  PASS  A-1 review 只保留当前会话主体＋findings 三新字段＋review.mode 定值
+  FAIL  A-2 deslop 走隔离 revision 候选→重检→publish（不直接 normalize 正式稿） — deslop 旧直写链残留
+  PASS  A-2 deslop 不默认多加一轮＋停顿保留＋lint 只读
+  PASS  A-4 短篇 input 锁不豁免（outline-deliver 锁模式/authority-leak forbidden）
+  PASS  A-4 短篇豁免配额只计 hard/verify，editorial 不占配额
+  FAIL  A-4 长篇异常路由：非 complete 先查 journal 只 recover — exit2 重建清单旧路由残留
+  PASS  B-6 hook 旧细纲门/骨架门/快照门函数已拆
+  PASS  B-6 hook 通用正文门（先候选后 publish）＋session 显式 --project/--run
+== R6 分发协议文档与残留回流（A-3/E/F.3.3） ==
+  PASS  A-3 运行协议收 v2：新发起只接受 schema_version=2 清单＋author_input/candidate_checks
+  PASS  A-3 首次 preview 职责（证据不存在则生成、零正式写入）入运行协议
+  FAIL  A-3 可照填示例齐备：input/v2 清单/checkpoint/plan-patch — 缺可直接照填的运行示例
+  PASS  A-3 恢复先验后写：四类现场与第三态零新增写入
+  PASS  A-3 旧 v1 措辞清除：3072 降建议、prepared 非仅 normalize、重入不等同 recover、低层 commit 非发布入口
+  PASS  E1 lifecycle 加 v4 降级横幅（压测非前置门、不绑作者性四件）并入 INDEX 降级表
+  PASS  E4 anti-ai 文件内降级横幅：旧数量配额失效、去味走 revision 候选
+  PASS  E5 批次公约：保留 POV 锚点与知情边界，移除心理次数/预设轮换伪装硬锁
+  PASS  E2 语言纪律模板去编排/执行双层措辞（当前会话按需读，无执行层下发）
+  PASS  F.3.3 安装来源统一为经核验的 zstwtfanmy/guyin-story-skills（setup 与 README 一致）
+  PASS  F.3.5 setup 明示 deploy 只管受管 agent、不是技能包修复器
+== 06 整改黄金样本回归（H2/O2/O3/I1/I2） ==
+  PASS  H2 整句泄漏必报 blocking
+  PASS  H2 四字子句泄漏必报 blocking（E1：稳住，别慌）
+  PASS  H2 化用句静默（同一精神、不同措辞合法）
+  PASS  H2 无作者性项目静默（E6）
+  PASS  H2 占位符气卡报词源为空 advisory
+  PASS  O2 beat 版残缺细纲必报 outline-missing-group-1（四组化 hard）
+  PASS  O2 beat 版残缺细纲必报 outline-missing-group-2（四组化 hard）
+  PASS  O2 beat 版残缺细纲必报 outline-missing-group-3（四组化 hard）
+  PASS  O2 beat 版残缺细纲必报 outline-missing-group-4（四组化 hard）
+  PASS  O2 beat 版残缺细纲必报 outline-missing-wordcount（四组化 hard）
+  PASS  O2 beat 版残缺细纲必报 outline-missing-anchor（四组化 hard）
+  PASS  O2 beat 版残缺细纲必报 outline-missing-holdback（四组化 hard）
+  PASS  O2 四组细纲静默（四组齐备+保留行齐备，已废除槽位零发射）
+  PASS  O2 只缺组三必报 outline-missing-group-3（缺哪组报哪组）
+  PASS  O2 缺字数目标行报 outline-missing-wordcount
+  PASS  S2 章号不在气卡坐标区间报 qiyun-coord-uncovered（65∉61-63，editorial 默认门 exit 0）
+  PASS  S2 章号落在区间内静默（62∈61-63）
+  PASS  S2 气卡缺失静默（fail-open 无假警报）
+  PASS  Y2 设定/气韵卡.md 坐标停旧段必报（61∉28-32，卷3 规划行不算覆盖；editorial 默认门 exit 0）
+  PASS  Y2 当前行刷新到本批区间后静默（61∈61-75）
+  PASS  Y2 模板坐标节未实例化（无数字区间）静默
+  PASS  A3 题材定位文件缺失 → advisory outline-genre-contract-missing
+  PASS  A3 读者契约节 {{...}} 占位未实例化 → advisory（模板原样不算可用内容）
+  PASS  A3 非升级型「不适用＋替代阶段说明」→ 放行（合法显式决定）
+  PASS  A3 setup 模板含 题材定位.md 骨架（Phase 0 清单登记）
+  PASS  O3 2014 字对缺省 3000 必报 blocking
+  PASS  O3 同 2905 字对目标 3000 静默（×90% 达标线 2700）
+  PASS  O3 同 2905 字对目标 3500 必报（目标驱动）
+  PASS  O3 无细纲 2905 字对缺省 3000 必报
+  PASS  J1 区间 3000-3300 对 2900 必报（下限 3000 不再打折）
+  PASS  J1 区间 3000-3300 对 3000 静默（旧 bug 九折 2700 线下假达标）
+  PASS  J2 均质批报 chapter-length-uniform advisory（editorial，默认门 exit 0）
+  PASS  J2 --uniform-gap=10 覆盖后静默（本书刻意均质豁免通道）
+  PASS  I1 前置：首章 commit 建库
+  PASS  I1 指纹库欠账必报 blocking（库至第 1 章、受检至第 2 章）
+  PASS  I1 --commit 补齐（库登记至第 2 章）
+  PASS  I1 补齐后欠账静默
+  PASS  I2 模板 短语黑名单.md 随模板分发
+  PASS  I2 黑名单每章超限必报 phrase-quota advisory（editorial，默认门 exit 0）
+  PASS  I2 无黑名单项目静默
+== guyin-setup 模板完整性（Phase 0 清单落成断言；P3.1 后无受管 agent） ==
+  PASS  模板存在 long/AGENTS.md
+  PASS  模板存在 long/README.md
+  PASS  模板存在 long/.claude/settings.json
+  PASS  模板存在 long/.claude/hooks/guyin-hook.js
+  PASS  模板存在 long/.opencode/commands/guyin.md
+  PASS  模板存在 long/作者性/气卡.md
+  PASS  模板存在 long/作者性/指纹.md
+  PASS  模板存在 long/作者性/偏执点.md
+  PASS  模板存在 long/作者性/魂档案.md
+  PASS  模板存在 long/作者性/粒度配置.md
+  PASS  模板存在 long/作者性/参考-气质谱系.md
+  PASS  模板存在 long/作者性/口述定稿单.md
+  PASS  模板存在 long/作者性/语言纪律.md
+  PASS  模板存在 long/作者性/纪律冲突台账.md
+  PASS  模板存在 long/大纲/README.md
+  PASS  模板存在 long/大纲/魂谱对表.md
+  PASS  模板存在 long/大纲/执行层一页纸.md
+  PASS  模板存在 long/追踪/_tracking-state.json
+  PASS  模板存在 short/大纲/情节节点.md
+  PASS  模板存在 short/大纲/情绪曲线.md
+  PASS  模板存在 short/大纲/反转表.md
+  PASS  模板树无受管 agents/（beat-writer/checker 退役，防打包回流）
+  PASS  部署器 guyin-deploy.js 与 legacy 受管归档就位
+  PASS  F.3.1 固定版本清单存在且覆盖整条依赖链（write 全树/setup/9 入口/默认 profile）
+  FAIL  F.3.1/F.3.4 源树 verify exit0：零缺件/零混版，Node/Python 真实版本在报 — []
+  PASS  F.3.1 残缺/混版安装 verify exit1：分别列缺件与哈希不符（不报写死脚本数）
+  PASS  F.3.2 技能根 realpath 锚定：根下缺 guyin-write 直接 exit2，不回退混找全局/旧项目
+  PASS  Fw-03 模板全树无 agents 生效/注释 model 行（无执行层可配）
+  PASS  Fw-03 单模型去向写入 AGENTS.md 不变式（当前会话自由执笔）
+  PASS  v3-C2 skills/guyin-setup/SKILL.md 无陈旧执行层三硬动作措辞
+  PASS  v3-C2 skills/guyin-write/SKILL.md 无陈旧执行层三硬动作措辞
+== Y4 灵感台账状态位（模板契约，docs/09 §三） ==
+  PASS  Y4 状态位含「候选」
+  PASS  Y4 状态位含「转正」
+  PASS  Y4 状态位含「保护」
+  PASS  Y4 状态位含「弃用」
+  PASS  Y4 弃用须理由＋替代物（终态登记）
+  PASS  Y4 保护资产过堂纪律（过堂不落卡＝静默弃用）
+  PASS  Y4 弃用同步偏差区（U2 联动）
+== merge-claude-settings.js（hooks 节确定性合并） ==
+  PASS  无 target 等价复制
+  PASS  用户 hooks 保留
+  PASS  旧管理注册被刷新为模板三条
+  PASS  用户顶层字段保留
+  PASS  重复执行幂等
+== SP2 直引号字符集迁移（docs/11 §一 SP2，三文件六处） ==
+  PASS  SP2-deliver 直引号对白内术语首现判对白（outline-term-unanchored 零报）
+  PASS  SP2-narrative 直引号对白段不进叙述扫描（isNarrative 判 false）
+  PASS  SP2-split 直引号相邻对白不跨边界成词（无「给你货给」类串入库）
+  PASS  SP2-beat 心理计数：叙述行 +1（心想），对白内「觉得」不计（stripQuoted 剥除）
+== SP1 同章短语复读门（docs/11 §一 SP1，repetition 第三分支+白名单） ==
+  PASS  SP1-正例 同章中段同拍重复 ×2 报 phrase-echo-inline（editorial，默认门 exit 0）
+  PASS  SP1-章尾归 ending（同短语×2 末次落章尾 → 报 ending 不报 inline，互斥）
+  PASS  SP1-cross 优先（够 cross 不报 inline，零双报）
+  PASS  SP1-白名单 复沓锚句.md 登记「算盘」豁免（同短语×2 零报）
+== SP3 口吃标点模式（docs/11 §一 SP3，ai-patterns 新函数） ==
+  PASS  SP3-正例 同字夹冒号报 stutter-punct（editorial，默认门 exit 0）
+  PASS  SP3-反例 冒号后接「这」但前字非同字（零报）
+== PV2 视角纪律（docs/11 §二 PV2，ai-patterns 状态机扫描） ==
+  PASS  PV2-显式 公约 POV=燕衡；书办内心×2 报 pov-drift N=2
+  PASS  PV2-回指 一跳代词回指 + 心理动词×2 报 pov-drift（subject=书办）
+  PASS  PV2-单处静默（书办心理×1 不报，给喜剧拍留空间）
+  PASS  PV2-静默态 无视角规格行 fail-open（不扫，零报）
+== Fw-05 beat 心理动词拆分（合法认知半句不计数/情绪告知计数） ==
+  PASS  Fw-05 知道/明白/清楚/疑惑/纳闷不计数（mono-limit=0 仍零报）
+  PASS  Fw-05 心想计 mono-count 1（对白内觉得不计）
+  PASS  Fw-05 愤怒/恐惧单独计 emotion-tell 2，与内心动作词分账（P3.2 拆分）
+  PASS  Fw-05 mono-count 文案明示不抑制内心戏
+== Fw-01 开篇留存门 guyin-check-opening-retention（四组化：组一读者承诺行） ==
+  PASS  Fw-01 ch001 组一读者承诺行（含入口声明）通过
+  PASS  Fw-01 缺读者承诺行报 outline-opening-promise-missing
+  PASS  Fw-01 读者承诺值「无」判未填（blocking）
+  PASS  Fw-01 {{占位}} 值 fail-on=block exit 1
+  PASS  Fw-01 旧格式四留存字段在场静默＋legacy_four_fields 标记
+  PASS  Fw-01 ch004+ 静默 exit 0 零 findings
+== Fw-02 prose-fragment-ratio（碎化率，密/疏双轨配套） ==
+  PASS  Fw-02 碎化 67% 恒 advisory（editorial，默认门 exit 0，v3-A1）
+  PASS  Fw-02 碎化 67% --fail-on=all exit 1（观测全拦须显式）
+  PASS  Fw-02 碎化 26% advisory（>25% 且 ≤40%）
+  PASS  Fw-02 editorial 不触发默认门（block）
+  PASS  Fw-02 样本不足（<30 段/<800 字）静默
+  PASS  Fw-02 细纲碎化豁免后降 advisory（editorial，默认门 exit 0）
+== Fw-06/E1 用户验收检查点门 guyin-check-trial-gate ==
+  PASS  Fw-06 ch3 静默（写作期不需要试读）
+  PASS  v3-A2 读者信号缺失 + ch4 → blocking trial-gate-missing（缺件≠放行）
+  PASS  Fw-06 无试读记录节 → blocking trial-gate-missing
+  PASS  Fw-06 实际模板未填数据行 → blocking（模板填完可识别）
+  PASS  v3-A2 模板+版本锚+处置保留 → ch4 手续完整放行 exit 0
+  PASS  v3-A2 JSON 报告明示定位：手续门非满意度认证（不认证真人/品质）
+  PASS  v3-A2 想不想看下一章空白 → blocking trial-gate-incomplete
+  PASS  v3-A2 负面回答「否」合法计入——不报 incomplete/missing，仅报处置待定
+  PASS  v3-A2 负面反馈＋处置保留 → 手续完整放行（负面≠非法）
+  PASS  v3-A2 缺版本锚 → blocking trial-gate-version
+  PASS  v3-A2 正文改动后版本锚不匹配 → blocking trial-gate-version（旧稿试读失效）
+  PASS  v3-A2 处置「待处理」→ blocking trial-gate-undecided
+  PASS  v3-A2 处置「暂停」→ blocking trial-gate-paused（不续写）
+  PASS  v3-A2 处置「修订@第4章」→ 写第4章本身放行
+  PASS  v3-A2 处置「修订@第4章」→ 写第5章 blocking trial-gate-revision-scope（修订不开放后续新章）
+  PASS  Fw-06 只覆盖 ch1-2 → blocking 且指出缺 ch3
+  PASS  Fw-06 多行并集覆盖 ch1-3 → 放行
+  PASS  Fw-06 试读人空＝无法证明真人 → blocking
+  PASS  Fw-06 ch7 试读止于 ch3 → verify trial-gate-stale（默认门 exit 1）
+  PASS  Fw-06 advisory 在 --fail-on=all 下 exit 1
+  PASS  Fw-06 覆盖至 ch4 → ch7 无 stale 提醒
+  PASS  v3-A2 --hash 输出可回填的版本锚串
+  PASS  E1 仅模型审读行覆盖 → blocking trial-gate-source（模型不能顶替人）
+  PASS  E1 新表来源列空 → blocking trial-gate-incomplete-source
+  PASS  E1 来源「独立读者」→ ch4 放行
+  PASS  E1 旧表无来源列 → 默认门放行并出 editorial source-legacy
+  PASS  E1 旧表 source-legacy 在 --fail-on=all 下 exit 1
+  PASS  E1 续写登记 12-18@19 → ch4 无到点检查点静默（不背 ch1-3 默认）
+  PASS  E1 续写检查点 ch19 到点无反馈 → blocking missing（点名 ch12-18）
+  PASS  E1 续写检查点 ch19 反馈齐全（独立读者 12-18）→ 放行
+  PASS  E1 检查点延期@第7章 → ch6 静默（显式延期非豁免，下一检查点已登记）
+  PASS  E1 延期后 ch7 到点无反馈 → blocking missing（验收段顺延 ch1-6）
+  PASS  E1 延期后 ch7 验收覆盖 ch1-6 → 放行
+  PASS  E1 检查点状态暂停 → ch4 blocking trial-gate-paused
+  PASS  E1 检查点登记畸形 → blocking trial-gate-checkpoint-bad
+  PASS  E1 已登记未来检查点@19 → ch7 无 stale 提醒
+== Fw-04 笔法文件治理 guyin-check-rule-conflict ==
+  PASS  Fw-04 无笔法文件静默（fail-open）
+  PASS  Fw-04 笔法在/台账缺 → verify ledger-missing（默认门 exit 1）
+  PASS  Fw-04 ledger-missing 在 --fail-on=all 下 exit 1
+  PASS  Fw-04 模板占位台账零未仲裁行
+  PASS  Fw-04 样本清单含 C-01…C-08 八条（仓内红测样本）
+  PASS  Fw-04 C-01…C-08 整表落入且未仲裁 → 8 条 unadjudicated advisory
+  PASS  Fw-04 八条全部仲裁回填后 exit 0
+== Fw-09 批次 C：C1 页眉约定 / C2 伏笔编号门 / C3 切口门 / C4 术语准入 ==
+  PASS  Fw-09 C1 过期评估页眉规范有固定文案与落点（check-doc-budget 头注释）
+  PASS  Fw-09 C3 write SKILL 无切口门/私人切口强制定稿/卷末强刷
+  FAIL  Fw-09 C3 write SKILL 明示作者性素材可缺省、不拦写不追讨 — 缺作者性可缺省声明
+  PASS  Fw-09 C3 story 诊断不把作者性四件列为开写缺件
+  PASS  Fw-09 C4 细纲协议含术语准入节（定义+反例+正文可指认特征）
+  PASS  Fw-09 C4 术语准入点名黑话样例（密/疏、外选、气压、回甘强度）
+  PASS  Fw-09 C2 无伏笔台账静默（fail-open）
+  PASS  Fw-09 C2 模板占位台账零 finding
+  PASS  Fw-09 C2 重号+空号 → hard（默认门 exit 1）
+  PASS  Fw-09 C2 重号+空号在 --fail-on=all 下 exit 1
+  PASS  Fw-09 C2 正文与大纲引用未登记 F009 → 各一条 ref-unregistered
+  PASS  Fw-09 C2 大纲规划台账中的未来编号 F99 不误报（只扫细纲_*.md）
+  PASS  Fw-09 C2 补登记后无悬空引用（registered 含 F001/F003/F009）
+  PASS  Fw-09 C2 合成对照：12 编号无重号/空号/悬空引用
+== Fw-05 silence-density-tic（沉默短语密度） ==
+  PASS  Fw-05 沉默短语 4 处/千余字报 silence-density-tic（advisory）
+  PASS  Fw-05 没答案/没接住不计沉默短语（零报）
+== Fw-05 dialogue-zero-information（ch1-3 对话零信息启发式） ==
+  PASS  Fw-05 主角零发问＋对白中位≤5字 → dialogue-zero-information
+  PASS  Fw-05 主角主动发问＋长对白 → 不报
+  PASS  Fw-05 ch004+ 静默（黄金三章契约不外推）
+  PASS  Fw-05 无批次公约 POV fail-open 静默
+== E2 参考接口：拆文产物路径口径 ==
+  PASS  E2-1 [方法]入口零旧路径消费、[存档]旧入口全部挂停用横幅
+  PASS  E2-1 workflow-chapter.md 停用横幅在体（正文旧路径不致复活）
+  PASS  E2-1 workflow-setup.md 停用横幅在体（正文旧路径不致复活）
+  PASS  E2-1 workflow-daily.md 停用横幅在体（正文旧路径不致复活）
+  PASS  E2-1 artifact-protocols.md 停用横幅在体（正文旧路径不致复活）
+  PASS  E2-2 短篇 consult 旧路径仅存在于停用声明
+  PASS  E2-2 长短 cross-book-recall 副本字节一致（接口不分叉）
+  PASS  E2-3 cross-book-recall 阶段消费表挂真实产物（章节/第XXX章.md＋节奏.md＋情绪模块.md）
+  PASS  E2-3 outline-structure-theory 迁移改章区间召回（节奏.md/逐章摘要/chA-chB，不再读剧情单元文件）
+  PASS  E2-3 style-genre-modules 权威召回改挂书根新路径
+  PASS  E2-4 analyze SKILL 声明真实产物且对标视图标手动不自动同步
+  PASS  E2-4 exemplars README 登记拆文库真实路径＋仿写不升格（对标未验证）
+  PASS  E2-4 题材定位模板：数据源拆文库＋对标手动子集＋对标未验证
+  PASS  E2-4 guyin-story / guyin-short-analyze 入口均标手动复制不自动同步
+  PASS  E2-5 全仓 SKILL 无「自动同步」肯定表述
+  PASS  E2-6 合成拆文库具备召回文档枚举的全部真实产物
+  PASS  E2-6 合成树无旧布局产物（剧情/、*_摘要.md）
+  PASS  E2-6 逐章摘要承载章区间召回所需字段（事件/情绪/钩子）
+== E3 部署同步（agent 退役 / hook / 模板 / setup v0.9） ==
+  PASS  E3-1 新模板三端均无受管 agents/（beat-writer/checker 不从新分发）
+  PASS  E3-1 canonical skills/guyin-write/agents/ 已退役（不留空壳）
+  PASS  E3-1 legacy/agents-v0.8 归档保留 8 份受管字节（旧项目迁移识别依据）
+  PASS  E3-1 guyin-deploy.js 部署/退役脚本就位
+  PASS  E3-2 模板 hook 含 D2 发布门（_publication 在途/损坏拦截）
+  PASS  E3-3 模板 AGENTS.md 单模型自由执笔（不委派 writer/checker、无 Fallback 菜单）
+  PASS  E3-3 模板 AGENTS.md 含隔离发布不变式（.guyin/work＋publish 唯一通道＋recover）
+  PASS  E3-3 模板 AGENTS.md 含验收检查点不变式（用户/独立读者＋延期不静默豁免）
+  PASS  E3-3 模板 AGENTS.md 取消「写正文前必须有细纲」前置（无细纲可试写）
+  PASS  E3-3 模板 README：hook guard 行列发布门＋隔离发布段＋待审台账
+  PASS  E3-3 模板 README 执行模型段：单模型、无低模型配置表
+  PASS  E3-4 setup v0.9.0：版本与机械部署入口
+  PASS  E3-4 setup：受管退役预览-批准-备份链＋source_hash 重核
+  PASS  E3-4 setup：自定义/来源不明同名文件保留、不盲目删
+  PASS  E3-4 setup 删除模型提取/回填与执行层自检（无 Fw-03/低模型配置/model 实测值）
+  PASS  E3-4 setup：旧项目升级给待升级清单不自动重写＋实际加载路径报告
+  PASS  E3-4 setup Phase 0 必检含 读者信号.md 与 待审台账.md 且反向查 agents 污染
+== F1 短篇协议（SKILL/模板/pitch/发布器） ==
+  PASS  F1-1 短篇继承连续场景＋全文审读＋隔离发布
+  PASS  F1-1 短篇不继承卷纲/第4章门
+  PASS  F1-1 固定单元 1：append 首发/revision 重发＋显式贯穿不靠文件名
+  PASS  F1-1 同项目多篇须先定稳定映射与状态隔离
+  PASS  F1-1 移除首 beat 强制多抽与固定情绪升降（SKILL 无旧配额）
+  PASS  F1-1 保留短篇篇幅与回报期限（wordcount 按情节节点定界）
+  PASS  F1-1 短篇骨架模板去 beat 配额/必多采样/末beat
+  PASS  F1-1 pitch 只提取已发布正文卖点（短篇整篇发布后；不强塞）
+  PASS  F1-1 发布器指纹固化显式传 --unit（不靠文件名反解）
+  PASS  F1-1 发布器放行非章号 destination 仅限单元 1（多篇映射缺失即拒）
+  PASS  F1-1 短篇 revision 存档名带篇名 stem
+  PASS  F1-1 repetition 支持 --unit 且显式值压过文件名解析
+== F1-2 repetition --unit 运行时 ==
+  PASS  F1-2 篇名文件无 --unit 拒绝并提示显式单元号
+  PASS  F1-2 拒绝文案含 --unit 指引（非 JSON 模式）
+  PASS  F1-2 --commit --unit 1 篇名文件入库（chapter=1/file=追妻.md）
+  PASS  F1-2 篇检 --unit 1 无指纹欠账（库 1 = 受检 1）
+  PASS  F1-2 --unit 与文件名章号冲突即拒
+  PASS  F1-2 --unit 配目录目标拒绝（多文件不共用一个显式单元号）
+  PASS  F1-2 --unit 必须正整数
+== P1.1 T01-T04 权限与入口（单模型自主执笔） ==
+  PASS  T01 write SKILL 明示无完整细纲也可起笔、试写停 ready
+  PASS  T01 细纲协议：无细纲不造四组过门，检查记不适用
+  PASS  T01 卡为按需辅助：无默认下发/配额/逐 beat 验收
+  PASS  T01 三入口无 writer/checker 委派与模式降级菜单（自指废止语不算）
+  PASS  T01 框架不选 model/provider、不默认 git 提交
+  FAIL  T02 只开书/只出纲交规划即停、不写正文 — 规划停止点缺失
+  PASS  T02 裸调用/问状态只诊断不生成正文
+  PASS  T03 细纲前三组是工作假说、未锁定差异允许正文驱动
+  PASS  T03 第四组只收带来源硬锁、模型建议不偷升
+  FAIL  T03 规划补丁发布后凭改纲授权回写、不篡改历史批准稿 — 改纲授权边界缺失
+  PASS  T04 三种授权分开记录、试写/这个版本可以/继续 不自动扩权
+  PASS  T04 锁必带来源、自己觉得该保留不生成用户硬锁（SKILL＋协议＋写作卡）
+== P1.2 T05-T07 默认文风 profile 单一来源 ==
+  PASS  T07 默认文风文件含可解析机读路由 JSON 块
+  PASS  T07 路由 JSON 语法合法
+  PASS  T07 11 个 profile 全部登记且版本合法（relationship-payoff=v2 余 v1）、主题材非空（character-causal 除外）
+  PASS  T05 路由：爽文/历史穿越/穿越仙侠/穿越恋爱/无题材/穿越暂定 等 15 例全部命中规定 profile
+  PASS  T05 “穿越”不自动等于历史（device 规则排在历史与显式题材之后）
+  PASS  T07 每个 profile 都有 ≥60 非空字符的可加载定义段
+  PASS  T07 C-3 合成夹具：profile 定义段 LF/CRLF 两种行尾归一化后等价可解析（≥60 非空字符）
+  PASS  T07 relationship-payoff v2 定义含人面机制（过日子的人/自由间接体/非任务时刻/闲相处/判词节制）
+  PASS  T07 冻结边界声明：effective_features 行动面与人面并取，不得只冻行动标签
+  PASS  T07 速查表 11 行齐全
+  PASS  T07 加载边界：只加载所选单个 profile、不加载全表、参考书名不随章注入
+  FAIL  T07 对标研究未验证有标注口径、不伪造原文切片 — 未验证标注缺失
+  PASS  T06 选择规则第 1 条＝用户指定/书级 profile 优先
+  PASS  T06 profile 冻结进 run input（ID/版本/特征），库升级不换声线
+  PASS  T06 框架 W 在书根 B 外、profile 不加入书根 baseline
+  PASS  T06 题材定位模板有 ## 叙事风格 书级入口（ID/版本/用户文风可选）
+  PASS  T06 气质谱系降为可选补充＋指向 profile 单一来源，无三角合成强制默认
+  PASS  T06 作者性引导：无默认档/无句长闲笔硬配额/无回填期限
+  PASS  T07 exemplars 取消首批细纲前必补真实切片、旧仿写库不默认注入
+  PASS  T06/T07 write/story SKILL 均指向 profile 单一来源且无作者名阻断
+== P2.1 author-session 写作 run 进度与恢复（T08-T12/T33） ==
+  PASS  P2.1 p21neg init exit0
+  PASS  P2.1 输入校验拒绝：kind 非法
+  PASS  P2.1 输入校验拒绝：chapter=0
+  PASS  P2.1 输入校验拒绝：title 越界
+  PASS  P2.1 输入校验拒绝：来源重复
+  PASS  P2.1 输入校验拒绝：锁来源不存在
+  PASS  P2.1 输入校验拒绝：wordcount min>max
+  PASS  P2.1 输入校验拒绝：file 来源越界
+  PASS  P2.1 输入校验拒绝：publish quote 无法定位
+  PASS  P2.1 输入校验拒绝：publish target 不一致
+  PASS  P2.1 输入校验拒绝：selected-candidate 哈希长度错
+  PASS  P2.1 run_id 含斜杠拒绝（1-80 位规则）
+  PASS  P2.1 p21t08 init exit0
+  PASS  T08 合法 start exit0、phase=prepared、baseline rev=0
+  PASS  T08 同名 run 同输入 start 幂等不覆盖
+  PASS  T08 半章 checkpoint drafting exit0
+  PASS  T08 complete=false 不能进 drafted
+  PASS  T08 compact 后 status 指向同稿同 run（resumable，含 next_action）
+  PASS  T08 续稿 v0002 complete=true 进 drafted
+  PASS  T08 旧登记稿 v0001 字节未动（不重写已存文本）
+  PASS  T09 checkpoint 前孤立新稿：status 列出但不自动选择，当前稿仍是 v0002
+  PASS  T10 review 不绑当前稿 hash12 拒绝登记
+  PASS  T10 ready status ok
+  PASS  T10 ready 后候选被改 → blocked
+  PASS  T10 input 被改 → blocked
+  PASS  P2.1 p21t11 init exit0
+  PASS  T11 run-a start
+  PASS  T11 run-b start
+  PASS  T11 多个 run 不指定 --run 拒绝并列选择
+  PASS  T11 session 损坏 status blocked 且提示 repair
+  PASS  T11/G-6 repair 无 complete 账本：blocked、baseline=null、complete=false、证据全清、原文留存
+  PASS  G-6 repair 重建会话不伪造旧证据/ready
+  PASS  T11 对有效 session 再 repair 拒绝
+  PASS  P2.1 p21t33 init exit0
+  PASS  T33 selected-candidate 授权哈希≠当前候选 → 拒绝（换稿不复用授权）
+  PASS  T33 后补授权成功：指针切换、退回 drafted、四证据清空、旧 input 留存
+  PASS  T33 证据确已清空且 input 指针更新
+  PASS  T33 目标变化必须新开 run（不换输入强过门）
+  PASS  P2.1 p21t12 init exit0
+  PASS  T12 前置：真实 gather 为 v2 发布产出 pass 证据
+  PASS  T12 真实发布 exit0、state rev1
+  PASS  T12 发布后 status 不把本 run 造成的 rev1/正文新增当外部改动
+  PASS  T12 账本 complete 且目标稿一致才允许记 published
+  PASS  T12 published 后改稿/回退被拒、只许 plan_patch/next_action
+  PASS  T12 不重复提交：状态停在 rev1
+  PASS  P2.1 p21g6 init exit0
+  PASS  G-6 跳级 ready 缺 review 拒绝（ready 必须有全文回看）
+  PASS  G-6 R 外证据路径拒绝（不接受另一 run 的 review）
+  PASS  G-6 合法 reviewed（review 在本 R 且绑候选）
+  PASS  G-6 换稿回 drafting exit0（四证据随换稿清空）
+  PASS  G-6 换稿后 session 中四证据已清空
+  PASS  G-6 旧 review 绑的是 v1：换稿后不能再登记进 v2 会话（候选不匹配被拒）
+  PASS  P2.1 p21g6b init exit0
+  PASS  G-6 前置：合法 ready
+  PASS  G-6 ready→blocked 可达
+  PASS  G-6 blocked 解除不许跳过已有产物支撑（证据齐时回 drafting 被拒）
+  PASS  G-6 blocked 凭实际产物可回 ready
+  PASS  G-6 review 丢失后 status blocked
+  PASS  G-6 显式 blocked exit0
+  PASS  G-6 floor=drafted 时 blocked→reviewed 跳级拒绝
+  PASS  G-6 floor=drafted 时 blocked→drafted 允许
+  PASS  G-6 另一 run 在途时本 run status blocked 并指路 recover
+  PASS  G-6 repair 按 complete 账本固化候选核验重建 published
+  PASS  T12 对有效 published session 再 repair 仍拒绝
+  PASS  P2.1 p21g6c init exit0
+  PASS  G-6 书内来源变化后输入修订拒绝（不先重核基线）
+  PASS  G-6 正文基线外新成员出现时输入修订拒绝（先核来源）
+== P2.2 候选上下文与机器证据（T13-T18/T34） ==
+  PASS  P2.2 p22t13 init
+  PASS  T13 深层草稿与普通文件名在显式 B/N 下解析一致（章号+候选哈希）
+  PASS  T13 深层草稿不给 --chapter 必须拒绝（不靠目录/文件名猜）
+  PASS  T13 错误章号(0)/不存在候选/路径越界 全部非零
+  PASS  T13 显式章号与 input.target 冲突拒绝
+  PASS  P2.2 p22t14 init
+  PASS  T14 exact 锁逐字落地 → pass
+  PASS  T14 semantic 换说法只列人工核对（verify 待审，绝无正则自动 verified）
+  PASS  T14 exact 漏句机械失败（hard），exit 非零
+  PASS  T14 无细纲无锁＝not_applicable（不造四组过门、不零扫描冒充 pass）
+  PASS  T14 显式 --outline 不可读 exit2（不假通过）
+  PASS  T14 allowed_reuse 未使用合法（零白名单零 finding）
+  PASS  P2.2 p22t15 init
+  PASS  T15/T16 无作者性目录＋普通生活素材 → pass（空作者性合法、生活素材不自动 hard）
+  PASS  T15 真实工序指令（细纲/伏笔/读者/本章）必须报
+  PASS  T15 forbidden 文本字面入文 → hard
+  PASS  T15 allowed_reuse 白名单内照搬不被当泄漏（白名单不产生义务）
+  PASS  T16 占位作者性不产生空转拦截（私人素材缺省合法）
+  PASS  P2.2 p22t17 init
+  PASS  T17 guyin-check-ai-patterns.js 对正常文本零 hard/verify（exit0）
+  PASS  T17 guyin-check-beat.js 对正常文本零 hard/verify（exit0）
+  PASS  T17 guyin-check-degeneration.js 对正常文本零 hard/verify（exit0）
+  PASS  T17 检查只读：候选哈希前后一致
+  PASS  T17 术语在叙述中清楚引入不报 unanchored
+  PASS  P2.2 p22t18 init
+  PASS  T18/G-5 汇总器真实跑链产出 pass 证据（15 个必需检查全在；目标检查非零扫描）
+  PASS  T18 真证据校验通过
+  PASS  T18 缺必需检查的手写报告拒绝
+  PASS  T18 脚本版本不符（过期证据）拒绝
+  PASS  G-5 测试夹具：链中 strip 是目标检查
+  PASS  T18/G-5 目标检查零扫描证据拒绝
+  PASS  G-5 not_applicable 无原因拒绝（不接受空白终态）
+  PASS  T18 候选变更后旧证据拒绝（过期）
+  PASS  P2.2 p22b1 init
+  PASS  B-1 无细纲：outline-copy 显式模式 not_applicable 且带原因、候选已被扫描
+  PASS  B-1 显式 --outline 不可读 exit2（不 catch 成 exit0）
+  PASS  B-1 有细纲时走真实比对（pass 或 findings，不再 not_applicable，报告含扫描证据）
+  PASS  P2.2 p22b4 init
+  PASS  B-4 深层候选显式 --project/--chapter 读到真实正文前章（跨章 tic 命中，不靠草稿目录猜）
+  PASS  B-4 无显式书根时不从草稿路径外瞎找（跨章 tic 静默，证明读取源确为显式书根）
+  PASS  P2.2 p22g5miss init
+  PASS  G-5 缺 state：narrative-asset/consistency 记 error，汇总状态 error 阻止发布
+  PASS  P2.2 p22rc init
+  PASS  G-5 rule-conflict 入链：自创笔法无台账 → findings，汇总不能 pass
+  PASS  P2.2 p22t34 init
+  PASS  T34 候选+事务合法新增 F002、在册 F001 → 通过
+  PASS  T34 正文引用未登记 F009（空登记集同样要扫）→ verify
+  PASS  T34 事务新增 F008 候选未出现 → hard；且 F009 仍报
+  PASS  T34 损坏/缺失显式细纲不允许 exit0
+== P2.3 发布契约 v2、preview、before/after 恢复（T19-T24/T28-T32） ==
+  PASS  P2.3 p23g1 init
+  PASS  B-5 首次 preview 无授权 exit0、证据生成进 R、正式正文/追踪/账本零写入
+  PASS  B-5/G-1 无发布授权 publish 拒绝（preview 试演不替代授权）
+  PASS  G-1 v1 清单新发起 preview 拒绝（v1 只保留在途 recover）
+  PASS  G-1 v1 清单新发起 publish 拒绝（不补发 v2 证据）
+  PASS  P2.3 p23g1b init
+  PASS  G-1 前置：p23g1b ch1 发布成功
+  PASS  G-1 v2 强基线：正文逐成员内容哈希不符 → preview 拒绝（名单不能替代内容哈希）
+  PASS  P2.3 p23g1d init
+  PASS  G-2 三处目标不一致（manifest vs 事务标题）preview 写盘前拒绝
+  PASS  P2.3 p23v init
+  PASS  preview 合法 v2 清单 exit0、next_revision=1、不写账本/正文
+  PASS  T28/T19 preview 拒绝「空快照」且零写入
+  PASS  T28/T19 preview 拒绝「缺核心字段」且零写入
+  PASS  T28/T19 preview 拒绝「错误 revision」且零写入
+  PASS  v2 publish exit0、state rev1
+  PASS  v2 账本 schema_version=2 且 tracking_plan 含 before/after/staged
+  PASS  v2 staged 字节落 R/publication/artifacts/（state 与派生视图）
+  PASS  v2 同 run 重入幂等（不重复发布）
+  PASS  P2.3 p23fake init
+  PASS  T18 篡改证据的 v2 publish 拒绝（prepared 不信任手写证据）
+  PASS  P2.3 p23warn init
+  PASS  T20 超大逐章记录发布通过、告警、文件完整保留
+  PASS  T21 knowledge 怀疑原样保留在快照
+  PASS  P2.3 p23rev init
+  PASS  T22 ch1(v2) 发布
+  PASS  T22 ch2(v2) 发布，state rev2，ch1 文件保留
+  PASS  T22/T24 修订 ch1 基于最新 rev2 通过；ch2 保留；rev=3；有存档
+  PASS  T23 旧 expected revision 的修订被拒
+  PASS  T32 修订后 ch1 指纹为新稿（无欠账）且 ch2 指纹条数不受影响
+  PASS  P2.3 p23third init
+  PASS  T31 prepared→tracking 后按暂停点停（exit3）
+  PASS  T31 第三态（派生视图外部改动）recover 阻断、不重 append、rev 不增
+  PASS  T31 现场保持阻断（不静默回滚用户改动）
+  PASS  P2.3 p23t29 init
+  PASS  T29 state 写后 journal 前真实终止独立子进程（exit9，不是 exit3/异常）
+  PASS  T29 崩溃现场：state 已推进 rev1、journal 仍 prose_written、无重章
+  PASS  T29 recover 认账已落 state、零重放续跑 complete（不重章不重 revision）
+  PASS  T29 终态：journal complete、rev1、正文在位
+  PASS  P2.3 p23t30 init
+  PASS  T30 前置：prose_written 真实暂停（exit3）
+  PASS  T30 mixed 现场 recover exit2 并报 mixed/部分已写
+  PASS  T30 mixed 零新增写入：state 仍 before、未安装的产物保持 before 字节
+  PASS  T30 all_after 后续跑 complete：rev 只增一次、无重章
+  PASS  P2.3 p23t35a init
+  PASS  T35a 前置：v2 发布暂停在 prose_written（正文已装）
+  PASS  T35a 固定 v1 账本·可证明阶段 recover 续跑 complete（state 曾停在 rev0）
+  PASS  P2.3 p23t35b init
+  PASS  T35b 固定 v1 账本·提交归属不可证明（state 已 rev1 无 tracking step）→ exit2 保留现场
+  PASS  T35b 阻断零新增写入：rev 仍为 1、stage 保持 tracking_committed、再 recover 仍阻断
+== F2/T03 正常风格不误伤（破折号/内心/长对话/余韵 合成对照） ==
+  PASS  T03 正常破折号仅 editorial 不阻断；内心/长对话/余韵零误报（硬门 exit 0）
+  PASS  T03 合法内心认知（她想/心里清楚）不报 mono-count
+== P3.1 T25-T27 分发退役（install / preview-retire / 中断重核） ==
+  PASS  T25 新书长篇安装 exit0（非交互 JSON）
+  PASS  T25 新安装不分发任何受管 agent（managed_agents_distributed=false）
+  PASS  T25 hook/settings/command/台账落位＋AGENTS 书名替换
+  PASS  T25 部署标记 v0.9.0 / single-model-free-write
+  PASS  T25 重部署幂等：自定义 hook 保留、guyin hook 合并、AGENTS 不被覆盖
+  PASS  T25 长篇+短篇 delta 安装（情节节点/情绪曲线/反转表）
+  PASS  T25 安装书：短篇真实文件目标 append 可发布（rev1）
+  PASS  T25 安装书：短篇 revision 可重发（存档＋rev2，旧稿不丢）
+  PASS  T26 preview 只列受管退役项（4），同名自定义与未知 agent 分类保留
+  PASS  T26 批准清单混入自定义同名文件 → exit2 拒绝且现场不动
+  PASS  T26 受管批准后备份退役（MANIFEST 4 条），自定义与未知保留
+  PASS  T26 进度账本记录全部受管 rel 与 source_hash
+  PASS  T26 重复迁移幂等：exit0、零新备份、MANIFEST 不追加、自定义仍在
+  PASS  T27(a) 首批退役成功
+  PASS  T27(a) 账本丢失后续跑：实际现场核对补齐、不重复备份（两份备份各一份）
+  PASS  T27(b) 账本声称完成但文件在现场 → status 报 drift_returns（不信账本）
+  PASS  T27(b) 据实际差异补做退役成功、drift 清零
+  PASS  T27(c) 正常退役基线成立
+  PASS  T27(c) 进度哈希与源码不符 → exit4 阻断且不假报完成
+  PASS  T27(c) preview 标记 require_confirm_source 并给出新哈希
+  PASS  T27(c) 错误 confirm-source 仍阻断
+  PASS  T27(c) 凭新预览哈希 confirm-source 续跑成功，账本哈希修正
+== F2/T11 短篇发布端到端（临时合成项目，真实进程） ==
+  PASS  T11 短篇 append 首发 publish exit 0
+  PASS  T11 首发：候选安装到无数字篇名、state 至单元1 rev1、journal complete、锁释放
+  PASS  T11 指纹贯穿：条目 chapter=1 file=追妻.md（不靠文件名反解）
+  PASS  T11 篇检 repetition --unit 1 通过且无指纹欠账
+  PASS  T11 无数字篇名 chapter=2 拒绝（仅允许固定单元 1，不靠篇名猜序号）
+  PASS  T11 第二篇 append 冒充单元 1 被发布门拒绝（修订须走 revision）
+  PASS  T11 拒绝后正式正文/状态零污染
+  PASS  T11 revision exit0、存档名 单元001_追妻_发布前存档_*、内容=首发候选 hash
+  PASS  T11 revision 后指纹仍只有单元 1 一条篇名线
+  PASS  T11 短篇 prepared 中断 exit3 且候选隔离（正文未安装），recover 后与正常发布一致
+  PASS  T11 fingerprint 中断 recover complete 且指纹不重复（仅 2 条段落条目，章1篇名）
+
+Summary: 731 pass, 8 fail, 0 skip
+
+  - A-2 deslop 走隔离 revision 候选→重检→publish（不直接 normalize 正式稿）：deslop 旧直写链残留
+  - A-4 长篇异常路由：非 complete 先查 journal 只 recover：exit2 重建清单旧路由残留
+  - A-3 可照填示例齐备：input/v2 清单/checkpoint/plan-patch：缺可直接照填的运行示例
+  - F.3.1/F.3.4 源树 verify exit0：零缺件/零混版，Node/Python 真实版本在报：[]
+  - Fw-09 C3 write SKILL 明示作者性素材可缺省、不拦写不追讨：缺作者性可缺省声明
+  - T02 只开书/只出纲交规划即停、不写正文：规划停止点缺失
+  - T03 规划补丁发布后凭改纲授权回写、不篡改历史批准稿：改纲授权边界缺失
+  - T07 对标研究未验证有标注口径、不伪造原文切片：未验证标注缺失

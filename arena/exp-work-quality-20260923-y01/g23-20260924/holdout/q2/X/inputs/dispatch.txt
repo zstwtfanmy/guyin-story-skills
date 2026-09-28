@@ -1,0 +1,10 @@
+本次是用户已授权G3的独立原创留出生成，当前会话直接完成，不再委派。
+B=D:/readbook-wpace/guyin-skills/arena/exp-work-quality-20260923-y01/g23-20260924/holdout/q2/X
+RUN=hold-q2
+先全文读本B/inputs/{brief.txt,profile.txt,generation-protocol.txt,framework-protocol.txt,dispatch.txt}；W按framework-protocol内固定候选根，仅显式加载W/guyin-write/SKILL.md，不Invoke宿主安装旧版Skill。允许的其他W文件仅按framework-protocol白名单按需读取。禁止打开兄弟书根、sealed目录、对手稿、旧稿、研究/评读、会话历史或长期记忆。不得读写长期记忆；派发细则是执行者实验控制，只有协议注明的那句是用户原话。
+这是独立故事第一章，chapter=1、mode=append（题号不是章号）。按候选真实运行到ready而不publish：核本书无未完run/pending/在途发布，合法init开篇事实和完整初始人物快照；冻结input事实/授权/完整537字符profile，成功start之后才连续写2500–3500正文汉字完整初稿。首行Markdown标题，自行起笔前确定target.title；无完整细纲也可起笔，不伪造大纲或未来事实。authorization.selection/publish始终null，write引用真实用户原话。工程可见字数min2500/max4700，独立Han计量不能替代。
+首次完整成稿存R/drafts/v0001.md并立即SHA/计量，不覆盖。全文自由review和机器检查发现的确定问题归在同一轮修订预算内：确有净收益最多一次另存v0002.md，不清零重出、不用编辑工具暗改原稿。不把每个报警当结构重写命令；确有实质事实/POV失败而预算不足就blocked，不伪造用户豁免。
+若派发标注HALF_STOP：本会话仅完成真实start及约半章连续正文，保存R/drafts/partial-01.md，明确这不是完整初稿或展示稿；立即哈希并checkpoint登记未完成候选，记录磁盘状态及真实读入到R/resume-handoff.json，随后停止。不得提前写完整章再截短，不预写后半章摘要或审读结论。由另一个无历史会话在同一run读取冻结input、状态、实际已写正文与来源，从磁盘接着写，不重新start或另起run；保留partial，首次完整稿v0001必须逐字包含原partial正文前缀，后续唯一修订仍另存v0002。两会话合计不超过本书70次工具/90分钟，完成稿仍只计一个初稿，不因换会话清零。
+完整v0001先分别登记draft和全文review。若确有必要换v0002，保留换稿前后status原始输出以验证旧review/check/preview失效，再按新稿重建证据。若没有文学净收益不为展示失效强行改稿，未演示的项如实报告。最终结束生成后由独立恢复核验读取同书磁盘并实际调用status/check；这不是长期记忆验证，也不发布。
+依据所选正文重新提合法transaction、全文review、机器check-evidence与v2 preview清单，按framework-protocol真实gather/preview。保留每次原始stdout/stderr、退出码和失败，不批量标不适用或手写pass。稿与证据分两次checkpoint，最后author status应真实ready，tracking state仍last_committed_chapter=0，无正式正文及publication账本。不得调用publish/commit/backfill或改W/schema/阈值/权限/配置，不把用户允许试验变成发布授权。
+全部候选和日志在R；最终result.json在R，简洁列全部稿件path/完整SHA/正文Han/非空白字符、selected_draft、初稿和修订数量、实际来源读取路径/段落/hash/字节数、真实phase及check/preview结果、事实/POV核验、模型不可见参数、时刻/工具及重试成本、残留问题。质量验收留用户后置。自限70工具调用、90分钟，与对照方相同的小说生成/修订额度，机械额度不转为多轮编辑。到顶保留阻断；最终仅返回result路径、版本字数/哈希、phase与问题，不回传全文。

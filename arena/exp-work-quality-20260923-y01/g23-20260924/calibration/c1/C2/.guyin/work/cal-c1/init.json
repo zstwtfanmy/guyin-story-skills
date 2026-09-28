@@ -1,0 +1,57 @@
+{
+  "schema_version": 1,
+  "book_title": "面要趁热",
+  "last_chapter": 0,
+  "context": {
+    "position": "小酒吧演出刚结束，雨未停",
+    "volume": "独立短场景",
+    "volume_start_chapter": 1,
+    "story_time": "今晚开场前",
+    "scene": "酒吧后门窄檐下",
+    "long_term_constraints": ["第三人称有限，全段只进入梁序内心", "C2 暂时不可用"],
+    "active_character_names": ["梁序", "钱瑛"],
+    "continuity_risks": [],
+    "next_chapter_commitments": ["梁序明早须处理公司未完成的表", "钱瑛明早须处理公司未完成的表"],
+    "recent_chapters": [],
+    "foreshadow": [],
+    "timeline_events": [],
+    "verdicts": [],
+    "scenes": []
+  },
+  "2": {
+    "schema_version": 1,
+    "book_title": "面要趁热",
+    "last_chapter": 1,
+    "context": {
+      "position": "小酒吧",
+      "volume": "独立短场景",
+      "story_time": "今晚开场前",
+      "scene": "酒吧后门窄檐下",
+      "long_term_constraints": ["第三人称有限，全段只进入梁序内心"],
+      "active_character_names": ["梁序", "钱瑛"],
+      "continuity_risks": [],
+      "next_chapter_commitments": ["梁序明早须处理公司未完成的表", "钱瑛明早须处理公司未完成的表"],
+      "recent_chapters": [],
+      "foreshadow": [],
+      "timeline_events": [],
+      "scenes": []
+    },
+    "character_snapshots": {
+      "梁序": {
+        "identity": "二十九岁，小公司会计，业余贝斯手",
+        "location": "酒吧后门窄檐下",
+        "goal": "收拾自己的乐器箱；已有散场后陪苏笛吃面的承诺，尚未履行",
+        "state": "演出刚结束，手指还酸，手机有同事消息，具体内容尚未设定",
+        "abilities_resources": ["基本投影操作与画面取舍"],
+        "relationships": ["与固定搭档钱瑛工作配合熟，曾合租后各自搬走"],
+        "knowledge": ["莫圆首歌忘词停了几拍后跟上，后几首顺利", "场地方按约支付原定演出费，没有扣款或突然爆红机会"]
+      },
+      "钱瑛": {
+        "identity": "二十六岁，小公司会计，业余鼓手",
+        "location": "酒吧后门窄檐下",
+        "goal": "收拾自己的乐器箱；已有散场后陪梁序吃面的承诺，尚未履行",
+        "state": "演出刚结束，手指还酸，手机有同事消息，具体内容尚未设定"
+      }
+    }
+  }
+}

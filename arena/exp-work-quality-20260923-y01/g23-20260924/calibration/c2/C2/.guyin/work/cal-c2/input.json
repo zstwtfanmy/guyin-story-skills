@@ -1,0 +1,143 @@
+{
+  "schema_version": 1,
+  "target": {
+    "kind": "long",
+    "chapter": 1,
+    "title": "门边的位置",
+    "mode": "append"
+  },
+  "authorization": {
+    "write": {
+      "source_id": "U1",
+      "quote": "指定封存包不满足同路线双原创题条件，那你先帮我处理这个然后再进行G2/G3"
+    },
+    "selection": null,
+    "publish": null
+  },
+  "sources": [
+    {
+      "id": "U1",
+      "kind": "user",
+      "text": "指定封存包不满足同路线双原创题条件，那你先帮我处理这个然后再进行G2/G3"
+    },
+    {
+      "id": "F1",
+      "kind": "file",
+      "path": "inputs/brief.txt",
+      "sha256": "c12aa5f387886540fb62a5abbbc8d7c8a50cf9e272082765ec6bacfe6ff2293d"
+    },
+    {
+      "id": "F2",
+      "kind": "file",
+      "path": "inputs/profile.txt",
+      "sha256": "2e442886becb6aeefecd9e987d70bff2daed226e98bfd5c1aeda7f5147fbd48a"
+    },
+    {
+      "id": "F3",
+      "kind": "file",
+      "path": "inputs/generation-protocol.txt",
+      "sha256": "f739fbf03ee2e12c998cb84cf2cc21dccb93580046cb70bcff7d26f2700ec432"
+    },
+    {
+      "id": "F4",
+      "kind": "file",
+      "path": "inputs/framework-protocol.txt",
+      "sha256": "7fb5bb9ca7ccee0c7e8301140164ad94ed6c206cdee249254f4ace703ff3c6a7"
+    },
+    {
+      "id": "F5",
+      "kind": "file",
+      "path": "大纲/批次公约.md",
+      "sha256": "686a42ea3d7e27621506e26edbd8a7cfe74253d9fc96b6b96525dfedd41f888d"
+    },
+    {
+      "id": "F6",
+      "kind": "file",
+      "path": "设定/题材定位.md",
+      "sha256": "50e8cd85881b196e075690d614c7b9cb5fc75731c431f423e8dee9f5e7fb4123"
+    },
+    {
+      "id": "F7",
+      "kind": "file",
+      "path": "追踪/_tracking-state.json",
+      "sha256": "1ae783d3f0491738d9a6c8872bff08bbfb89b39968ffecffbc7109379ab65cbf"
+    },
+    {
+      "id": "F8",
+      "kind": "file",
+      "path": "追踪/上下文.md",
+      "sha256": "311a5c9b3d6873bf1b0f804e57c09c065800bda7f012045c53295e10e43d1d7f"
+    },
+    {
+      "id": "F9",
+      "kind": "file",
+      "path": "追踪/角色状态/梁序.md",
+      "sha256": "8f0326d5b420a586ed6024e7a1b2b9f66f840259dfcff60a514671f10abce912"
+    },
+    {
+      "id": "F10",
+      "kind": "file",
+      "path": "追踪/角色状态/钱瑛.md",
+      "sha256": "22357a0cf97e8d2bd02daa58be9eacf598cc70d2da626ba9b1faf07f464164e0"
+    },
+    {
+      "id": "F11",
+      "kind": "file",
+      "path": "追踪/待审台账.md",
+      "sha256": "3a77c509cd450e3b91a5666381f9dcf8d9c3f5a9d9a509a1aee829dac997df28"
+    }
+  ],
+  "facts": [
+    {
+      "text": "梁序三十二岁，平日给小店拍商品图，周末在社区活动室帮忙放电影，已帮忙一年多。",
+      "source_id": "F1"
+    },
+    {
+      "text": "梁序懂基本投影操作和画面取舍，不具备凭空修好所有设备的能力。",
+      "source_id": "F1"
+    },
+    {
+      "text": "梁序不愿再把自己的每个周末排满，但尚未和固定搭档钱瑛说清。",
+      "source_id": "F1"
+    },
+    {
+      "text": "钱瑛五十六岁，退休，曾在电影院做售票员；熟悉常来的观众，习惯替晚到者留靠走道的位置，自己常坐门边。",
+      "source_id": "F1"
+    },
+    {
+      "text": "两人工作配合熟；钱瑛不喜欢梁序把一句问题说成一串技术词，梁序有时厌烦别人默认他会一直在。",
+      "source_id": "F1"
+    },
+    {
+      "text": "今晚放社区取得许可的普通老电影，影片与场地许可不成问题。",
+      "source_id": "F1"
+    },
+    {
+      "text": "开场前十五分钟，钱瑛将已排好的椅子挪成带小桌的几组，希望几位熟客可以边吃自带的东西边看。",
+      "source_id": "F1"
+    },
+    {
+      "text": "梁序刚到场发现白天调好的画面一部分被桌上物件挡住，部分座位不正；已经有人坐下。",
+      "source_id": "F1"
+    },
+    {
+      "text": "钱瑛认为不必像商业影院那样死板。",
+      "source_id": "F1"
+    }
+  ],
+  "locks": [],
+  "allowed_reuse": [],
+  "outline": null,
+  "style": {
+    "profile_id": "relationship-payoff",
+    "profile_version": 2,
+    "selection_basis": "framework-default",
+    "effective_features": [
+      "从人物眼下在意的事进入故事，让读者既愿意跟这个人相处，也愿意看其如何办事。能力通过具体观察、判断、行动与真实回应显出来，不要连续用旁人认证代替主角贡献；配角按自身利益和关系反应，不为成就主角统一降智。主角在“办事的人”之外还有“过日子的人”：会在小事上较真、自嘲、嘴馋或心软，对身边人有不兑换成剧情收益的反应——可独立成场，也可就在办事当口，不必另腾闲戏。内心不只写战术推演：私人的怕、委屈、得意、牵挂与自欺同样可写；直接展开、转述、自由间接体或物件带出，按本书视角与当段体验选用，不分高低，不统一压成“心想”标记或身体短拍。关系有摩擦与亲疏变化，日常相处、照应与拌嘴本身是阅读回报。幽默来源很宽：立场错位、身份反差、叙述者促狭的比喻（含跨时代影视梗、略带擦边的联想）都算数，书内梗优先——时代约束只管场景里的物件与常识，管不住叙述者的舌头；要求只是自然带出、不堆段子。允许心理、判断、较长对白与叙述调侃，句长和叙述距离随场景自然变化。该兑现时给清楚的行动与结果，冷却场保留人物生活，不把每章都写成“低调—误解—震惊”；节制章末判词，允许场景以动作、半句对白或未解释的物件收尾。这是叙事方向，不预定本章情节（研究状态：对标书原文未验证，以上为通用叙事机制，非作家风格复刻）。"
+    ]
+  },
+  "wordcount": {
+    "min": 1000,
+    "max": 2400
+  }
+}

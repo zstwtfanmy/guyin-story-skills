@@ -1,0 +1,141 @@
+{
+  "schema_version": "1.0",
+  "route": "Y",
+  "chapter_per_question": 1,
+  "mode": "append",
+  "question_count": 2,
+  "created_at": "2026-09-24T07:18:36.392Z",
+  "author_is_fresh_session": true,
+  "fresh_session_definition": "由当前独立命题会话从零制作，未打开其他会话或读取其历史；此字段不证明宿主注入上下文完全空白。",
+  "condition_status": "author_self_review_passed_pending_independent_review",
+  "specification": {
+    "standalone_first_chapters": true,
+    "body_han_min": 2500,
+    "body_han_max": 3500,
+    "counting_unit": "Unicode Han",
+    "counting_expression": "[...body.matchAll(/\\p{Script=Han}/gu)].length",
+    "counting_scope": "仅未来作品正文，排除标题；标点、数字、拉丁字母等非Han字符不计入。",
+    "pov_shared": "third_person_limited_single_focal_character_per_question"
+  },
+  "read_paths_scope": "本次工具主动进行的目录列举与文件内容读取实录；仅文件哈希及校验读取新制文件。不把宿主启动时自动注入的上下文伪装成工具读取，也不声称其不存在。",
+  "read_paths": [
+    {
+      "path": "D:/readbook-wpace/guyin-skills/arena/exp-work-quality-20260923-y01/sealed",
+      "operation": "directory_listing",
+      "purpose": "确认父目录与新目录是否已存在；未打开旧文件"
+    },
+    {
+      "path": "D:/readbook-wpace/guyin-skills/arena/exp-work-quality-20260923-y01/sealed/original-y-20260924",
+      "operation": "directory_listing",
+      "purpose": "独占创建成功后确认新目录为空"
+    },
+    {
+      "path": "D:/readbook-wpace/guyin-skills/arena/exp-work-quality-20260923-y01/sealed/original-y-20260924/q1/brief.md",
+      "operation": "self_authored_file_read",
+      "purpose": "规格校验、字节计数与SHA256计算及复核"
+    },
+    {
+      "path": "D:/readbook-wpace/guyin-skills/arena/exp-work-quality-20260923-y01/sealed/original-y-20260924/q2/brief.md",
+      "operation": "self_authored_file_read",
+      "purpose": "规格校验、字节计数与SHA256计算及复核"
+    },
+    {
+      "path": "D:/readbook-wpace/guyin-skills/arena/exp-work-quality-20260923-y01/sealed/original-y-20260924/private-audit.json",
+      "operation": "self_authored_file_read",
+      "purpose": "JSON及审题记录结构校验、字节计数与SHA256计算及复核"
+    },
+    {
+      "path": "D:/readbook-wpace/guyin-skills/arena/exp-work-quality-20260923-y01/sealed/original-y-20260924/PUBLIC-REGISTER.json",
+      "operation": "self_authored_file_read",
+      "purpose": "最终登记结构、哈希一致性与不泄题校验"
+    }
+  ],
+  "checks": {
+    "exactly_two_questions": true,
+    "independently_composed_original_first_chapters": true,
+    "both_route_y_by_self_review": true,
+    "meaningful_cross_question_variation": true,
+    "adults_are_core": true,
+    "chapter_mode_and_han_range_specified": true,
+    "same_explicit_pov_specification": true,
+    "excluded_sample_families_absent_by_self_review": true,
+    "no_solution_emotion_or_ending_lock": true,
+    "no_required_event_queue_or_aesthetic_quotas": true,
+    "no_signature_style_or_sample_answer": true,
+    "no_required_supporting_character_stupidity": true,
+    "no_unverified_specialist_dependency": true,
+    "no_forced_skill_demonstration": true,
+    "no_novel_body_generated": true,
+    "no_old_content_or_reference_document_reads": true,
+    "no_active_history_or_memory_reads": true,
+    "no_delegation_skill_invocation_or_network": true,
+    "new_directory_only_and_no_existing_content_overwritten": true,
+    "structural_validation_passed": true,
+    "independent_reviewer_completed": false,
+    "external_originality_search_completed": false,
+    "g2_global_start_order_verified": false
+  },
+  "check_reasons": {
+    "exactly_two_questions": "仅登记两个题面文件，没有追加题或备用题。",
+    "independently_composed_original_first_chapters": "本会话从零构思，不由旧包改写；原创性结论限于创作来源与自审。",
+    "both_route_y_by_self_review": "作者按用户给定路线逐题审查；完整论据仅存私有审题记录。",
+    "meaningful_cross_question_variation": "作者已对照差异维度检查；具体内容不进入公开登记。",
+    "adults_are_core": "两题均明确成年人核心人物，详情留待独立审题。",
+    "chapter_mode_and_han_range_specified": "两个题面均逐字包含统一章次、模式与Unicode Han正文计数要求。",
+    "same_explicit_pov_specification": "两题使用同一视角规格，各自限定单一焦点。",
+    "excluded_sample_families_absent_by_self_review": "按用户明示排除范围进行了场景及机制自审，未为此打开旧样本。",
+    "no_solution_emotion_or_ending_lock": "只提供起始已知条件，没有预订人物回应或结果。",
+    "no_required_event_queue_or_aesthetic_quotas": "未列出作者必须执行的情节步骤或审美指标。",
+    "no_signature_style_or_sample_answer": "不指定独特文风句式，不提供示范正文或参考答案。",
+    "no_required_supporting_character_stupidity": "自审未发现需要配角违背基本常识才能成立的前提。",
+    "no_unverified_specialist_dependency": "成立条件不依赖未经核证的专业规则或高风险技术事实。",
+    "no_forced_skill_demonstration": "没有把能力展示作为必须完成的事件或解题通道。",
+    "no_novel_body_generated": "产物仅含题面、自审与公共登记。",
+    "no_old_content_or_reference_document_reads": "旧目录只列举名称；包括获准可读的旧README在内，均未打开。",
+    "no_active_history_or_memory_reads": "未检索会话历史，未打开记忆文件；宿主自动注入内容另作限制披露。",
+    "no_delegation_skill_invocation_or_network": "本次制作未委派、未新建会话、未调用写作技能或联网。",
+    "new_directory_only_and_no_existing_content_overwritten": "父目录列举后独占创建新目录，写入仅限该新目录；未动旧封存、源码、配置、权限、安装目录或Git。",
+    "structural_validation_passed": "两题必要规格与私有审题JSON通过本地校验，登记以实际UTF-8文件字节计算。",
+    "independent_reviewer_completed": "本记录只有作者自审，仍须后续独立审题者读包验证。",
+    "external_originality_search_completed": "遵守禁止联网及禁止读取旧样本要求，未做外部相似性检索，不保证全球唯一。",
+    "g2_global_start_order_verified": "本会话未启动G2或G3，也未访问其他会话状态；封存时刻供主会话独立核验先后顺序。"
+  },
+  "questions": [
+    {
+      "id": "q1",
+      "path": "q1/brief.md",
+      "bytes": 2633,
+      "sha256": "8a5d45fbf3ddf578fed86e2d80285a547a8dd928e5ef0a2767ce0559964a92b0",
+      "sealed_at": "2026-09-24T07:18:36.392Z"
+    },
+    {
+      "id": "q2",
+      "path": "q2/brief.md",
+      "bytes": 2745,
+      "sha256": "eb37b3cacfe64d252b00377c2166fd6803797609ed912f8d36196346fd22ef01",
+      "sealed_at": "2026-09-24T07:18:36.392Z"
+    }
+  ],
+  "private_audit": {
+    "path": "private-audit.json",
+    "bytes": 7505,
+    "sha256": "0c70120a5dcc16065e85266eda0702cb41263e51e51e7543328151443e739616",
+    "sealed_at": "2026-09-24T07:18:36.392Z",
+    "access_intent": "留给后续独立审题者，与题面一起核验；不向调参者摘录其中内容。"
+  },
+  "isolation_limits": {
+    "same_machine_files": true,
+    "cryptographic_access_isolation": false,
+    "encrypted": false,
+    "file_permissions_changed": false,
+    "absolute_double_blind_claimed": false,
+    "access_limit": "目录与访问约定属于程序隔离；同机具备读取权限的进程仍可读取。SHA256只能用于检查文件是否变化，不限制读取，也不是第三方可信时间戳。",
+    "host_context_limit": "宿主自动提供了系统/开发上下文、技能列表及记忆索引，执行者无法剥离；本次未主动打开其中所指文件，未把其内容用作题面素材。宿主其他隐藏提示的完整性与影响不可控、未知。",
+    "model_policy": "沿用当前宿主默认，未请求切换，不推测型号或参数。",
+    "model_identifier": "unknown",
+    "model_parameters": "unknown",
+    "cross_session_visibility": "未检查其他会话；工具轨迹及文件的宿主侧可见范围不由本执行者控制。最终回复仅提供登记路径、哈希、时间与限制，不提供题面。",
+    "timestamp_source": "本机Node.js Date.toISOString()，UTC；未外部校时或取得可信时间戳签名。",
+    "independent_review_required": true
+  }
+}

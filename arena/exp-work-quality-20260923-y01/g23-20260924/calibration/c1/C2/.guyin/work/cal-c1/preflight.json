@@ -1,0 +1,12 @@
+{
+  "checked_at": "2026-09-24T07:26:30.722951+00:00",
+  "files": {
+    "追踪/_publication.json": false,
+    "追踪/_tracking-state.json": false,
+    "追踪/待审台账.md": false,
+    "追踪/检查点.md": false
+  },
+  "other_runs": [],
+  "this_run_preexisting_session": false,
+  "hooks": "not deployed; no installation authorized"
+}

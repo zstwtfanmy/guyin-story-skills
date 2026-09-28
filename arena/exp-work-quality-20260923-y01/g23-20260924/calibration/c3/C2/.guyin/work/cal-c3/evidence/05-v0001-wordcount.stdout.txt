@@ -1,0 +1,6 @@
+{
+  "findings": [],
+  "files_scanned": [
+    "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c3\\C2\\.guyin\\work\\cal-c3\\drafts\\v0001.md"
+  ]
+}

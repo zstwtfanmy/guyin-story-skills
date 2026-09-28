@@ -1,0 +1,23 @@
+{
+  "status": "resumable",
+  "run_id": "cal-c2",
+  "phase": "reviewed",
+  "input": {
+    "path": ".guyin/work/cal-c2/input.json",
+    "sha256": "cb9bcf21cefc"
+  },
+  "draft": {
+    "path": ".guyin/work/cal-c2/drafts/v0002.md",
+    "sha256": "b6057154a95a",
+    "complete": true
+  },
+  "review": true,
+  "transaction": false,
+  "check_evidence": false,
+  "plan_patch": false,
+  "baseline_state_revision": 0,
+  "publication_stage": null,
+  "orphan_drafts": [],
+  "reasons": [],
+  "next_action": "G2止于reviewed；等待独立评读，无选稿或发布授权。"
+}

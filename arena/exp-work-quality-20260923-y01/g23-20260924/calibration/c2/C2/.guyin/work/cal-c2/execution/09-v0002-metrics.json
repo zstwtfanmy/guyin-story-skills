@@ -1,0 +1,14 @@
+{
+  "name": "09-v0002-metrics",
+  "argv": [
+    "node",
+    "-e",
+    "const fs=require('fs'),crypto=require('crypto');const p=process.argv[1],bytes=fs.readFileSync(p),text=bytes.toString('utf8'),body=text.split(/\\r?\\n/).slice(1).join('\\n');console.log(JSON.stringify({path:p,sha256:crypto.createHash('sha256').update(bytes).digest('hex'),bytes:bytes.length,body_han:(body.match(/\\p{Script=Han}/gu)||[]).length,body_non_whitespace:Array.from(body.replace(/\\s/gu,'')).length,measured_at:new Date().toISOString(),draft_mtime:fs.statSync(p).mtime.toISOString()},null,2));",
+    "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c2\\C2\\.guyin\\work\\cal-c2\\drafts\\v0002.md"
+  ],
+  "started_at": "2026-09-24T07:44:44.683098+00:00",
+  "ended_at": "2026-09-24T07:44:44.760096+00:00",
+  "exit_code": 0,
+  "stdout_path": "execution/09-v0002-metrics.stdout.txt",
+  "stderr_path": "execution/09-v0002-metrics.stderr.txt"
+}

@@ -1,0 +1,185 @@
+{
+  "scope": "当前会话显式工具调用，含4个parallel包装；不含宿主内部执行。",
+  "calls": [
+    {
+      "n": 1,
+      "action": "parallel:5-input-reads"
+    },
+    {
+      "n": 2,
+      "action": "Read:brief"
+    },
+    {
+      "n": 3,
+      "action": "Read:profile"
+    },
+    {
+      "n": 4,
+      "action": "Read:generation-protocol"
+    },
+    {
+      "n": 5,
+      "action": "Read:framework-protocol"
+    },
+    {
+      "n": 6,
+      "action": "Read:write-skill"
+    },
+    {
+      "n": 7,
+      "action": "TaskCreate"
+    },
+    {
+      "n": 8,
+      "action": "TaskUpdate:in-progress"
+    },
+    {
+      "n": 9,
+      "action": "Read:tracking-transaction"
+    },
+    {
+      "n": 10,
+      "action": "Bash:preflight"
+    },
+    {
+      "n": 11,
+      "action": "Bash:create-directories-and-list-scripts"
+    },
+    {
+      "n": 12,
+      "action": "Write:init"
+    },
+    {
+      "n": 13,
+      "action": "Grep:pending-wordcount-interface"
+    },
+    {
+      "n": 14,
+      "action": "parallel:2-script-reads"
+    },
+    {
+      "n": 15,
+      "action": "Read:pending-1-100"
+    },
+    {
+      "n": 16,
+      "action": "Read:wordcount-1-95"
+    },
+    {
+      "n": 17,
+      "action": "parallel:2-document-writes"
+    },
+    {
+      "n": 18,
+      "action": "Write:batch-contract"
+    },
+    {
+      "n": 19,
+      "action": "Write:genre-profile"
+    },
+    {
+      "n": 20,
+      "action": "Bash:pending-init-check"
+    },
+    {
+      "n": 21,
+      "action": "parallel:4-tracking-reads"
+    },
+    {
+      "n": 22,
+      "action": "Read:context"
+    },
+    {
+      "n": 23,
+      "action": "Read:Liang-snapshot"
+    },
+    {
+      "n": 24,
+      "action": "Read:Qian-snapshot"
+    },
+    {
+      "n": 25,
+      "action": "Read:state"
+    },
+    {
+      "n": 26,
+      "action": "Write:pending-ledger"
+    },
+    {
+      "n": 27,
+      "action": "Bash:freeze-input-and-start"
+    },
+    {
+      "n": 28,
+      "action": "Write:v0001"
+    },
+    {
+      "n": 29,
+      "action": "Bash:v0001-metrics-wordcount-drafted"
+    },
+    {
+      "n": 30,
+      "action": "Read:v0001-full"
+    },
+    {
+      "n": 31,
+      "action": "Read:review-skill"
+    },
+    {
+      "n": 32,
+      "action": "Glob:quality-rubric"
+    },
+    {
+      "n": 33,
+      "action": "Read:quality-rubric"
+    },
+    {
+      "n": 34,
+      "action": "Write:review-v0001"
+    },
+    {
+      "n": 35,
+      "action": "Write:v0002"
+    },
+    {
+      "n": 36,
+      "action": "Bash:v0002-metrics-wordcount-drafted"
+    },
+    {
+      "n": 37,
+      "action": "Read:v0002-full"
+    },
+    {
+      "n": 38,
+      "action": "Write:review"
+    },
+    {
+      "n": 39,
+      "action": "Bash:combined-finalization-parse-failure"
+    },
+    {
+      "n": 40,
+      "action": "Bash:reviewed-status-pending-check"
+    },
+    {
+      "n": 41,
+      "action": "Write:result-finalizer"
+    },
+    {
+      "n": 42,
+      "action": "Bash:execute-result-finalizer"
+    },
+    {
+      "n": 43,
+      "action": "TaskGet"
+    },
+    {
+      "n": 44,
+      "action": "TaskUpdate:completed"
+    },
+    {
+      "n": 45,
+      "action": "Bash:final-accounting"
+    }
+  ]
+}

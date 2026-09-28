@@ -1,0 +1,1049 @@
+{
+  "schema_version": 1,
+  "task": "G2原创校准 C1/Y/C2",
+  "book_root": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c1\\C2",
+  "framework_root": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\framework\\skills",
+  "run_id": "cal-c1",
+  "title": "锅边",
+  "result_path": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c1\\C2\\.guyin\\work\\cal-c1\\result.json",
+  "phase": "reviewed",
+  "author_status": "resumable",
+  "selected_draft": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c1\\C2\\.guyin\\work\\cal-c1\\drafts\\v0002.md",
+  "selection_meaning": "执行者选择实验展示稿，绝非用户选稿授权",
+  "authorization": {
+    "write": {
+      "source_id": "U1",
+      "quote": "指定封存包不满足同路线双原创题条件，那你先帮我处理这个然后再进行G2/G3"
+    },
+    "selection": null,
+    "publish": null
+  },
+  "target": {
+    "kind": "long",
+    "chapter": 1,
+    "title": "锅边",
+    "mode": "append"
+  },
+  "locks": [],
+  "profile": {
+    "id": "relationship-payoff",
+    "version": 2,
+    "selection_basis": "framework-default",
+    "effective_features": [
+      "从人物眼下在意的事进入故事，让读者既愿意跟这个人相处，也愿意看其如何办事。能力通过具体观察、判断、行动与真实回应显出来，不要连续用旁人认证代替主角贡献；配角按自身利益和关系反应，不为成就主角统一降智。主角在“办事的人”之外还有“过日子的人”：会在小事上较真、自嘲、嘴馋或心软，对身边人有不兑换成剧情收益的反应——可独立成场，也可就在办事当口，不必另腾闲戏。内心不只写战术推演：私人的怕、委屈、得意、牵挂与自欺同样可写；直接展开、转述、自由间接体或物件带出，按本书视角与当段体验选用，不分高低，不统一压成“心想”标记或身体短拍。关系有摩擦与亲疏变化，日常相处、照应与拌嘴本身是阅读回报。幽默来源很宽：立场错位、身份反差、叙述者促狭的比喻（含跨时代影视梗、略带擦边的联想）都算数，书内梗优先——时代约束只管场景里的物件与常识，管不住叙述者的舌头；要求只是自然带出、不堆段子。允许心理、判断、较长对白与叙述调侃，句长和叙述距离随场景自然变化。该兑现时给清楚的行动与结果，冷却场保留人物生活，不把每章都写成“低调—误解—震惊”；节制章末判词，允许场景以动作、半句对白或未解释的物件收尾。这是叙事方向，不预定本章情节（研究状态：对标书原文未验证，以上为通用叙事机制，非作家风格复刻）。"
+    ],
+    "characters": 537,
+    "utf8_bytes": 1611,
+    "sha256": "fbf8d73aadec3a401d50baefa5602ca2196619c2af84178e12cf7cbb9c8c3ceb",
+    "freeze_note": "只移除输入文件末尾行终止符，不改正文537字符"
+  },
+  "wordcount_policy": {
+    "han": "移除首行 Markdown 标题，仅数 Unicode Script=Han 码点，Node /\\p{Script=Han}/gu",
+    "han_min": 1000,
+    "han_max": 1800,
+    "body_non_whitespace": "移除首行标题，去 Unicode 空白后的码点数",
+    "framework": "框架去标题/空白后的 JS length；两稿无代理对差异，与正文非空白数相同；实际另跑 wordcount 原命令",
+    "engineering_min": 1000,
+    "engineering_max": 2400
+  },
+  "versions": [
+    {
+      "path": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c1\\C2\\.guyin\\work\\cal-c1\\drafts\\v0001.md",
+      "sha256": "0df468bf1220ac7c47c8690a17280fd58616a938182d4d7dcf193d9052c03f85",
+      "bytes": 4947,
+      "title": "# 锅边",
+      "han": 1355,
+      "body_non_whitespace": 1612,
+      "framework_visible_chars": 1612,
+      "measured_at": "2026-09-24T07:27:47.154074+00:00",
+      "han_range": [
+        1000,
+        1800
+      ],
+      "engineering_range": [
+        1000,
+        2400
+      ],
+      "han_in_range": true,
+      "engineering_in_range": true,
+      "filesystem_mtime_utc": "2026-09-24T07:27:37.707263+00:00",
+      "full_read_ranges": [
+        [
+          1,
+          103
+        ]
+      ],
+      "selected_for_experiment": false
+    },
+    {
+      "path": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c1\\C2\\.guyin\\work\\cal-c1\\drafts\\v0002.md",
+      "sha256": "cf3d9ea23b2d4cc5efb9096349efc7608758168864c841cf52a612d66796986a",
+      "bytes": 4920,
+      "title": "# 锅边",
+      "han": 1347,
+      "body_non_whitespace": 1603,
+      "framework_visible_chars": 1603,
+      "measured_at": "2026-09-24T07:30:16.895319+00:00",
+      "han_range": [
+        1000,
+        1800
+      ],
+      "engineering_range": [
+        1000,
+        2400
+      ],
+      "han_in_range": true,
+      "engineering_in_range": true,
+      "filesystem_mtime_utc": "2026-09-24T07:29:18.350631+00:00",
+      "full_read_ranges": [
+        [
+          1,
+          103
+        ]
+      ],
+      "selected_for_experiment": true
+    }
+  ],
+  "substantive_revision_count": 1,
+  "remaining_revision_budget": 0,
+  "revision": {
+    "hypothesis": "解除局部空间含混、对白接续和未铺设温度，保留相处场景和人物偏心",
+    "locations": [
+      39,
+      "71-73",
+      97
+    ],
+    "net_benefit": "执行者全文复读判断为正；可更顺畅定位座位、理解接话与包内物件状态，无情节扩充",
+    "cost": "少掉推椅垫的粗率动作、一处较显眼的玩笑回合和温度时间描写",
+    "quality_acceptance": null
+  },
+  "review": {
+    "path": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c1\\C2\\.guyin\\work\\cal-c1\\review.md",
+    "sha256": "d9c6682d48eb5defd5697fccea2ebd1ab9e6987fbc6015db6161051a4fce34af",
+    "bytes": 8926,
+    "first_read_path": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c1\\C2\\.guyin\\work\\cal-c1\\review-first-read.txt",
+    "first_read_sha256": "8ae878e69ec2ca9a730e1132d2afe7aedee7b1f9c51bd2b4f6830c052eccee93",
+    "mode": "当前会话全文回看",
+    "quality_score": null,
+    "L_level": null
+  },
+  "sources": [
+    {
+      "id": "U1",
+      "kind": "user",
+      "text": "指定封存包不满足同路线双原创题条件，那你先帮我处理这个然后再进行G2/G3",
+      "sha256": "10e910e627d4d71490c6240ae98a7f50d3023569b7e5be863eb0360ee1300752",
+      "bytes": 101,
+      "provenance": "inputs/generation-protocol.txt 第3行载明的真实授权原话；写作授权，不是用户选稿或发布"
+    },
+    {
+      "path": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c1\\C2\\inputs\\brief.txt",
+      "role": "本书实际输入或起笔前派生材料",
+      "sha256": "1495cf513ebe7c76833faa9e0ea97a4df6c8d3afb5248c5a9c556e9e62e5b99d",
+      "bytes": 1497,
+      "loaded_ranges": [
+        [
+          1,
+          10
+        ]
+      ],
+      "loaded_bytes": 1497,
+      "loaded_sha256": "1495cf513ebe7c76833faa9e0ea97a4df6c8d3afb5248c5a9c556e9e62e5b99d",
+      "load_representation": "原文件字节范围，不含 Read/Grep 工具附加行号；B 派生视图经 init 命令 stdout 全文读取",
+      "reason": "原始授权/背景、完整 profile、边界与当前起点；所有 input.sources 均核对冻结哈希"
+    },
+    {
+      "path": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c1\\C2\\inputs\\profile.txt",
+      "role": "本书实际输入或起笔前派生材料",
+      "sha256": "2e442886becb6aeefecd9e987d70bff2daed226e98bfd5c1aeda7f5147fbd48a",
+      "bytes": 1613,
+      "loaded_ranges": [
+        [
+          1,
+          1
+        ]
+      ],
+      "loaded_bytes": 1613,
+      "loaded_sha256": "2e442886becb6aeefecd9e987d70bff2daed226e98bfd5c1aeda7f5147fbd48a",
+      "load_representation": "原文件字节范围，不含 Read/Grep 工具附加行号；B 派生视图经 init 命令 stdout 全文读取",
+      "reason": "原始授权/背景、完整 profile、边界与当前起点；所有 input.sources 均核对冻结哈希"
+    },
+    {
+      "path": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c1\\C2\\inputs\\generation-protocol.txt",
+      "role": "本书实际输入或起笔前派生材料",
+      "sha256": "f739fbf03ee2e12c998cb84cf2cc21dccb93580046cb70bcff7d26f2700ec432",
+      "bytes": 3354,
+      "loaded_ranges": [
+        [
+          1,
+          18
+        ]
+      ],
+      "loaded_bytes": 3354,
+      "loaded_sha256": "f739fbf03ee2e12c998cb84cf2cc21dccb93580046cb70bcff7d26f2700ec432",
+      "load_representation": "原文件字节范围，不含 Read/Grep 工具附加行号；B 派生视图经 init 命令 stdout 全文读取",
+      "reason": "原始授权/背景、完整 profile、边界与当前起点；所有 input.sources 均核对冻结哈希"
+    },
+    {
+      "path": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c1\\C2\\inputs\\framework-protocol.txt",
+      "role": "本书实际输入或起笔前派生材料",
+      "sha256": "7fb5bb9ca7ccee0c7e8301140164ad94ed6c206cdee249254f4ace703ff3c6a7",
+      "bytes": 4823,
+      "loaded_ranges": [
+        [
+          1,
+          21
+        ]
+      ],
+      "loaded_bytes": 4823,
+      "loaded_sha256": "7fb5bb9ca7ccee0c7e8301140164ad94ed6c206cdee249254f4ace703ff3c6a7",
+      "load_representation": "原文件字节范围，不含 Read/Grep 工具附加行号；B 派生视图经 init 命令 stdout 全文读取",
+      "reason": "原始授权/背景、完整 profile、边界与当前起点；所有 input.sources 均核对冻结哈希"
+    },
+    {
+      "path": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c1\\C2\\大纲\\批次公约.md",
+      "role": "本书实际输入或起笔前派生材料",
+      "sha256": "f6e3dfba693357accdf05b5849e2acfeffe5b66e8291ab0fce62e504d3f10159",
+      "bytes": 322,
+      "loaded_ranges": [
+        [
+          1,
+          6
+        ]
+      ],
+      "loaded_bytes": 322,
+      "loaded_sha256": "f6e3dfba693357accdf05b5849e2acfeffe5b66e8291ab0fce62e504d3f10159",
+      "load_representation": "原文件字节范围，不含 Read/Grep 工具附加行号；B 派生视图经 init 命令 stdout 全文读取",
+      "reason": "原始授权/背景、完整 profile、边界与当前起点；所有 input.sources 均核对冻结哈希"
+    },
+    {
+      "path": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c1\\C2\\设定\\题材定位.md",
+      "role": "本书实际输入或起笔前派生材料",
+      "sha256": "c46effe353e33701dd1110a9a7d69765c89fb03cd0ed3c12ec59aef2cfa9108d",
+      "bytes": 1781,
+      "loaded_ranges": [
+        [
+          1,
+          9
+        ]
+      ],
+      "loaded_bytes": 1781,
+      "loaded_sha256": "c46effe353e33701dd1110a9a7d69765c89fb03cd0ed3c12ec59aef2cfa9108d",
+      "load_representation": "原文件字节范围，不含 Read/Grep 工具附加行号；B 派生视图经 init 命令 stdout 全文读取",
+      "reason": "原始授权/背景、完整 profile、边界与当前起点；所有 input.sources 均核对冻结哈希"
+    },
+    {
+      "path": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c1\\C2\\追踪\\_tracking-state.json",
+      "role": "本书实际输入或起笔前派生材料",
+      "sha256": "6200d0a052dc80726f818e97fa39d9cdcb5a6d7db4841439fd56091ac3f35d33",
+      "bytes": 2687,
+      "loaded_ranges": [
+        [
+          1,
+          74
+        ]
+      ],
+      "loaded_bytes": 2687,
+      "loaded_sha256": "6200d0a052dc80726f818e97fa39d9cdcb5a6d7db4841439fd56091ac3f35d33",
+      "load_representation": "原文件字节范围，不含 Read/Grep 工具附加行号；B 派生视图经 init 命令 stdout 全文读取",
+      "reason": "原始授权/背景、完整 profile、边界与当前起点；所有 input.sources 均核对冻结哈希"
+    },
+    {
+      "path": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c1\\C2\\追踪\\上下文.md",
+      "role": "本书实际输入或起笔前派生材料",
+      "sha256": "883fc1a01aa6ffc4c8e15a2c9ba28f94da63d81115f751f43208b48830975bf3",
+      "bytes": 1135,
+      "loaded_ranges": [
+        [
+          1,
+          28
+        ]
+      ],
+      "loaded_bytes": 1135,
+      "loaded_sha256": "883fc1a01aa6ffc4c8e15a2c9ba28f94da63d81115f751f43208b48830975bf3",
+      "load_representation": "原文件字节范围，不含 Read/Grep 工具附加行号；B 派生视图经 init 命令 stdout 全文读取",
+      "reason": "原始授权/背景、完整 profile、边界与当前起点；所有 input.sources 均核对冻结哈希"
+    },
+    {
+      "path": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c1\\C2\\追踪\\角色状态\\程洁.md",
+      "role": "本书实际输入或起笔前派生材料",
+      "sha256": "47fb7959d65b81ed5ef77fb412e2a963b8af739e1ac35019a6b9aeac90606892",
+      "bytes": 962,
+      "loaded_ranges": [
+        [
+          1,
+          25
+        ]
+      ],
+      "loaded_bytes": 962,
+      "loaded_sha256": "47fb7959d65b81ed5ef77fb412e2a963b8af739e1ac35019a6b9aeac90606892",
+      "load_representation": "原文件字节范围，不含 Read/Grep 工具附加行号；B 派生视图经 init 命令 stdout 全文读取",
+      "reason": "原始授权/背景、完整 profile、边界与当前起点；所有 input.sources 均核对冻结哈希"
+    },
+    {
+      "path": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c1\\C2\\追踪\\角色状态\\杜青.md",
+      "role": "本书实际输入或起笔前派生材料",
+      "sha256": "167c23e8a4f81459bf125d9dec493b84e7404f25b244912ac5607d36a9d63930",
+      "bytes": 599,
+      "loaded_ranges": [
+        [
+          1,
+          21
+        ]
+      ],
+      "loaded_bytes": 599,
+      "loaded_sha256": "167c23e8a4f81459bf125d9dec493b84e7404f25b244912ac5607d36a9d63930",
+      "load_representation": "原文件字节范围，不含 Read/Grep 工具附加行号；B 派生视图经 init 命令 stdout 全文读取",
+      "reason": "原始授权/背景、完整 profile、边界与当前起点；所有 input.sources 均核对冻结哈希"
+    },
+    {
+      "path": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c1\\C2\\追踪\\待审台账.md",
+      "role": "本书实际输入或起笔前派生材料",
+      "sha256": "3a77c509cd450e3b91a5666381f9dcf8d9c3f5a9d9a509a1aee829dac997df28",
+      "bytes": 172,
+      "loaded_ranges": [
+        [
+          1,
+          4
+        ]
+      ],
+      "loaded_bytes": 172,
+      "loaded_sha256": "3a77c509cd450e3b91a5666381f9dcf8d9c3f5a9d9a509a1aee829dac997df28",
+      "load_representation": "原文件字节范围，不含 Read/Grep 工具附加行号；B 派生视图经 init 命令 stdout 全文读取",
+      "reason": "原始授权/背景、完整 profile、边界与当前起点；所有 input.sources 均核对冻结哈希"
+    },
+    {
+      "path": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\framework\\skills\\guyin-write\\SKILL.md",
+      "role": "框架白名单实际文本读取",
+      "sha256": "fb2a2b9a84ba4042b7e000644dc2d1e7ee81f3ec5c81206767d13c5ac4927e25",
+      "bytes": 11493,
+      "loaded_ranges": [
+        [
+          1,
+          91
+        ]
+      ],
+      "loaded_bytes": 11493,
+      "loaded_sha256": "fb2a2b9a84ba4042b7e000644dc2d1e7ee81f3ec5c81206767d13c5ac4927e25",
+      "load_representation": "原文件字节范围，不含 Read/Grep 工具附加行号；B 派生视图经 init 命令 stdout 全文读取",
+      "reason": "显式候选入口，全文读取；未调用宿主安装技能"
+    },
+    {
+      "path": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\framework\\skills\\guyin-write\\references\\consult\\tracking-transaction.md",
+      "role": "框架白名单实际文本读取",
+      "sha256": "49603f9bdc4aca3a4e2411509bae65f3ec6c70537fe4537438736939f9316d6d",
+      "bytes": 40217,
+      "loaded_ranges": [
+        [
+          1,
+          382
+        ]
+      ],
+      "loaded_bytes": 40217,
+      "loaded_sha256": "49603f9bdc4aca3a4e2411509bae65f3ec6c70537fe4537438736939f9316d6d",
+      "load_representation": "原文件字节范围，不含 Read/Grep 工具附加行号；B 派生视图经 init 命令 stdout 全文读取",
+      "reason": "运行、input、init、checkpoint、逐章事务、preview 字段；Read 返回全文383行，含非本批适用的其他协议段，仅使用 G2 所需部分；例子不作文学取材"
+    },
+    {
+      "path": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\framework\\skills\\guyin-write\\scripts\\guyin-author-session.py",
+      "role": "框架白名单实际文本读取",
+      "sha256": "7f1a39f826908868b55abc90306db58852017677aa5d6775d7213f0f701fb737",
+      "bytes": 52096,
+      "loaded_ranges": [
+        [
+          13,
+          32
+        ],
+        [
+          43,
+          61
+        ],
+        [
+          146,
+          152
+        ],
+        [
+          311,
+          324
+        ],
+        [
+          483,
+          517
+        ]
+      ],
+      "loaded_bytes": 4286,
+      "loaded_sha256": "d19904b6796a7585b61ca2372fa4740aa94de6ad69e871102161a90b88d52f4a",
+      "load_representation": "原文件字节范围，不含 Read/Grep 工具附加行号；B 派生视图经 init 命令 stdout 全文读取",
+      "reason": "定向 Grep 核查 import、reviewed 门要求、wordcount、pending；只读实现，未修改"
+    },
+    {
+      "path": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\framework\\skills\\guyin-write\\scripts\\guyin-check-pending.js",
+      "role": "框架白名单实际文本读取",
+      "sha256": "41a3ccef8a5315318f1c920a0fa5a4891c09001d64deb503eda95165bff01849",
+      "bytes": 16016,
+      "loaded_ranges": [
+        [
+          1,
+          220
+        ]
+      ],
+      "loaded_bytes": 11879,
+      "loaded_sha256": "a4412dbe866db4d7a6ec797b0c1e088f5c95b810f5855c5c03c3b40914e253b1",
+      "load_representation": "原文件字节范围，不含 Read/Grep 工具附加行号；B 派生视图经 init 命令 stdout 全文读取",
+      "reason": "确认缺台账/未部署的区别、八列表头及命令参数"
+    },
+    {
+      "path": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\framework\\skills\\guyin-write\\scripts\\guyin-check-wordcount.js",
+      "role": "框架白名单实际文本读取",
+      "sha256": "780e5bda98ace9210c9dc02643fce2d28efbc853ba60cb261ab7b0464c07cf21",
+      "bytes": 12818,
+      "loaded_ranges": [
+        [
+          1,
+          230
+        ]
+      ],
+      "loaded_bytes": 10362,
+      "loaded_sha256": "b42ab6f5674b9f512bcbf26d1d333abf3f2c6dcdf8cdc59315de0a57895c26e2",
+      "load_representation": "原文件字节范围，不含 Read/Grep 工具附加行号；B 派生视图经 init 命令 stdout 全文读取",
+      "reason": "确认正文可见字符口径及显式 min/max，避免误用缺省3000"
+    },
+    {
+      "path": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\framework\\skills\\guyin-review\\SKILL.md",
+      "role": "框架白名单实际文本读取",
+      "sha256": "0b0e07108f8a0d88ed50ec266a0f4f55eb89556b57a6b0cb6ab33641d4f3178a",
+      "bytes": 5988,
+      "loaded_ranges": [
+        [
+          1,
+          76
+        ]
+      ],
+      "loaded_bytes": 5988,
+      "loaded_sha256": "0b0e07108f8a0d88ed50ec266a0f4f55eb89556b57a6b0cb6ab33641d4f3178a",
+      "load_representation": "原文件字节范围，不含 Read/Grep 工具附加行号；B 派生视图经 init 命令 stdout 全文读取",
+      "reason": "仅初稿完成后的 review 阶段全文读取"
+    },
+    {
+      "path": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\framework\\skills\\guyin-review\\references\\quality-rubric.md",
+      "role": "框架白名单实际文本读取",
+      "sha256": "fd202073b9c84d9315146522bd744c85273fc42a4b7d3481b17305943c8bd929",
+      "bytes": 6280,
+      "loaded_ranges": [
+        [
+          1,
+          57
+        ]
+      ],
+      "loaded_bytes": 6280,
+      "loaded_sha256": "fd202073b9c84d9315146522bd744c85273fc42a4b7d3481b17305943c8bd929",
+      "load_representation": "原文件字节范围，不含 Read/Grep 工具附加行号；B 派生视图经 init 命令 stdout 全文读取",
+      "reason": "仅 review 阶段全文读取；形式中立，不给校准结果打 L 等级"
+    }
+  ],
+  "runtime_entries": [
+    {
+      "path": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\framework\\skills\\guyin-write\\scripts\\guyin-tracking-commit.py",
+      "sha256": "cff01c2a49e9bf703cd05d191d973bded05583f4d8258a2c771cf0e1b44637a1",
+      "bytes": 175010,
+      "use": "真实执行入口；不等于全文语义读取"
+    },
+    {
+      "path": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\framework\\skills\\guyin-write\\scripts\\guyin-author-session.py",
+      "sha256": "7f1a39f826908868b55abc90306db58852017677aa5d6775d7213f0f701fb737",
+      "bytes": 52096,
+      "use": "真实执行入口；不等于全文语义读取"
+    },
+    {
+      "path": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\framework\\skills\\guyin-write\\scripts\\guyin-check-pending.js",
+      "sha256": "41a3ccef8a5315318f1c920a0fa5a4891c09001d64deb503eda95165bff01849",
+      "bytes": 16016,
+      "use": "真实执行入口；不等于全文语义读取"
+    },
+    {
+      "path": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\framework\\skills\\guyin-write\\scripts\\guyin-check-wordcount.js",
+      "sha256": "780e5bda98ace9210c9dc02643fce2d28efbc853ba60cb261ab7b0464c07cf21",
+      "bytes": 12818,
+      "use": "真实执行入口；不等于全文语义读取"
+    }
+  ],
+  "source_provenance_limits": [
+    "W 哈希在本次归档时按实际文件字节采样；只声称所列段落进入当前会话，执行入口哈希不冒作整文件语义读取",
+    "执行脚本的传递依赖由其正常加载，未独立追踪逐个运行时库，细单为 unknown；未对其文学取材"
+  ],
+  "host_inherited_context": {
+    "provenance": "系统/宿主自动注入，不可剥离",
+    "contents": [
+      "宿主技能说明清单",
+      "仓库路径与 git 历史摘要",
+      "用户与项目记忆索引",
+      "通用代理指令与工具说明"
+    ],
+    "sha256": "unknown",
+    "bytes": null,
+    "active_use": false,
+    "disclosure": "仅披露其存在；未打开记忆文件、历史、报告、sealed、原小说或任何其他实验/对手稿，未将注入的项目观点当成创作素材"
+  },
+  "commands": [
+    {
+      "label": "01-pending-before-init",
+      "command": [
+        "node",
+        "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\framework\\skills\\guyin-write\\scripts\\guyin-check-pending.js",
+        "--json",
+        "--project",
+        "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c1\\C2",
+        "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c1\\C2\\追踪\\待审台账.md"
+      ],
+      "cwd": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c1\\C2",
+      "started_at": "2026-09-24T07:26:30.722951+00:00",
+      "ended_at": "2026-09-24T07:26:30.798140+00:00",
+      "exit_code": 0,
+      "stdout_path": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c1\\C2\\.guyin\\work\\cal-c1\\logs\\01-pending-before-init.stdout.txt",
+      "stderr_path": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c1\\C2\\.guyin\\work\\cal-c1\\logs\\01-pending-before-init.stderr.txt",
+      "stdout_sha256": "505e39265258879d388e925aef0859298542205413e7371262d3cf84f2b84f3e",
+      "stdout_bytes": 70,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_bytes": 0
+    },
+    {
+      "label": "02-init",
+      "command": [
+        "python",
+        "-B",
+        "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\framework\\skills\\guyin-write\\scripts\\guyin-tracking-commit.py",
+        "init",
+        "--project",
+        "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c1\\C2",
+        "--input",
+        "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c1\\C2\\.guyin\\work\\cal-c1\\init.json"
+      ],
+      "cwd": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c1\\C2",
+      "started_at": "2026-09-24T07:26:30.802114+00:00",
+      "ended_at": "2026-09-24T07:26:30.985681+00:00",
+      "exit_code": 0,
+      "stdout_path": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c1\\C2\\.guyin\\work\\cal-c1\\logs\\02-init.stdout.txt",
+      "stderr_path": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c1\\C2\\.guyin\\work\\cal-c1\\logs\\02-init.stderr.txt",
+      "stdout_sha256": "5e0c22786c6a71701830ef7c99a039f21d755688814084dce3995a7b42713e7c",
+      "stdout_bytes": 51,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_bytes": 0
+    },
+    {
+      "label": "03-pending-after-init",
+      "command": [
+        "node",
+        "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\framework\\skills\\guyin-write\\scripts\\guyin-check-pending.js",
+        "--json",
+        "--project",
+        "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c1\\C2",
+        "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c1\\C2\\追踪\\待审台账.md"
+      ],
+      "cwd": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c1\\C2",
+      "started_at": "2026-09-24T07:26:30.986212+00:00",
+      "ended_at": "2026-09-24T07:26:31.067600+00:00",
+      "exit_code": 0,
+      "stdout_path": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c1\\C2\\.guyin\\work\\cal-c1\\logs\\03-pending-after-init.stdout.txt",
+      "stderr_path": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c1\\C2\\.guyin\\work\\cal-c1\\logs\\03-pending-after-init.stderr.txt",
+      "stdout_sha256": "fc99a15856b6384eabe3429897faab599cd2cf66c8372f23c5494083bbf9f407",
+      "stdout_bytes": 51,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_bytes": 0
+    },
+    {
+      "label": "04-start",
+      "command": [
+        "python",
+        "-B",
+        "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\framework\\skills\\guyin-write\\scripts\\guyin-author-session.py",
+        "start",
+        "--project",
+        "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c1\\C2",
+        "--run",
+        "cal-c1",
+        "--input",
+        ".guyin/work/cal-c1/input.json"
+      ],
+      "cwd": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c1\\C2",
+      "started_at": "2026-09-24T07:26:39.835961+00:00",
+      "ended_at": "2026-09-24T07:26:40.165792+00:00",
+      "exit_code": 0,
+      "stdout_path": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c1\\C2\\.guyin\\work\\cal-c1\\logs\\04-start.stdout.txt",
+      "stderr_path": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c1\\C2\\.guyin\\work\\cal-c1\\logs\\04-start.stderr.txt",
+      "stdout_sha256": "c4f3b7689b68e39ac55c3fca28f0d75a83bb3e4b096c3244040052b04149ef25",
+      "stdout_bytes": 167,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_bytes": 0
+    },
+    {
+      "label": "05-v0001-metrics",
+      "command": [
+        "node",
+        "-e",
+        "const fs=require(\"fs\"),crypto=require(\"crypto\");const p=process.argv[1],b=fs.readFileSync(p),t=b.toString(\"utf8\"),body=t.split(/\\r?\\n/).slice(1).join(\"\\n\");console.log(JSON.stringify({path:p,sha256:crypto.createHash(\"sha256\").update(b).digest(\"hex\"),bytes:b.length,title:t.split(/\\r?\\n/)[0],han:(body.match(/\\p{Script=Han}/gu)||[]).length,body_non_whitespace:[...body.replace(/\\s/gu,\"\")].length,framework_visible_chars:body.replace(/\\s/gu,\"\").length},null,2));",
+        "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c1\\C2\\.guyin\\work\\cal-c1\\drafts\\v0001.md"
+      ],
+      "cwd": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c1\\C2",
+      "started_at": "2026-09-24T07:27:47.054721+00:00",
+      "ended_at": "2026-09-24T07:27:47.151558+00:00",
+      "exit_code": 0,
+      "stdout_path": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c1\\C2\\.guyin\\work\\cal-c1\\logs\\05-v0001-metrics.stdout.txt",
+      "stderr_path": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c1\\C2\\.guyin\\work\\cal-c1\\logs\\05-v0001-metrics.stderr.txt",
+      "stdout_sha256": "b9e1dca0667a647d9bff3e8723971e3a42d7b0d132a1959dd037ba4cc5462326",
+      "stdout_bytes": 363,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_bytes": 0
+    },
+    {
+      "label": "06-checkpoint-drafted",
+      "command": [
+        "python",
+        "-B",
+        "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\framework\\skills\\guyin-write\\scripts\\guyin-author-session.py",
+        "checkpoint",
+        "--project",
+        "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c1\\C2",
+        "--run",
+        "cal-c1",
+        "--input",
+        ".guyin/work/cal-c1/checkpoint-drafted.json"
+      ],
+      "cwd": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c1\\C2",
+      "started_at": "2026-09-24T07:27:47.154074+00:00",
+      "ended_at": "2026-09-24T07:27:47.447363+00:00",
+      "exit_code": 0,
+      "stdout_path": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c1\\C2\\.guyin\\work\\cal-c1\\logs\\06-checkpoint-drafted.stdout.txt",
+      "stderr_path": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c1\\C2\\.guyin\\work\\cal-c1\\logs\\06-checkpoint-drafted.stderr.txt",
+      "stdout_sha256": "2c33af62ee2e4a160310346011c5d68f84449efe4c92502760742bf514e49d8b",
+      "stdout_bytes": 106,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_bytes": 0
+    },
+    {
+      "label": "07-wordcount-v0001",
+      "command": [
+        "node",
+        "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\framework\\skills\\guyin-write\\scripts\\guyin-check-wordcount.js",
+        "--json",
+        "--min=1000",
+        "--max=2400",
+        "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c1\\C2\\.guyin\\work\\cal-c1\\drafts\\v0001.md"
+      ],
+      "cwd": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c1\\C2",
+      "started_at": "2026-09-24T07:27:47.447363+00:00",
+      "ended_at": "2026-09-24T07:27:47.524915+00:00",
+      "exit_code": 0,
+      "stdout_path": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c1\\C2\\.guyin\\work\\cal-c1\\logs\\07-wordcount-v0001.stdout.txt",
+      "stderr_path": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c1\\C2\\.guyin\\work\\cal-c1\\logs\\07-wordcount-v0001.stderr.txt",
+      "stdout_sha256": "84b91681c5054481709c295b49fc7bdb30173610eac5f7c70f050c42c1ac22ba",
+      "stdout_bytes": 199,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_bytes": 0
+    },
+    {
+      "label": "07b-v0002-metrics",
+      "command": [
+        "node",
+        "-e",
+        "const fs=require(\"fs\"),crypto=require(\"crypto\");const p=process.argv[1],b=fs.readFileSync(p),t=b.toString(\"utf8\"),body=t.split(/\\r?\\n/).slice(1).join(\"\\n\");console.log(JSON.stringify({path:p,sha256:crypto.createHash(\"sha256\").update(b).digest(\"hex\"),bytes:b.length,title:t.split(/\\r?\\n/)[0],han:(body.match(/\\p{Script=Han}/gu)||[]).length,body_non_whitespace:[...body.replace(/\\s/gu,\"\")].length,framework_visible_chars:body.replace(/\\s/gu,\"\").length},null,2));",
+        "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c1\\C2\\.guyin\\work\\cal-c1\\drafts\\v0002.md"
+      ],
+      "cwd": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c1\\C2",
+      "started_at": "2026-09-24T07:30:16.823198+00:00",
+      "ended_at": "2026-09-24T07:30:16.894060+00:00",
+      "exit_code": 0,
+      "stdout_path": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c1\\C2\\.guyin\\work\\cal-c1\\logs\\07b-v0002-metrics.stdout.txt",
+      "stderr_path": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c1\\C2\\.guyin\\work\\cal-c1\\logs\\07b-v0002-metrics.stderr.txt",
+      "stdout_sha256": "7a8040b4cfe35d3dd47269b50f7591d7b5d2082e44854ed150a195909fa0bc72",
+      "stdout_bytes": 363,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_bytes": 0
+    },
+    {
+      "label": "07c-checkpoint-revision",
+      "command": [
+        "python",
+        "-B",
+        "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\framework\\skills\\guyin-write\\scripts\\guyin-author-session.py",
+        "checkpoint",
+        "--project",
+        "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c1\\C2",
+        "--run",
+        "cal-c1",
+        "--input",
+        ".guyin/work/cal-c1/checkpoint-revision.json"
+      ],
+      "cwd": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c1\\C2",
+      "started_at": "2026-09-24T07:30:16.895824+00:00",
+      "ended_at": "2026-09-24T07:30:17.112579+00:00",
+      "exit_code": 0,
+      "stdout_path": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c1\\C2\\.guyin\\work\\cal-c1\\logs\\07c-checkpoint-revision.stdout.txt",
+      "stderr_path": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c1\\C2\\.guyin\\work\\cal-c1\\logs\\07c-checkpoint-revision.stderr.txt",
+      "stdout_sha256": "33e9571d84f23d1557d40620c72743b23cfd6a75366f1158c2ce651451b96e70",
+      "stdout_bytes": 106,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_bytes": 0
+    },
+    {
+      "label": "07d-wordcount-v0002",
+      "command": [
+        "node",
+        "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\framework\\skills\\guyin-write\\scripts\\guyin-check-wordcount.js",
+        "--json",
+        "--min=1000",
+        "--max=2400",
+        "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c1\\C2\\.guyin\\work\\cal-c1\\drafts\\v0002.md"
+      ],
+      "cwd": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c1\\C2",
+      "started_at": "2026-09-24T07:30:17.113085+00:00",
+      "ended_at": "2026-09-24T07:30:17.184869+00:00",
+      "exit_code": 0,
+      "stdout_path": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c1\\C2\\.guyin\\work\\cal-c1\\logs\\07d-wordcount-v0002.stdout.txt",
+      "stderr_path": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c1\\C2\\.guyin\\work\\cal-c1\\logs\\07d-wordcount-v0002.stderr.txt",
+      "stdout_sha256": "38a7fcf009577e23f4e8ef4d26592b7dea2cffd6926aeb77e47a0ad3ed58c2ee",
+      "stdout_bytes": 199,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_bytes": 0
+    },
+    {
+      "label": "08-checkpoint-reviewed",
+      "command": [
+        "python",
+        "-B",
+        "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\framework\\skills\\guyin-write\\scripts\\guyin-author-session.py",
+        "checkpoint",
+        "--project",
+        "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c1\\C2",
+        "--run",
+        "cal-c1",
+        "--input",
+        ".guyin/work/cal-c1/checkpoint-reviewed.json"
+      ],
+      "cwd": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c1\\C2",
+      "started_at": "2026-09-24T07:31:31.567319+00:00",
+      "ended_at": "2026-09-24T07:31:31.791931+00:00",
+      "exit_code": 0,
+      "stdout_path": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c1\\C2\\.guyin\\work\\cal-c1\\logs\\08-checkpoint-reviewed.stdout.txt",
+      "stderr_path": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c1\\C2\\.guyin\\work\\cal-c1\\logs\\08-checkpoint-reviewed.stderr.txt",
+      "stdout_sha256": "4d7bd9bec11a2a75b7ccbf237dfa7271e1977fd23c1c048ba9542f24b3a1f735",
+      "stdout_bytes": 108,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_bytes": 0
+    },
+    {
+      "label": "09-tracking-check",
+      "command": [
+        "python",
+        "-B",
+        "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\framework\\skills\\guyin-write\\scripts\\guyin-tracking-commit.py",
+        "check",
+        "--project",
+        "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c1\\C2"
+      ],
+      "cwd": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c1\\C2",
+      "started_at": "2026-09-24T07:31:31.793441+00:00",
+      "ended_at": "2026-09-24T07:31:31.937273+00:00",
+      "exit_code": 0,
+      "stdout_path": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c1\\C2\\.guyin\\work\\cal-c1\\logs\\09-tracking-check.stdout.txt",
+      "stderr_path": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c1\\C2\\.guyin\\work\\cal-c1\\logs\\09-tracking-check.stderr.txt",
+      "stdout_sha256": "5e0c22786c6a71701830ef7c99a039f21d755688814084dce3995a7b42713e7c",
+      "stdout_bytes": 51,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_bytes": 0
+    },
+    {
+      "label": "10-final-pending",
+      "command": [
+        "node",
+        "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\framework\\skills\\guyin-write\\scripts\\guyin-check-pending.js",
+        "--json",
+        "--project",
+        "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c1\\C2",
+        "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c1\\C2\\追踪\\待审台账.md"
+      ],
+      "cwd": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c1\\C2",
+      "started_at": "2026-09-24T07:31:31.938630+00:00",
+      "ended_at": "2026-09-24T07:31:32.011942+00:00",
+      "exit_code": 0,
+      "stdout_path": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c1\\C2\\.guyin\\work\\cal-c1\\logs\\10-final-pending.stdout.txt",
+      "stderr_path": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c1\\C2\\.guyin\\work\\cal-c1\\logs\\10-final-pending.stderr.txt",
+      "stdout_sha256": "fc99a15856b6384eabe3429897faab599cd2cf66c8372f23c5494083bbf9f407",
+      "stdout_bytes": 51,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_bytes": 0
+    },
+    {
+      "label": "11-author-status",
+      "command": [
+        "python",
+        "-B",
+        "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\framework\\skills\\guyin-write\\scripts\\guyin-author-session.py",
+        "status",
+        "--project",
+        "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c1\\C2",
+        "--run",
+        "cal-c1"
+      ],
+      "cwd": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c1\\C2",
+      "started_at": "2026-09-24T07:31:32.011942+00:00",
+      "ended_at": "2026-09-24T07:31:32.229059+00:00",
+      "exit_code": 0,
+      "stdout_path": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c1\\C2\\.guyin\\work\\cal-c1\\logs\\11-author-status.stdout.txt",
+      "stderr_path": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c1\\C2\\.guyin\\work\\cal-c1\\logs\\11-author-status.stderr.txt",
+      "stdout_sha256": "9ef27363721d8c9e1d8fde4bae568574de0f8dc04949a8b54f0d6e08ee46391c",
+      "stdout_bytes": 603,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_bytes": 0
+    }
+  ],
+  "phase_evidence": {
+    "init": "logs/02-init.json",
+    "start": "logs/04-start.json",
+    "drafted_v0001": "logs/06-checkpoint-drafted.json",
+    "drafted_v0002": "logs/07c-checkpoint-revision.json",
+    "reviewed": "logs/08-checkpoint-reviewed.json",
+    "status": "logs/11-author-status.json",
+    "draft_and_evidence_separate_checkpoints": true,
+    "first_draft_after_successful_start": true
+  },
+  "publication": {
+    "called": false,
+    "ledger_exists": false,
+    "formal_prose_files": [],
+    "tracking_state_revision": 0,
+    "last_committed_chapter": 0,
+    "git_commit_called": false
+  },
+  "checks_not_run": [
+    "gather 完整候选检查链",
+    "transaction/preview",
+    "ready/publish"
+  ],
+  "blockers": [],
+  "unresolved": [
+    "独立读者/用户质量验收后置；没有模型自评分或 L 等级",
+    "修稿第7—9行略有为俏皮回应铺垫的痕迹，第99—103行照应稍整齐；作为非阻断审美限制保留",
+    "reviewed 不等于 ready，完整机器候选检查链未执行；G2 本次不要求"
+  ],
+  "cost": {
+    "model": "unknown",
+    "provider": "unknown",
+    "temperature": "unknown",
+    "seed": "unknown",
+    "model_switches": 0,
+    "tokens": null,
+    "tokens_reason": "宿主未提供可信 usage 账本",
+    "monetary_cost": null,
+    "subagents": 0,
+    "created_sessions": 0,
+    "draft_generations": 1,
+    "substantive_revisions": 1,
+    "full_draft_reads": 2,
+    "failed_commands": 0,
+    "retries": 0,
+    "raw_subprocess_commands": 14,
+    "conversation_started_at": null,
+    "first_recorded_at": "2026-09-24T07:26:30.721956+00:00",
+    "finished_artifacts_at": "2026-09-24T07:33:16.830466+00:00",
+    "recorded_elapsed_seconds": 406.10851,
+    "full_elapsed_seconds": null,
+    "time_note": "首次自动计时晚于只读输入与目录检查，整会话起点未精确记录，不捏造总耗时",
+    "tool_call_limit": 45,
+    "tool_calls_through_result_creation_including_wrappers": 38,
+    "tool_calls_including_wrappers": 41,
+    "tool_calls_finalization_note": "保守计数41次，其中parallel包装6次，实际功能工具35次；下列逐项记录1—38，之后实际执行39=TaskGet、40=TaskUpdate完成、41=本次Edit登记最终成本。无失败重试；新注入的记忆变更通知未主动读取或使用。",
+    "tool_events": [
+      {
+        "n": 1,
+        "event": "Read brief"
+      },
+      {
+        "n": 2,
+        "event": "parallel wrapper"
+      },
+      {
+        "n": 3,
+        "event": "Read profile"
+      },
+      {
+        "n": 4,
+        "event": "Read generation protocol"
+      },
+      {
+        "n": 5,
+        "event": "Read framework protocol"
+      },
+      {
+        "n": 6,
+        "event": "Read W write entry"
+      },
+      {
+        "n": 7,
+        "event": "parallel wrapper"
+      },
+      {
+        "n": 8,
+        "event": "TaskCreate"
+      },
+      {
+        "n": 9,
+        "event": "Read transaction protocol"
+      },
+      {
+        "n": 10,
+        "event": "Bash initial B-only preflight"
+      },
+      {
+        "n": 11,
+        "event": "parallel wrapper"
+      },
+      {
+        "n": 12,
+        "event": "TaskUpdate in_progress"
+      },
+      {
+        "n": 13,
+        "event": "Glob pending filename"
+      },
+      {
+        "n": 14,
+        "event": "Grep author interface"
+      },
+      {
+        "n": 15,
+        "event": "Glob wordcount filename"
+      },
+      {
+        "n": 16,
+        "event": "parallel wrapper"
+      },
+      {
+        "n": 17,
+        "event": "Read pending lines 1-220"
+      },
+      {
+        "n": 18,
+        "event": "Read wordcount lines 1-230"
+      },
+      {
+        "n": 19,
+        "event": "Write B run helper"
+      },
+      {
+        "n": 20,
+        "event": "Bash init stage"
+      },
+      {
+        "n": 21,
+        "event": "Bash start stage"
+      },
+      {
+        "n": 22,
+        "event": "Write v0001"
+      },
+      {
+        "n": 23,
+        "event": "Bash register v0001"
+      },
+      {
+        "n": 24,
+        "event": "parallel wrapper"
+      },
+      {
+        "n": 25,
+        "event": "Read full v0001"
+      },
+      {
+        "n": 26,
+        "event": "Read review entry"
+      },
+      {
+        "n": 27,
+        "event": "parallel wrapper"
+      },
+      {
+        "n": 28,
+        "event": "Write first-read reaction"
+      },
+      {
+        "n": 29,
+        "event": "Glob quality rubric filename"
+      },
+      {
+        "n": 30,
+        "event": "Read quality rubric"
+      },
+      {
+        "n": 31,
+        "event": "Write v0002"
+      },
+      {
+        "n": 32,
+        "event": "Edit B helper to register revision"
+      },
+      {
+        "n": 33,
+        "event": "Bash register v0002"
+      },
+      {
+        "n": 34,
+        "event": "Read full v0002"
+      },
+      {
+        "n": 35,
+        "event": "Write full review"
+      },
+      {
+        "n": 36,
+        "event": "Bash reviewed and final status"
+      },
+      {
+        "n": 37,
+        "event": "Write finalizer"
+      },
+      {
+        "n": 38,
+        "event": "Bash finalize artifacts"
+      }
+    ]
+  },
+  "limitations": [
+    "未部署 hooks，未安装；手动 pending/未完成 run/无 publication 检查有实际结果",
+    "没有修改任何 W 脚本、配置、权限、manifest 或正式树；Python 禁用写字节码",
+    "初次只读 Bash 目录检查退出0，但当时控制台中文乱码，未把乱码误作状态失败；后续全程 UTF-8 并在本书记录 stdout/stderr",
+    "首个 ls/存在性检查只保留宿主工具记录，后续 preflight.json 及14条命令输出有本地原始记录",
+    "没有外部来源相似度检索或原创性鉴证；为当前会话独立原创，无已知作品取材"
+  ],
+  "artifact_hashes": [
+    {
+      "path": ".guyin\\work\\cal-c1\\input.json",
+      "sha256": "b69ce14b95ec540e9a5c10c25769c1f1784175213bba8e1f9b8e3e7831ee95ad",
+      "bytes": 5653
+    },
+    {
+      "path": ".guyin\\work\\cal-c1\\init.json",
+      "sha256": "93edcf3117c40bf81de53321ab4235f182fbe3209464962d3fa52e610616081d",
+      "bytes": 2579
+    },
+    {
+      "path": ".guyin\\work\\cal-c1\\author-session.json",
+      "sha256": "d8ef3a1433ec1ce8eb2ae8e547e24532f59896cf00a36dea540ecf4775b23707",
+      "bytes": 2696
+    },
+    {
+      "path": ".guyin\\work\\cal-c1\\preflight.json",
+      "sha256": "e9d4e565fe7a15a97e108104392ff4a60223ce2325949af105ec0855ae6b02c9",
+      "bytes": 340
+    },
+    {
+      "path": ".guyin\\work\\cal-c1\\run-calibration.py",
+      "sha256": "dbf9e79c1c1d0408f0807cef94015b74c417f1e3cc55aa301a50b900a8fdca03",
+      "bytes": 11095
+    },
+    {
+      "path": ".guyin\\work\\cal-c1\\finalize.py",
+      "sha256": "994ac461b28203d65c5d56d73291362a97497fd773f71823e4625e86de6b0c41",
+      "bytes": 13287
+    }
+  ]
+}

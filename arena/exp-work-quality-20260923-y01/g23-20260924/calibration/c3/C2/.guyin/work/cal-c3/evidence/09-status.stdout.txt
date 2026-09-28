@@ -1,0 +1,23 @@
+{
+  "status": "resumable",
+  "run_id": "cal-c3",
+  "phase": "reviewed",
+  "input": {
+    "path": ".guyin/work/cal-c3/input.json",
+    "sha256": "f09236c8d7eb"
+  },
+  "draft": {
+    "path": ".guyin/work/cal-c3/drafts/v0001.md",
+    "sha256": "4282127fd56c",
+    "complete": true
+  },
+  "review": true,
+  "transaction": false,
+  "check_evidence": false,
+  "plan_patch": false,
+  "baseline_state_revision": 0,
+  "publication_stage": null,
+  "orphan_drafts": [],
+  "reasons": [],
+  "next_action": "G2当前会话已全文审读；保留初稿，等待后置用户质量验收；不申请ready、不发布。"
+}

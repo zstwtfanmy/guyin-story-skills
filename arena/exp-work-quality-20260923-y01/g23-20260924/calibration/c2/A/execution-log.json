@@ -1,0 +1,27 @@
+{
+  "recording_started_at": "2026-09-24T07:38:07.557Z",
+  "initial_input_reads_before_recording": 3,
+  "first_tool_call_timestamp": null,
+  "first_tool_call_timestamp_note": "The first directory listing and three full input reads preceded this timestamp; their wall-clock timestamps were not exposed.",
+  "visible_tool_calls_through_this_call": 5,
+  "sources": [
+    {
+      "path": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c2\\A\\inputs\\brief.txt",
+      "sha256": "c12aa5f387886540fb62a5abbbc8d7c8a50cf9e272082765ec6bacfe6ff2293d",
+      "bytes": 1616,
+      "loaded": "Read tool; complete file"
+    },
+    {
+      "path": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c2\\A\\inputs\\profile.txt",
+      "sha256": "2e442886becb6aeefecd9e987d70bff2daed226e98bfd5c1aeda7f5147fbd48a",
+      "bytes": 1613,
+      "loaded": "Read tool; complete file"
+    },
+    {
+      "path": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c2\\A\\inputs\\generation-protocol.txt",
+      "sha256": "f739fbf03ee2e12c998cb84cf2cc21dccb93580046cb70bcff7d26f2700ec432",
+      "bytes": 3354,
+      "loaded": "Read tool; complete file"
+    }
+  ]
+}

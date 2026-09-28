@@ -1,0 +1,6 @@
+{
+  "started": "cal-c2",
+  "phase": "prepared",
+  "input_sha256": "cb9bcf21cefc59259ac329bc57fb57883d24d9b84164927981a4e80298e90301",
+  "baseline_state_revision": 0
+}

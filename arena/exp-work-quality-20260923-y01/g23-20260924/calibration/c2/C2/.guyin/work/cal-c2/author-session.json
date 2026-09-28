@@ -1,0 +1,78 @@
+{
+  "schema_version": 1,
+  "run_id": "cal-c2",
+  "input_path": ".guyin/work/cal-c2/input.json",
+  "input_sha256": "cb9bcf21cefc59259ac329bc57fb57883d24d9b84164927981a4e80298e90301",
+  "phase": "reviewed",
+  "baseline": {
+    "state_revision": 0,
+    "state": {
+      "path": "追踪/_tracking-state.json",
+      "sha256": "1ae783d3f0491738d9a6c8872bff08bbfb89b39968ffecffbc7109379ab65cbf"
+    },
+    "prose": {
+      "dir": "正文",
+      "files": []
+    },
+    "sources": [
+      {
+        "path": "inputs/brief.txt",
+        "sha256": "c12aa5f387886540fb62a5abbbc8d7c8a50cf9e272082765ec6bacfe6ff2293d"
+      },
+      {
+        "path": "inputs/profile.txt",
+        "sha256": "2e442886becb6aeefecd9e987d70bff2daed226e98bfd5c1aeda7f5147fbd48a"
+      },
+      {
+        "path": "inputs/generation-protocol.txt",
+        "sha256": "f739fbf03ee2e12c998cb84cf2cc21dccb93580046cb70bcff7d26f2700ec432"
+      },
+      {
+        "path": "inputs/framework-protocol.txt",
+        "sha256": "7fb5bb9ca7ccee0c7e8301140164ad94ed6c206cdee249254f4ace703ff3c6a7"
+      },
+      {
+        "path": "大纲/批次公约.md",
+        "sha256": "686a42ea3d7e27621506e26edbd8a7cfe74253d9fc96b6b96525dfedd41f888d"
+      },
+      {
+        "path": "设定/题材定位.md",
+        "sha256": "50e8cd85881b196e075690d614c7b9cb5fc75731c431f423e8dee9f5e7fb4123"
+      },
+      {
+        "path": "追踪/_tracking-state.json",
+        "sha256": "1ae783d3f0491738d9a6c8872bff08bbfb89b39968ffecffbc7109379ab65cbf"
+      },
+      {
+        "path": "追踪/上下文.md",
+        "sha256": "311a5c9b3d6873bf1b0f804e57c09c065800bda7f012045c53295e10e43d1d7f"
+      },
+      {
+        "path": "追踪/角色状态/梁序.md",
+        "sha256": "8f0326d5b420a586ed6024e7a1b2b9f66f840259dfcff60a514671f10abce912"
+      },
+      {
+        "path": "追踪/角色状态/钱瑛.md",
+        "sha256": "22357a0cf97e8d2bd02daa58be9eacf598cc70d2da626ba9b1faf07f464164e0"
+      },
+      {
+        "path": "追踪/待审台账.md",
+        "sha256": "3a77c509cd450e3b91a5666381f9dcf8d9c3f5a9d9a509a1aee829dac997df28"
+      }
+    ]
+  },
+  "draft": {
+    "path": ".guyin/work/cal-c2/drafts/v0002.md",
+    "complete": true,
+    "sha256": "b6057154a95a3ce7f6b274c424015bac804a3a153c166303c13f7e9ff9a9708c"
+  },
+  "review": {
+    "path": ".guyin/work/cal-c2/review.md",
+    "sha256": "49a802fe98eeefbaab9b3b090f3ce7dd96e91fcecb29f5411ec64a04ef9af8be",
+    "candidate_sha256": "b6057154a95a3ce7f6b274c424015bac804a3a153c166303c13f7e9ff9a9708c"
+  },
+  "transaction": null,
+  "check_evidence": null,
+  "plan_patch": null,
+  "next_action": "G2止于reviewed；等待独立评读，无选稿或发布授权。"
+}

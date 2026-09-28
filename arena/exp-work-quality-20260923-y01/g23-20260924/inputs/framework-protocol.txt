@@ -1,0 +1,21 @@
+框架条件的运行补充（仅C2/X读取，A不读）
+
+实际工程根W固定为 D:/readbook-wpace/guyin-skills/arena/exp-work-quality-20260923-y01/g23-20260924/framework/skills。
+按显式候选入口 W/guyin-write/SKILL.md 执行，不调用宿主安装版同名Skill，避免路由到正式旧树。profile仅用本书输入中profile.txt的完整537字符；这是W所选relationship-payoff/v2定义原字副本，不读取其他profile、不自称user-selected。
+
+需要实际读取：write入口；本书brief/profile/共用生成协议/本补充；准备和审读需要的本书追踪派生视图；事务冷路径 references/consult/tracking-transaction.md 的运行、input、init、checkpoint、逐章事务和preview字段。共享review入口及quality-rubric仅在review阶段读取；craft/dialogue等仅遇具体损失且确实需要时才读相应段落并记理由，不每章强塞五份consult。允许为接口核查定向读取W/guyin-write/scripts/及lib实现，不能修改。其他冷白名单：references/consult/{INDEX.md,writing-craft.md,dialogue-mastery.md,character-relations.md,character-design-methods.md}，不读exemplars/旧小说/私人同题练习/对手稿。
+
+本书B与run标识由派发消息指定。新书仅在B建立必要目录、空的正文目录、真实开篇追踪init；不部署模板、不写AGENTS/hooks/配置。核B内无在途publication、无未知未完run，使用python W/guyin-write/scripts/guyin-tracking-commit.py init --project B --input 初始化事务路径。init写书名、last_chapter=0、开篇前context和人物完整起始快照，不预填未来故事事件。
+
+起笔前准备大纲/批次公约.md（从brief准确写chapter=1和POV，不补额外审美约束）、设定/题材定位.md（Y及profile）、R/input.json。sources包含真实用户原话（共用协议原话）以及B内brief/profile/公约及实际追踪资料完整哈希；不得把执行者说明冒作用户quote。locks无真实锁可空，facts只提实际背景事实。write绑定真实原话；selection=null、publish=null一直保留。style.selection_basis=framework-default，effective_features逐字完整。wordcount是工程可见字符：G2=1000/2400，G3=2500/4700，不能替代独立Han计量。target.kind=long、chapter=1、mode=append，标题起笔前自行定，不用题号当章号。
+
+执行 author-session.py start --project B --run RUN --input .guyin/work/RUN/input.json，所有author --input必须B相对路径。起笔必须晚于成功start；正文写R/drafts/v0001.md。稿件登记与证据登记分两次checkpoint，不能同次传稿和review指望保留；新稿清旧证据。原始稿和工具结果不得覆盖。
+
+G2短场景校准只要求真实start、完整初稿、全文review、必要一轮修订与reviewed登记，不声称ready或publish。G3独立首章必须继续：从所选稿提真实合法transaction（chapter_title与target标题一致；完整当前角色快照不丢已知事实，无变化数组可空，delta.result非空）；生成v2 preview清单及check-evidence，真实汇总候选检查、核事实与POV，处理确定错误后再登记ready。
+
+机器检查原始命令：node W/guyin-write/scripts/lib/guyin-candidate-context.js --gather --project B --chapter 1 --boundary R/input.json --transaction R/transaction.json --out R/check-evidence.json R/drafts/vNNNN.md。
+preview使用 python W/guyin-write/scripts/guyin-tracking-commit.py preview --project B --input 发布清单路径。candidate_checks第一次可以不存在，review/check_evidence辅助文件必须实际存在并嵌hash12。baseline列追踪/_tracking-state.json hash12及正文空目录files=[]/files_hashed=[]；expected_state_revision读实际state。不会产生publication账本或正文安装。
+
+finding保持原始结果，每个hard/verify逐条记追踪/待审台账.md按原八列：章号、来源、报警/发现、处置类别、正文版本、终态、决定依据、去向/备注。真实错误在同一修订预算内修；可证不适用/确定已修需具体行位证据，不能批量标不适用或空写pass；没有用户POV豁免裁决就不得制造豁免附件。由于新增追踪记录可能影响baseline，先查协议，不能手改author-session洗掉漂移。无法合规到ready就保留blocked和具体原因，不伪造过门。
+
+初稿全文review与每次完整修订已计在共用预算中。G3最后保存preview、gather、tracking check、author status原始stdout/stderr及退出码，result.json明确phase、候选完整SHA、未决项。不得调用publish、commit、backfill、recover去安装正文，不更改框架脚本/manifest/校验阈值，不为了消除检查改profile或硬边界。技术接口错误可修JSON再跑并记成本，不掩盖正文重写次数。

@@ -1,0 +1,320 @@
+{
+  "task": "G2原创校准C1简约直写",
+  "status": "completed_pending_user_quality_review",
+  "root": "D:/readbook-wpace/guyin-skills/arena/exp-work-quality-20260923-y01/g23-20260924/calibration/c1/A",
+  "title": "锅边",
+  "selected_draft": "D:/readbook-wpace/guyin-skills/arena/exp-work-quality-20260923-y01/g23-20260924/calibration/c1/A/drafts/v0002.md",
+  "selection_authority": "执行者仅为实验展示选择；不是用户选稿授权、用户验收或发布授权。",
+  "initial_draft_count": 1,
+  "substantive_revision_count": 1,
+  "initial_draft_overwritten": false,
+  "versions": [
+    {
+      "version": "v0001",
+      "path": "D:/readbook-wpace/guyin-skills/arena/exp-work-quality-20260923-y01/g23-20260924/calibration/c1/A/drafts/v0001.md",
+      "sha256": "f0ef67420f5e88927fc4ed0d20d580be016590dd9dd5fb2bfc4c7f01abb011cb",
+      "bytes": 5001,
+      "body_han": 1362,
+      "body_non_whitespace": 1628,
+      "framework_wordcount": null,
+      "first_measurement_at": "2026-09-24T07:27:02.050Z",
+      "han_range_valid": true,
+      "visible_character_range_valid": true,
+      "full_semantic_read": "保存和即时哈希计量之后，第10次工具调用以Read全文读取110行；随后自由审读。"
+    },
+    {
+      "version": "v0002",
+      "path": "D:/readbook-wpace/guyin-skills/arena/exp-work-quality-20260923-y01/g23-20260924/calibration/c1/A/drafts/v0002.md",
+      "sha256": "b0711360ba9e21c228122325e95fd3bc06208759fa94bf427fcc35625e9ecf49",
+      "bytes": 4977,
+      "body_han": 1356,
+      "body_non_whitespace": 1620,
+      "framework_wordcount": null,
+      "first_measurement_at": "2026-09-24T07:28:32.638Z",
+      "han_range_valid": true,
+      "visible_character_range_valid": true,
+      "full_semantic_read": "完整文本由本会话生成并以Write另存；修订后回看使用当前会话内完整文本，未额外调用Read重读修订稿；Node另作原始字节哈希与计量。"
+    }
+  ],
+  "measurement": {
+    "body_definition": "移除首行Markdown标题及其行终止符，其余为正文。",
+    "han_method": "JavaScript /\\p{Script=Han}/gu匹配数量。",
+    "non_whitespace_method": "按Unicode码点遍历正文，排除JavaScript /\\s/u匹配的空白；包括标点。",
+    "han_range": [
+      1000,
+      1800
+    ],
+    "engineering_visible_character_range": [
+      1000,
+      2400
+    ],
+    "framework_wordcount_reason": "本条件禁止主动读取或调用框架，故未运行框架wordcount，记null，不以其他口径冒充。",
+    "literary_quality_implied": false
+  },
+  "revision": {
+    "dominant_hypothesis": "减少为搬走和桌子选购作即时演示的刻意呼应，让相处停留在眼前吃饭；澄清两处动作和空间表达。",
+    "changes": [
+      "杜青在桌子话题后继续剔鱼，不再伸腿碰椅子来即时响应程洁的选购理由。",
+      "洗碗布的变化落到提起时看见破洞，删除才搬走一周的叙述提示。",
+      "鱼头对白明确询问吃不吃。",
+      "葱根所在位置由窗槽改为水槽滤网边缘。"
+    ],
+    "executor_assessed_net_benefit": "局部减少安排感，改善动作可辨性，保留同一场景的亲疏和嘴馋；未把篇幅计量当成文学结论。",
+    "cost": "减少桌子段的一点轻巧笑意与末尾一周的时间回声。",
+    "revision_for_length": false,
+    "external_validation": null
+  },
+  "review": {
+    "path": "D:/readbook-wpace/guyin-skills/arena/exp-work-quality-20260923-y01/g23-20260924/calibration/c1/A/review.md",
+    "sha256": "b2ab65d1966555a3797c0b55c48fee055808bf2b50556bad66a7594c45e0b462",
+    "sequence": "初稿全文读取；先记真实阅读反应，再核事实、POV与继续阅读理由；记录主导假说；另存唯一修订；回看后记录选择与代价。",
+    "pov": "第三人称有限视角，仅进入程洁内心。",
+    "user_quality_acceptance": null,
+    "quality_grade": null,
+    "quality_score": null,
+    "quality_review_status": "待后置用户验收；本记录不产生L等级。"
+  },
+  "sources": [
+    {
+      "path": "D:/readbook-wpace/guyin-skills/arena/exp-work-quality-20260923-y01/g23-20260924/calibration/c1/A/inputs/brief.txt",
+      "sha256": "1495cf513ebe7c76833faa9e0ea97a4df6c8d3afb5248c5a9c556e9e62e5b99d",
+      "bytes": 1497,
+      "actual_read": "第2次调用Read完整读取全部11行；第7次调用Node读取全部原始字节以计算SHA256。第16次调用Node复核原始字节SHA256及字节数，均一致。",
+      "purpose": "当前场景背景、范围与视角约束。"
+    },
+    {
+      "path": "D:/readbook-wpace/guyin-skills/arena/exp-work-quality-20260923-y01/g23-20260924/calibration/c1/A/inputs/profile.txt",
+      "sha256": "2e442886becb6aeefecd9e987d70bff2daed226e98bfd5c1aeda7f5147fbd48a",
+      "bytes": 1613,
+      "actual_read": "第3次调用Read完整读取全部2行，未截断长行；第7次调用Node读取全部原始字节以计算SHA256。第16次调用Node复核原始字节SHA256及字节数，均一致。",
+      "purpose": "完整叙事方向，不视为作家风格复刻或情节硬锁。"
+    },
+    {
+      "path": "D:/readbook-wpace/guyin-skills/arena/exp-work-quality-20260923-y01/g23-20260924/calibration/c1/A/inputs/generation-protocol.txt",
+      "sha256": "f739fbf03ee2e12c998cb84cf2cc21dccb93580046cb70bcff7d26f2700ec432",
+      "bytes": 3354,
+      "actual_read": "第4次调用Read完整读取全部19行；第7次调用Node读取全部原始字节以计算SHA256。第16次调用Node复核原始字节SHA256及字节数，均一致。",
+      "purpose": "不可覆盖初稿、最多一次修订、计量及实验记录协议。"
+    }
+  ],
+  "other_actual_reads": [
+    "第1次调用ls仅列出授权B根目录，返回inputs。",
+    "第9次调用Node完整字节读取v0001以立即哈希计量。",
+    "第10次调用Read全文读取自己的v0001用于自由审读。",
+    "第13次调用Node完整字节读取v0001与v0002，核验初稿未变并计量修订稿。",
+    "第16次调用Node解析result.json，读取三份输入及两稿原始字节进行机械核验；只列出drafts目录并检查review文件非空，不读取其他目录。",
+    "第20次调用Node解析自己的result.json并读取review.md原始字节以登记哈希，无新增外部来源读取。"
+  ],
+  "host_auto_injection": {
+    "present": true,
+    "disclosed_before_first_tool": true,
+    "visible_categories": [
+      "技能名称与描述列表",
+      "用户与项目记忆索引摘要",
+      "环境与Git状态摘要",
+      "工具定义、通用规则与宿主提示"
+    ],
+    "raw_paths": null,
+    "sha256": null,
+    "bytes": null,
+    "token_count": null,
+    "unknown_reason": "宿主自动注入不可控，其原始来源字节和完整哈希不可核验；未主动打开相关文件。",
+    "proactively_read_skill_framework_memory_or_history_files": false,
+    "used_as_story_source": false,
+    "complete_absence_of_context_influence_verifiable": null
+  },
+  "execution": {
+    "delegations": 0,
+    "additional_sessions": 0,
+    "skill_invocations": 0,
+    "network_calls": 0,
+    "installs": 0,
+    "configuration_changes": 0,
+    "permission_changes": 0,
+    "git_commands": 0,
+    "publish_actions": 0,
+    "opponent_drafts_read": 0,
+    "novel_source_research_or_sealed_prompt_reads": 0,
+    "filesystem_write_scope": "仅B/drafts/v0001.md、B/drafts/v0002.md、B/review.md、B/result.json；目录创建仅B/drafts。",
+    "host_task_tracking": "另使用宿主TaskCreate/TaskUpdate跟踪本次任务，无主动文件写入路径；不属于文学产物或额外生成会话。"
+  },
+  "model": {
+    "selection": "沿用当前默认模型",
+    "model_id": null,
+    "temperature": null,
+    "seed": null,
+    "top_p": null,
+    "reasoning_effort": null,
+    "input_tokens": null,
+    "output_tokens": null,
+    "options_changed": false,
+    "unknown_reason": "当前任务未提供可核实的底层型号、采样参数或token计量，不猜测。"
+  },
+  "timing": {
+    "task_started_at": null,
+    "task_started_at_unknown_reason": "首次工具与输入读取前未取得可核实墙钟时间，不能倒推。",
+    "recorded_start_at": "2026-09-24T07:25:49.380Z",
+    "recorded_start_scope": "第7次工具调用取得时间；已完整读取三份输入，尚未生成初稿。",
+    "ended_at": "2026-09-24T07:31:50.958Z",
+    "recorded_elapsed_seconds": 361.578,
+    "time_limit_minutes": 30,
+    "exact_end_to_end_duration": null,
+    "exact_duration_reason": "首次取样前的耗时未记录，精确端到端时长未知；可核区间为recorded_start_at至ended_at。",
+    "ended_at_scope": "最后一次工具调用内，最终记录写入前的墙钟取样；不含其后的文件写入与响应传输耗时。",
+    "recorded_interval_within_limit": true
+  },
+  "tool_usage": {
+    "limit": 25,
+    "observed_calls_including_result_creation": 15,
+    "total_calls": 20,
+    "failures": 0,
+    "retries": 0,
+    "count_scope": "本生成会话显式工具调用，每次functions调用计1；不含宿主不可见内部执行或自动注入。",
+    "host_internal_tool_calls": null,
+    "finalization_note": "包含当前最后一次Bash调用；所有显式调用成功，无失败和重试，之后不再调用工具。宿主不可见内部调用量未知。",
+    "calls": [
+      {
+        "number": 1,
+        "tool": "Bash",
+        "operation": "ls B",
+        "status": "success"
+      },
+      {
+        "number": 2,
+        "tool": "Read",
+        "operation": "inputs/brief.txt全文",
+        "status": "success"
+      },
+      {
+        "number": 3,
+        "tool": "Read",
+        "operation": "inputs/profile.txt全文",
+        "status": "success"
+      },
+      {
+        "number": 4,
+        "tool": "Read",
+        "operation": "inputs/generation-protocol.txt全文",
+        "status": "success"
+      },
+      {
+        "number": 5,
+        "tool": "TaskCreate",
+        "operation": "建立本次任务跟踪",
+        "status": "success"
+      },
+      {
+        "number": 6,
+        "tool": "TaskUpdate",
+        "operation": "标记进行中",
+        "status": "success"
+      },
+      {
+        "number": 7,
+        "tool": "Bash",
+        "operation": "三份输入字节哈希、首次墙钟取样、创建drafts",
+        "status": "success"
+      },
+      {
+        "number": 8,
+        "tool": "Write",
+        "operation": "drafts/v0001.md首次完整落盘",
+        "status": "success"
+      },
+      {
+        "number": 9,
+        "tool": "Bash",
+        "operation": "立即计算v0001哈希与计量",
+        "status": "success"
+      },
+      {
+        "number": 10,
+        "tool": "Read",
+        "operation": "v0001全文自由审读",
+        "status": "success"
+      },
+      {
+        "number": 11,
+        "tool": "Write",
+        "operation": "review.md记录初读与修订假说",
+        "status": "success"
+      },
+      {
+        "number": 12,
+        "tool": "Write",
+        "operation": "drafts/v0002.md唯一一次修订",
+        "status": "success"
+      },
+      {
+        "number": 13,
+        "tool": "Bash",
+        "operation": "v0002计量并核验v0001未变",
+        "status": "success"
+      },
+      {
+        "number": 14,
+        "tool": "Edit",
+        "operation": "review.md补充修订后回看与残留问题",
+        "status": "success"
+      },
+      {
+        "number": 15,
+        "tool": "Write",
+        "operation": "result.json初次完整记录",
+        "status": "success"
+      },
+      {
+        "number": 16,
+        "tool": "Bash",
+        "operation": "复核三份来源和两稿哈希、计量、标题及JSON",
+        "status": "success"
+      },
+      {
+        "number": 17,
+        "tool": "TaskGet",
+        "operation": "获取当前任务状态",
+        "status": "success"
+      },
+      {
+        "number": 18,
+        "tool": "TaskUpdate",
+        "operation": "完成任务跟踪",
+        "status": "success"
+      },
+      {
+        "number": 19,
+        "tool": "TaskList",
+        "operation": "确认本次跟踪任务已完成",
+        "status": "success"
+      },
+      {
+        "number": 20,
+        "tool": "Bash",
+        "operation": "登记完整调用、审读文件哈希与结束时间",
+        "status": "success"
+      }
+    ],
+    "within_limit": true
+  },
+  "residual_issues": [
+    "桌子、运书、炉灶话题接得稍密，背景输入的痕迹仍可辨认。",
+    "湿毛巾段末的私人判断略有解释意味，保留而未追加润色。",
+    "洗碗收尾较轻，未展示离门；这是所选场景范围的代价。",
+    "宿主自动注入内容无法完全排除或核验；已披露，未主动使用为故事来源。",
+    "框架wordcount未运行，模型参数及token数量不可见，精确任务开始时间未知。"
+  ],
+  "blockers": [],
+  "stopped_at_budget_limit": false,
+  "mechanical_verification": {
+    "status": "passed",
+    "verified_at": "2026-09-24T07:30:37.876Z",
+    "source_hashes_match": true,
+    "draft_hashes_match": true,
+    "initial_draft_unchanged": true,
+    "counts_match": true,
+    "title_line_valid": true,
+    "range_checks_valid": true,
+    "versions_exactly_two": true,
+    "literary_quality_validated": false
+  }
+}

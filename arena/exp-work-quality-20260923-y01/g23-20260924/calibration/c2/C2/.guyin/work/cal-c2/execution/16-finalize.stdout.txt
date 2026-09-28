@@ -1,0 +1,18 @@
+{
+  "result": "D:/readbook-wpace/guyin-skills/arena/exp-work-quality-20260923-y01/g23-20260924/calibration/c2/C2/.guyin/work/cal-c2/result.json",
+  "phase": "reviewed",
+  "versions": [
+    {
+      "version": "v0001",
+      "sha256": "ec10a7aef84bb6eb8e6759257ec3484fd46df6368e843ebf6dce2bd06dc7f739",
+      "body_han": 1294,
+      "body_non_whitespace": 1547
+    },
+    {
+      "version": "v0002",
+      "sha256": "b6057154a95a3ce7f6b274c424015bac804a3a153c166303c13f7e9ff9a9708c",
+      "body_han": 1280,
+      "body_non_whitespace": 1533
+    }
+  ]
+}

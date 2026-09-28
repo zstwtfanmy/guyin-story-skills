@@ -1,0 +1,74 @@
+{
+  "book_title": "锅边",
+  "chapter_summaries": {},
+  "characters": {
+    "杜青": {
+      "abilities_resources": [
+        "习惯一次煮两人份的饭"
+      ],
+      "goal": "未提供当下意图；不预填邀请吃饭或其他未来选择",
+      "identity": "四十一岁，仍住原来的合租房",
+      "knowledge": [],
+      "location": "原合租房内",
+      "open_threads": [],
+      "relationships": [
+        "与程洁合住三年，程洁搬走并非闹翻，会互尝新买的东西，各有不让对方碰的生活习惯",
+        "两人不是互诉所有事的挚友，没有等待揭露的秘密"
+      ],
+      "state": "程洁敲门时刚洗完头，厨房里有饭香"
+    },
+    "程洁": {
+      "abilities_resources": [
+        "从事书籍排版",
+        "喜欢买大开本画册，为这些书付的搬家运费比买一张桌子贵",
+        "仍持原房备用钥匙，尚未交还"
+      ],
+      "goal": "交还备用钥匙，原以为说两句话就走；租小单间是为了一个人住",
+      "identity": "三十五岁，在家做书籍排版",
+      "knowledge": [
+        "杜青习惯一次煮两人份的饭",
+        "自己过去总嫌米饭偏硬，却会盛走锅边的一层"
+      ],
+      "location": "搬离原合租房后的第一个星期六傍晚，来到原房门外",
+      "open_threads": [
+        "备用钥匙待交还",
+        "新单间桌子尚未送到"
+      ],
+      "relationships": [
+        "与杜青合住三年，未闹翻，会互尝新买的东西，各有不让对方碰的生活习惯",
+        "两人不是互诉所有事的挚友，没有等待揭露的秘密"
+      ],
+      "state": "刚搬到步行十分钟外的小单间，有自己的灶，桌子未送到，这些天在窗台吃饭"
+    }
+  },
+  "context": {
+    "active_character_names": [
+      "程洁",
+      "杜青"
+    ],
+    "continuity_risks": [
+      "不能把程洁搬家写成与杜青闹翻；两人并非互诉所有事的挚友，也没有等待揭露的秘密"
+    ],
+    "long_term_constraints": [
+      "第三人称有限视角，全段只进入程洁的内心"
+    ],
+    "next_chapter_commitments": [],
+    "position": {
+      "scene": "原合租房门外；杜青刚洗完头，厨房有饭香",
+      "story_time": "程洁搬走后的第一个星期六傍晚，来交还备用钥匙，敲门时",
+      "volume": "独立场景",
+      "volume_start_chapter": 1
+    },
+    "recent_chapters": []
+  },
+  "evidence": {},
+  "foreshadow": {},
+  "geo": {},
+  "imported_through_chapter": 0,
+  "last_committed_chapter": 0,
+  "scenes": {},
+  "schema_version": 7,
+  "state_revision": 0,
+  "timeline": {},
+  "verdicts": {}
+}

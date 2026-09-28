@@ -1,0 +1,111 @@
+{
+  "schema_version": "1.0",
+  "route": "Y",
+  "review_type": "author_self_review_before_seal",
+  "independent_reviewer_completed": false,
+  "timestamp_source": "PUBLIC-REGISTER.json.created_at",
+  "source_provenance": {
+    "newly_composed_in_this_session": true,
+    "old_readme_read": false,
+    "old_questions_or_samples_read": false,
+    "reference_novels_read": false,
+    "research_audit_skill_profile_documents_read": false,
+    "session_history_or_memory_files_read": false,
+    "delegation_or_new_session_used": false,
+    "writing_skills_invoked": false,
+    "network_used": false,
+    "provenance_limit": "原创指本会话从零独立构思，未读取或改写已有样稿；不声称已穷尽外部作品并证明全球唯一。排除旧样本的判断仅依据用户提供的禁止场景及机制范围，没有打开旧包做相似性检索。宿主已自动提供系统与开发上下文、技能列表及记忆索引；未主动访问其对应资料，也未以其内容作为命题素材。"
+  },
+  "shared_specification": {
+    "chapter": 1,
+    "mode": "append",
+    "standalone": true,
+    "body_length": {
+      "min": 2500,
+      "max": 3500,
+      "unit": "Unicode Han",
+      "counting_expression": "[...body.matchAll(/\\p{Script=Han}/gu)].length",
+      "scope": "只统计生成作品正文，不统计标题；标点、数字、拉丁字母等非Han字符不计入。范围约束针对未来正文，不是题面字数。"
+    },
+    "pov": "第三人称有限视角；各题固定跟随指定主角，不进入其他人物内心",
+    "style_prescription": false,
+    "sample_prose_or_reference_answer_supplied": false,
+    "ending_supplied": false
+  },
+  "question_reviews": [
+    {
+      "id": "q1",
+      "path": "q1/brief.md",
+      "core_relationship": "成年夫妻，涉及双方与长辈的既有互助",
+      "social_setting": "普通租住家庭的共享居住空间与排班生活",
+      "pressure_source": "已经同意的短住因外部工期变动而延长，共用空间和个人时间尚未重新协商",
+      "Y_route_basis": "主角有职业以外的手作经历、交友习惯、旧物使用史和接受过亲人帮助的生活。伴侣对她能力的认识来自有限的简单缝补观察，而她有从拆衣到改制的独立经验。反差是熟人认知与实际生活能力的距离，不是神秘身份或竞技压制。",
+      "opening_basis": "提供的是已经到家的人员、已经调整的房间和此前尚未答复的请求；没有前作、上章结果或必须追溯的情节缺口。",
+      "agency_check": "既有的个人改制计划不等于要求本章完成。题面没有规定要改衣、解决空间问题、展示手艺、争吵、谅解、拒绝或迁就，也没有规定任何人的情绪与收尾。",
+      "supporting_character_check": "丈夫也把自己的工作设备搬出，并非只让妻子退让；长辈能自理，且过去切实照顾过主角。矛盾不依赖反派动机或任何人缺少基本常识。",
+      "professional_premise_check": "手艺来源于长期接触与日常实践，不规定材料极限、机器操作细节或神奇修复；借住缘由只是已通知的施工延期，不依赖健康、法律或财务结论。",
+      "revision_before_seal": "自审时补明伴侣只见过简单缝补的事实，使能力与熟人认知之间的距离有题面依据；未增加能力展示或情节结果要求。",
+      "passes": true
+    },
+    {
+      "id": "q2",
+      "path": "q2/brief.md",
+      "core_relationship": "成年旧友在长期疏于见面后共同参加活动",
+      "social_setting": "对公众开放的周末杂物集市及普通服务业生活背景",
+      "pressure_source": "共有摊位的空间条件发生变化，同时旧友公开沿用学生时代对主角的认知",
+      "Y_route_basis": "主角拥有十一年日常接待与人员协调经验，与学生时代沉默、由朋友出面交涉的旧印象有距离；旧收藏、合租生活、换班和学画让人物不只剩服务岗位。友谊有双向帮助的实际历史，不以成功者欺侮落魄者为必要前提。",
+      "opening_basis": "两人已到现场但尚未摆开，现状足够开启一段新故事；不提供后续顾客事件、危机顺序或营业结果。",
+      "agency_check": "没有指定如何摆桌、定价或收款，没有要求拆穿旧友、协调全场、卖出物品、证明自我或修复关系。介绍卡的配文只是既成事实，不规定主角是否在意或如何回应。",
+      "supporting_character_check": "场地缩减是所有摊位收到的统一变更，两人均已知情，并非某人故意失误。合照使用事先征得同意，旧友的过时认知可以来自多年缺少实际相处，不需要恶意或降智。",
+      "professional_premise_check": "早餐厅经验仅限观察、询问和协调，不含食品安全处置知识。集市条件是虚构故事的具体现场事实，不冒充行业法规或市场经营通则。",
+      "revision_before_seal": "自审未发现需要进一步锁定故事选择的缺口，保留现有开放处境。",
+      "passes": true
+    }
+  ],
+  "cross_question_review": {
+    "same_route": true,
+    "meaningful_variation": true,
+    "variation_basis": "一题是共同居住中夫妻对个人时间与手艺的日常认识，另一题是公共活动中旧友对成年变化的滞后认识；核心关系、生活环境、压力来源均不同。两题都让能力反差进入关系经验，而不预订炫技或打脸结果。",
+    "shared_pov_specification": true,
+    "adults_are_core": true,
+    "first_chapters_without_prior_text": true,
+    "not_variants_of_each_other": true
+  },
+  "exclusion_review": {
+    "excluded_scenarios": [
+      "武馆比武",
+      "藏实力上门挑战",
+      "快递驿站冷链误拿",
+      "眼镜验配",
+      "跤社",
+      "社区影院放映",
+      "旧邻居归还钥匙",
+      "乐队排练"
+    ],
+    "all_absent": true,
+    "mechanism_review": "两题均没有上门比试或能力竞赛，没有错拿敏感物件引发专业危机，没有专业诊断展示，没有放映、归还钥匙或排练事件。人物能力不是用来保证胜过对手的通关钥匙；空间受限是日常处境，不指定以技巧逆转。",
+    "old_content_comparison_performed": false,
+    "reason": "按用户隔离要求不读取旧brief、anchor、meta或实验正文；只能针对用户明示的排除范围进行机制级自审。"
+  },
+  "constraint_review": {
+    "background_present_facts_and_immediate_situation_only": true,
+    "no_solution_prescribed": true,
+    "no_emotion_prescribed": true,
+    "no_ending_prescribed": true,
+    "no_required_event_queue": true,
+    "no_itemized_aesthetic_quotas": true,
+    "no_specific_prose_style_or_signature_sentences": true,
+    "no_supporting_character_stupidity_required": true,
+    "no_unverified_medical_legal_financial_or_high_risk_technical_dependency": true,
+    "no_forced_skill_demonstration": true,
+    "no_novel_body_generated": true
+  },
+  "release_assessment": {
+    "author_self_review_passed": true,
+    "ready_for_independent_review": true,
+    "g2_or_g3_started_by_this_session": false,
+    "g2_has_not_started_globally_verified": false,
+    "timing_limit": "本会话在制作封存包时没有启动G2/G3；无法检查或证明其他会话何时启动G2。公共封存时刻供主会话核验先后顺序。",
+    "not_an_independent_review_certificate": true
+  }
+}

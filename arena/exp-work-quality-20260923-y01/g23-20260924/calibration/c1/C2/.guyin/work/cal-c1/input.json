@@ -1,0 +1,119 @@
+{
+  "schema_version": 1,
+  "target": {
+    "kind": "long",
+    "chapter": 1,
+    "title": "锅边",
+    "mode": "append"
+  },
+  "authorization": {
+    "write": {
+      "source_id": "U1",
+      "quote": "指定封存包不满足同路线双原创题条件，那你先帮我处理这个然后再进行G2/G3"
+    },
+    "selection": null,
+    "publish": null
+  },
+  "sources": [
+    {
+      "id": "U1",
+      "kind": "user",
+      "text": "指定封存包不满足同路线双原创题条件，那你先帮我处理这个然后再进行G2/G3"
+    },
+    {
+      "id": "F1",
+      "kind": "file",
+      "path": "inputs/brief.txt",
+      "sha256": "1495cf513ebe7c76833faa9e0ea97a4df6c8d3afb5248c5a9c556e9e62e5b99d"
+    },
+    {
+      "id": "F2",
+      "kind": "file",
+      "path": "inputs/profile.txt",
+      "sha256": "2e442886becb6aeefecd9e987d70bff2daed226e98bfd5c1aeda7f5147fbd48a"
+    },
+    {
+      "id": "F3",
+      "kind": "file",
+      "path": "inputs/generation-protocol.txt",
+      "sha256": "f739fbf03ee2e12c998cb84cf2cc21dccb93580046cb70bcff7d26f2700ec432"
+    },
+    {
+      "id": "F4",
+      "kind": "file",
+      "path": "inputs/framework-protocol.txt",
+      "sha256": "7fb5bb9ca7ccee0c7e8301140164ad94ed6c206cdee249254f4ace703ff3c6a7"
+    },
+    {
+      "id": "F5",
+      "kind": "file",
+      "path": "大纲/批次公约.md",
+      "sha256": "f6e3dfba693357accdf05b5849e2acfeffe5b66e8291ab0fce62e504d3f10159"
+    },
+    {
+      "id": "F6",
+      "kind": "file",
+      "path": "设定/题材定位.md",
+      "sha256": "c46effe353e33701dd1110a9a7d69765c89fb03cd0ed3c12ec59aef2cfa9108d"
+    },
+    {
+      "id": "F7",
+      "kind": "file",
+      "path": "追踪/_tracking-state.json",
+      "sha256": "6200d0a052dc80726f818e97fa39d9cdcb5a6d7db4841439fd56091ac3f35d33"
+    },
+    {
+      "id": "F8",
+      "kind": "file",
+      "path": "追踪/上下文.md",
+      "sha256": "883fc1a01aa6ffc4c8e15a2c9ba28f94da63d81115f751f43208b48830975bf3"
+    },
+    {
+      "id": "F9",
+      "kind": "file",
+      "path": "追踪/角色状态/程洁.md",
+      "sha256": "47fb7959d65b81ed5ef77fb412e2a963b8af739e1ac35019a6b9aeac90606892"
+    },
+    {
+      "id": "F10",
+      "kind": "file",
+      "path": "追踪/角色状态/杜青.md",
+      "sha256": "167c23e8a4f81459bf125d9dec493b84e7404f25b244912ac5607d36a9d63930"
+    },
+    {
+      "id": "F11",
+      "kind": "file",
+      "path": "追踪/待审台账.md",
+      "sha256": "3a77c509cd450e3b91a5666381f9dcf8d9c3f5a9d9a509a1aee829dac997df28"
+    }
+  ],
+  "facts": [
+    {
+      "text": "程洁，三十五岁，在家做书籍排版。她刚从一间合租房搬到步行十分钟外的小单间，租小房子是为了一个人住，并非和室友闹翻。她现在有自己的灶，但桌子还没送来；这些天吃饭得用窗台。她喜欢买大开本画册，搬家时为这些书付的运费比买一张桌子贵。",
+      "source_id": "F1"
+    },
+    {
+      "text": "杜青，四十一岁，仍住在原来的房子。两人合住了三年，会互相尝新买的东西，也各自有不肯让人碰的生活习惯。杜青习惯一次煮两人份的饭，程洁以前总嫌米饭偏硬，却会把锅边的那一层盛走。她们不是互相倾诉所有事的挚友，也没有等着揭露的秘密。",
+      "source_id": "F1"
+    },
+    {
+      "text": "搬走后的第一个星期六傍晚，程洁来把备用钥匙交还给杜青。她原以为说两句话就走，敲门时杜青正洗完头，厨房里有饭香。钥匙是日常物件，不强制象征某种道理或触发关系转折。到此之后发生什么、待多久、谈什么、是否留下吃饭都由作者决定，没有必须发生的冲突、温情升华或解决任务。",
+      "source_id": "F1"
+    }
+  ],
+  "locks": [],
+  "allowed_reuse": [],
+  "outline": null,
+  "style": {
+    "profile_id": "relationship-payoff",
+    "profile_version": 2,
+    "selection_basis": "framework-default",
+    "effective_features": [
+      "从人物眼下在意的事进入故事，让读者既愿意跟这个人相处，也愿意看其如何办事。能力通过具体观察、判断、行动与真实回应显出来，不要连续用旁人认证代替主角贡献；配角按自身利益和关系反应，不为成就主角统一降智。主角在“办事的人”之外还有“过日子的人”：会在小事上较真、自嘲、嘴馋或心软，对身边人有不兑换成剧情收益的反应——可独立成场，也可就在办事当口，不必另腾闲戏。内心不只写战术推演：私人的怕、委屈、得意、牵挂与自欺同样可写；直接展开、转述、自由间接体或物件带出，按本书视角与当段体验选用，不分高低，不统一压成“心想”标记或身体短拍。关系有摩擦与亲疏变化，日常相处、照应与拌嘴本身是阅读回报。幽默来源很宽：立场错位、身份反差、叙述者促狭的比喻（含跨时代影视梗、略带擦边的联想）都算数，书内梗优先——时代约束只管场景里的物件与常识，管不住叙述者的舌头；要求只是自然带出、不堆段子。允许心理、判断、较长对白与叙述调侃，句长和叙述距离随场景自然变化。该兑现时给清楚的行动与结果，冷却场保留人物生活，不把每章都写成“低调—误解—震惊”；节制章末判词，允许场景以动作、半句对白或未解释的物件收尾。这是叙事方向，不预定本章情节（研究状态：对标书原文未验证，以上为通用叙事机制，非作家风格复刻）。"
+    ]
+  },
+  "wordcount": {
+    "min": 1000,
+    "max": 2400
+  }
+}

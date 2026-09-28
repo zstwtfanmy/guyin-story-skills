@@ -1,0 +1,21 @@
+{
+  "label": "04-start",
+  "command": [
+    "python",
+    "-B",
+    "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\framework\\skills\\guyin-write\\scripts\\guyin-author-session.py",
+    "start",
+    "--project",
+    "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c1\\C2",
+    "--run",
+    "cal-c1",
+    "--input",
+    ".guyin/work/cal-c1/input.json"
+  ],
+  "cwd": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c1\\C2",
+  "started_at": "2026-09-24T07:26:39.835961+00:00",
+  "ended_at": "2026-09-24T07:26:40.165792+00:00",
+  "exit_code": 0,
+  "stdout_path": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c1\\C2\\.guyin\\work\\cal-c1\\logs\\04-start.stdout.txt",
+  "stderr_path": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c1\\C2\\.guyin\\work\\cal-c1\\logs\\04-start.stderr.txt"
+}

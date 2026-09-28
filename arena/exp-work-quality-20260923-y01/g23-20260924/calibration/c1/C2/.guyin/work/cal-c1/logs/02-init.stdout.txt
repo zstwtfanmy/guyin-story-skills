@@ -1,0 +1,1 @@
+{"last_committed_chapter": 0, "state_revision": 0}

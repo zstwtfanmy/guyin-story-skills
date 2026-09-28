@@ -1,0 +1,121 @@
+{
+  "experiment": "G2 / Y路线校准C2 / A简约直写",
+  "status": "generation_complete_awaiting_user_review",
+  "versions": [
+    {
+      "path": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c2\\A\\drafts\\v0001.md",
+      "sha256": "8fb111b82fbe0be31d209af856c5fb8db90a80fbb98271ba987352a92e07677d",
+      "bytes": 5001,
+      "body_han": 1372,
+      "body_non_whitespace": 1629,
+      "framework_wordcount": null,
+      "first_saved_at": "2026-09-24T07:39:07.332Z",
+      "first_measured_at": "2026-09-24T07:39:20.249Z",
+      "unchanged_since_first_measurement": true,
+      "han_within_requested_range": true,
+      "non_whitespace_within_engineering_range": true
+    },
+    {
+      "path": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c2\\A\\drafts\\v0002.md",
+      "sha256": "178d9e7d56f9c3ec9175e5e17a0aaf9ca4dd0c3eb47956f16254dd193f29d8fc",
+      "bytes": 5025,
+      "body_han": 1381,
+      "body_non_whitespace": 1637,
+      "framework_wordcount": null,
+      "first_saved_at": "2026-09-24T07:40:51.772Z",
+      "first_measured_at": "2026-09-24T07:41:13.746Z",
+      "unchanged_since_first_measurement": true,
+      "han_within_requested_range": true,
+      "non_whitespace_within_engineering_range": true
+    }
+  ],
+  "selected_draft": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c2\\A\\drafts\\v0002.md",
+  "selection_authority": "执行者仅选择实验展示版本；不是用户选稿或发布授权",
+  "revision": {
+    "count": 1,
+    "net_benefit": "钱瑛提出保留热饭座位的条件，去掉设备纠错造成的廉价上风；修清茶杯、试坐及下周排班连续性",
+    "cost": "减少一处职业联想，协商条件略更显性；正文增加9 Han和8非空白字符",
+    "assessment": "执行者编辑判断，不是用户质量验收"
+  },
+  "review": {
+    "path": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c2\\A\\review.md",
+    "sha256": "61fa2f8ae474b81e3ed5c9a11214c803357e7c266e1c929c122eeac1a2cc893d",
+    "full_read_versions": [
+      "v0001",
+      "v0002"
+    ]
+  },
+  "counting": {
+    "han": "Remove first title line, then count Unicode Script=Han code points",
+    "non_whitespace": "Remove first title line, then count Unicode non-whitespace code points",
+    "framework_wordcount": null,
+    "framework_wordcount_reason": "禁止读取框架或技能，未调用框架计数器；不以其他口径冒充"
+  },
+  "sources": [
+    {
+      "path": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c2\\A\\inputs\\brief.txt",
+      "sha256": "c12aa5f387886540fb62a5abbbc8d7c8a50cf9e272082765ec6bacfe6ff2293d",
+      "bytes": 1616,
+      "loaded": "Read tool; complete file"
+    },
+    {
+      "path": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c2\\A\\inputs\\profile.txt",
+      "sha256": "2e442886becb6aeefecd9e987d70bff2daed226e98bfd5c1aeda7f5147fbd48a",
+      "bytes": 1613,
+      "loaded": "Read tool; complete file"
+    },
+    {
+      "path": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c2\\A\\inputs\\generation-protocol.txt",
+      "sha256": "f739fbf03ee2e12c998cb84cf2cc21dccb93580046cb70bcff7d26f2700ec432",
+      "bytes": 3354,
+      "loaded": "Read tool; complete file"
+    }
+  ],
+  "host_auto_injection": {
+    "status": "unknown",
+    "sha256": null,
+    "bytes": null,
+    "note": "宿主可见上下文含自动注入的技能列表与记忆摘要；未主动访问、写入或援引记忆，未调用技能；完整注入范围及其哈希不可核实，不能宣称空白上下文"
+  },
+  "execution": {
+    "model": "沿用当前默认模型，未切换",
+    "model_id": null,
+    "temperature": null,
+    "seed": null,
+    "tokens": null,
+    "parameter_visibility": "不可核实的型号、参数与token量均不推测",
+    "visible_tool_calls": 14,
+    "visible_tool_calls_by_tool": {
+      "Bash": 5,
+      "Read": 5,
+      "Write": 3,
+      "Edit": 1
+    },
+    "visible_failures": 0,
+    "visible_retries": 0,
+    "tool_count_scope": "本会话可见调用，含最终生成并校验本结果的调用；不包含不可见宿主内部行为",
+    "delegated": false,
+    "network_used": false,
+    "installed": false,
+    "permissions_changed": false,
+    "published": false,
+    "git_used": false
+  },
+  "time": {
+    "first_tool_started_at": null,
+    "recording_started_at": "2026-09-24T07:38:07.557Z",
+    "finished_at": "2026-09-24T07:42:18.771Z",
+    "recorded_elapsed_seconds": 251.214,
+    "note": "目录ls和三次输入全文Read早于时钟登记，首调用精确时间不可见；记录时段不冒充完整会话耗时"
+  },
+  "limits": {
+    "tool_calls_max": 25,
+    "elapsed_minutes_max": 30
+  },
+  "unresolved": [
+    "文学质量与最终验收待用户后置判断，不评分或生成L等级",
+    "两段整饬内心独白是否显得作者代言，留待用户判断；未证明全部座位体验相同",
+    "框架wordcount、完整宿主注入SHA及首工具精确起始时间不可核实"
+  ],
+  "blockers": []
+}

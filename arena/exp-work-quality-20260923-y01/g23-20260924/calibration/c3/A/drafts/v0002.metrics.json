@@ -1,0 +1,12 @@
+{
+  "path": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c3\\A\\drafts\\v0002.md",
+  "sha256": "91ed710492e9ace0694fbf2511b3cf49a35ba1027a3c843f2e19a89e5cb312eb",
+  "bytes": 4956,
+  "body_han_count": 1334,
+  "body_non_whitespace_count": 1611,
+  "measured_at": "2026-09-24T07:41:14.334Z",
+  "framework_wordcount": null,
+  "framework_wordcount_note": "Framework access and invocation are prohibited by this condition.",
+  "han_range_met": true,
+  "visible_guardrail_met": true
+}

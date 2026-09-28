@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "assigned_at": "2026-09-24T07:31:47.765128+00:00",
+  "method": "secrets.randbelow, labels reserved before holdout generation",
+  "reader_blinding": "labels hide condition only; plot/text may reveal origin; no strict double-blind claim",
+  "questions": {
+    "q1": {
+      "甲": "X",
+      "乙": "A"
+    },
+    "q2": {
+      "甲": "A",
+      "乙": "X"
+    }
+  }
+}

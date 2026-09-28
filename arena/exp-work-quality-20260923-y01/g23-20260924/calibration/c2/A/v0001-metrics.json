@@ -1,0 +1,12 @@
+{
+  "path": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c2\\A\\drafts\\v0001.md",
+  "sha256": "8fb111b82fbe0be31d209af856c5fb8db90a80fbb98271ba987352a92e07677d",
+  "bytes": 5001,
+  "body_han": 1372,
+  "body_non_whitespace": 1629,
+  "framework_wordcount": null,
+  "framework_wordcount_note": "Not executed: framework files and writing skills are outside the authorized read scope.",
+  "first_saved_at": "2026-09-24T07:39:07.332Z",
+  "measured_at": "2026-09-24T07:39:20.249Z",
+  "visible_tool_calls_through_this_call": 7
+}

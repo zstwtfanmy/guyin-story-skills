@@ -1,0 +1,153 @@
+{
+  "schema_version": 1,
+  "target": {
+    "kind": "long",
+    "chapter": 1,
+    "title": "面要趁热",
+    "mode": "append"
+  },
+  "authorization": {
+    "write": {
+      "source_id": "U1",
+      "quote": "指定封存包不满足同路线双原创题条件，那你先帮我处理这个然后再进行G2/G3"
+    },
+    "selection": null,
+    "publish": null
+  },
+  "sources": [
+    {
+      "id": "U1",
+      "kind": "user",
+      "text": "指定封存包不满足同路线双原创题条件，那你先帮我处理这个然后再进行G2/G3"
+    },
+    {
+      "id": "F1",
+      "kind": "file",
+      "path": "inputs/brief.txt",
+      "sha256": "ea70575d1be0a11c40ef0717e5c6dc01e40e02add919ff4d1b7aaf64afb0a103"
+    },
+    {
+      "id": "F2",
+      "kind": "file",
+      "path": "inputs/profile.txt",
+      "sha256": "2e442886becb6aeefecd9e987d70bff2daed226e98bfd5c1aeda7f5147fbd48a"
+    },
+    {
+      "id": "F3",
+      "kind": "file",
+      "path": "inputs/generation-protocol.txt",
+      "sha256": "f739fbf03ee2e12c998cb84cf2cc21dccb93580046cb70bcff7d26f2700ec432"
+    },
+    {
+      "id": "F4",
+      "kind": "file",
+      "path": "inputs/framework-protocol.txt",
+      "sha256": "7fb5bb9ca7ccee0c7e8301140164ad94ed6c206cdee249254f4ace703ff3c6a7"
+    },
+    {
+      "id": "F5",
+      "kind": "file",
+      "path": "大纲/批次公约.md",
+      "sha256": "8069170e621259a43845f9f8623aa76bf53d91afc3f2c4f750cfc359656f5bf9"
+    },
+    {
+      "id": "F6",
+      "kind": "file",
+      "path": "设定/题材定位.md",
+      "sha256": "1bcd16903b6fe6789daa5dd23e067cb6844e937ed1c3683c24fd425fd717f464"
+    },
+    {
+      "id": "F7",
+      "kind": "file",
+      "path": "追踪/上下文.md",
+      "sha256": "fb7c2f8c789f6c95aca7c8dc6ce5e8a379dd2976e044ee1e92c700050831d0a4"
+    },
+    {
+      "id": "F8",
+      "kind": "file",
+      "path": "追踪/角色状态/赵禾.md",
+      "sha256": "ec15563ff9716dec3d8dbf31f9948d19540c2fe7a6ae90e6505cee59732d4ef8"
+    },
+    {
+      "id": "F9",
+      "kind": "file",
+      "path": "追踪/角色状态/苏笛.md",
+      "sha256": "ce4979b3acb643bd76edf2c6c60540ddfa63caa02bd4975711acd88cf0cd8853"
+    },
+    {
+      "id": "F10",
+      "kind": "file",
+      "path": "追踪/角色状态/莫圆.md",
+      "sha256": "5c3580c34b790a441f20289103791470967d6a26ea29bbb05bce3a7ef1085cd1"
+    },
+    {
+      "id": "F11",
+      "kind": "file",
+      "path": "追踪/_tracking-state.json",
+      "sha256": "8a10ac08cf004127b6fcda7dc9c40a2c837e091ba8bc2a186d271ebc52c6c256"
+    },
+    {
+      "id": "F12",
+      "kind": "file",
+      "path": "追踪/待审台账.md",
+      "sha256": "3a77c509cd450e3b91a5666381f9dcf8d9c3f5a9d9a509a1aee829dac997df28"
+    }
+  ],
+  "facts": [
+    {
+      "text": "赵禾二十九岁，在小公司做会计，业余弹贝斯；明早须处理未完成的表。",
+      "source_id": "F1"
+    },
+    {
+      "text": "苏笛与赵禾同龄，是大学以来一起玩音乐的朋友，曾合租后各自搬走。",
+      "source_id": "F1"
+    },
+    {
+      "text": "莫圆三十三岁，主唱，常联系演出，有不愿一直贴钱的顾虑。",
+      "source_id": "F1"
+    },
+    {
+      "text": "小乐队不指望靠它谋生，但各人认真在意的地方不同。",
+      "source_id": "F1"
+    },
+    {
+      "text": "首歌莫圆忘词停了几拍，苏笛赵禾保持节奏，莫圆后来跟上；后几首顺利。",
+      "source_id": "F1"
+    },
+    {
+      "text": "场地方照约定付原定演出费，无扣钱、无突然爆红的机会。",
+      "source_id": "F1"
+    },
+    {
+      "text": "苏笛当时笑了，莫圆看到了；笑的用意未知。",
+      "source_id": "F1"
+    },
+    {
+      "text": "赵禾演出前答应散场后陪苏笛吃面。",
+      "source_id": "F1"
+    },
+    {
+      "text": "三人现于酒吧后门窄檐下收拾乐器箱，雨未停，店员已拿出水和外套。",
+      "source_id": "F1"
+    },
+    {
+      "text": "赵禾手指酸，手机有同事消息；莫圆和苏笛还没私下谈过那几拍。",
+      "source_id": "F1"
+    }
+  ],
+  "locks": [],
+  "allowed_reuse": [],
+  "outline": null,
+  "style": {
+    "profile_id": "relationship-payoff",
+    "profile_version": 2,
+    "selection_basis": "framework-default",
+    "effective_features": [
+      "从人物眼下在意的事进入故事，让读者既愿意跟这个人相处，也愿意看其如何办事。能力通过具体观察、判断、行动与真实回应显出来，不要连续用旁人认证代替主角贡献；配角按自身利益和关系反应，不为成就主角统一降智。主角在“办事的人”之外还有“过日子的人”：会在小事上较真、自嘲、嘴馋或心软，对身边人有不兑换成剧情收益的反应——可独立成场，也可就在办事当口，不必另腾闲戏。内心不只写战术推演：私人的怕、委屈、得意、牵挂与自欺同样可写；直接展开、转述、自由间接体或物件带出，按本书视角与当段体验选用，不分高低，不统一压成“心想”标记或身体短拍。关系有摩擦与亲疏变化，日常相处、照应与拌嘴本身是阅读回报。幽默来源很宽：立场错位、身份反差、叙述者促狭的比喻（含跨时代影视梗、略带擦边的联想）都算数，书内梗优先——时代约束只管场景里的物件与常识，管不住叙述者的舌头；要求只是自然带出、不堆段子。允许心理、判断、较长对白与叙述调侃，句长和叙述距离随场景自然变化。该兑现时给清楚的行动与结果，冷却场保留人物生活，不把每章都写成“低调—误解—震惊”；节制章末判词，允许场景以动作、半句对白或未解释的物件收尾。这是叙事方向，不预定本章情节（研究状态：对标书原文未验证，以上为通用叙事机制，非作家风格复刻）。"
+    ]
+  },
+  "wordcount": {
+    "min": 1000,
+    "max": 2400
+  }
+}

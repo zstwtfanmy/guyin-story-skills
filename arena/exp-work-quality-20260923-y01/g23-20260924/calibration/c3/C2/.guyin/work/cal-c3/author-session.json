@@ -1,0 +1,82 @@
+{
+  "schema_version": 1,
+  "run_id": "cal-c3",
+  "input_path": ".guyin/work/cal-c3/input.json",
+  "input_sha256": "f09236c8d7ebde8bebafce5dcbe7865d5f8150cd045489aae1fedabe8ec17059",
+  "phase": "reviewed",
+  "baseline": {
+    "state_revision": 0,
+    "state": {
+      "path": "追踪/_tracking-state.json",
+      "sha256": "8a10ac08cf004127b6fcda7dc9c40a2c837e091ba8bc2a186d271ebc52c6c256"
+    },
+    "prose": {
+      "dir": "正文",
+      "files": []
+    },
+    "sources": [
+      {
+        "path": "inputs/brief.txt",
+        "sha256": "ea70575d1be0a11c40ef0717e5c6dc01e40e02add919ff4d1b7aaf64afb0a103"
+      },
+      {
+        "path": "inputs/profile.txt",
+        "sha256": "2e442886becb6aeefecd9e987d70bff2daed226e98bfd5c1aeda7f5147fbd48a"
+      },
+      {
+        "path": "inputs/generation-protocol.txt",
+        "sha256": "f739fbf03ee2e12c998cb84cf2cc21dccb93580046cb70bcff7d26f2700ec432"
+      },
+      {
+        "path": "inputs/framework-protocol.txt",
+        "sha256": "7fb5bb9ca7ccee0c7e8301140164ad94ed6c206cdee249254f4ace703ff3c6a7"
+      },
+      {
+        "path": "大纲/批次公约.md",
+        "sha256": "8069170e621259a43845f9f8623aa76bf53d91afc3f2c4f750cfc359656f5bf9"
+      },
+      {
+        "path": "设定/题材定位.md",
+        "sha256": "1bcd16903b6fe6789daa5dd23e067cb6844e937ed1c3683c24fd425fd717f464"
+      },
+      {
+        "path": "追踪/上下文.md",
+        "sha256": "fb7c2f8c789f6c95aca7c8dc6ce5e8a379dd2976e044ee1e92c700050831d0a4"
+      },
+      {
+        "path": "追踪/角色状态/赵禾.md",
+        "sha256": "ec15563ff9716dec3d8dbf31f9948d19540c2fe7a6ae90e6505cee59732d4ef8"
+      },
+      {
+        "path": "追踪/角色状态/苏笛.md",
+        "sha256": "ce4979b3acb643bd76edf2c6c60540ddfa63caa02bd4975711acd88cf0cd8853"
+      },
+      {
+        "path": "追踪/角色状态/莫圆.md",
+        "sha256": "5c3580c34b790a441f20289103791470967d6a26ea29bbb05bce3a7ef1085cd1"
+      },
+      {
+        "path": "追踪/_tracking-state.json",
+        "sha256": "8a10ac08cf004127b6fcda7dc9c40a2c837e091ba8bc2a186d271ebc52c6c256"
+      },
+      {
+        "path": "追踪/待审台账.md",
+        "sha256": "3a77c509cd450e3b91a5666381f9dcf8d9c3f5a9d9a509a1aee829dac997df28"
+      }
+    ]
+  },
+  "draft": {
+    "path": ".guyin/work/cal-c3/drafts/v0001.md",
+    "complete": true,
+    "sha256": "4282127fd56c7683f42a3b3286e754e898b72e3bda19531828fbde625fd736b7"
+  },
+  "review": {
+    "path": ".guyin/work/cal-c3/review.md",
+    "sha256": "27ac6326455ada8edc29249bc7af2400ab9210667db3a18ab9a730013eea26e6",
+    "candidate_sha256": "4282127fd56c7683f42a3b3286e754e898b72e3bda19531828fbde625fd736b7"
+  },
+  "transaction": null,
+  "check_evidence": null,
+  "plan_patch": null,
+  "next_action": "G2当前会话已全文审读；保留初稿，等待后置用户质量验收；不申请ready、不发布。"
+}

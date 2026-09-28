@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "book_title": "门边的位置",
+  "last_chapter": 0,
+  "context": {
+    "position": {
+      "volume": "社区放映",
+      "volume_start_chapter": 1,
+      "story_time": "今晚开场前十五分钟，梁序刚到场",
+      "scene": "社区活动室"
+    },
+    "long_term_constraints": ["第三人称有限，全段只进入梁序的内心。", "影片和场地均有许可，无需争论许可。"],
+    "active_character_names": ["梁序", "钱瑛"],
+    "continuity_risks": ["梁序不愿再排满每个周末，尚未向钱瑛说清；不能将此视为钱瑛已经知道。", "梁序只懂基本投影操作与画面取舍，不具备修好所有设备的能力。"],
+    "recent_chapters": [],
+    "next_chapter_commitments": []
+  },
+  "character_snapshots": {
+    "梁序": {
+      "identity": "三十二岁，平日给小店拍商品图，周末在社区活动室帮忙放电影一年多",
+      "location": "社区活动室，刚到场",
+      "goal": "处理眼前投影画面遮挡和座位偏向；不愿再把每个周末排满",
+      "state": "发现白天调好的画面被桌上物件挡住一部分，有人坐的位置不正；尚未向钱瑛说清周末安排",
+      "abilities_resources": ["基本投影操作", "画面取舍", "给小店拍商品图的日常经验"],
+      "relationships": ["与固定搭档钱瑛工作配合熟", "有时厌烦别人默认自己会一直在"],
+      "knowledge": ["白天自己调好了投影画面", "到场看见钱瑛重新排成的带小桌座位组，已有观众坐下"],
+      "open_threads": ["投影画面遮挡与座位偏向尚待面对", "尚未向钱瑛说清不想再排满每个周末"]
+    },
+    "钱瑛": {
+      "identity": "五十六岁，退休，曾在电影院做售票员",
+      "location": "社区活动室",
+      "goal": "让几位熟客一边吃自带的东西一边看电影",
+      "state": "开场前十五分钟将已经排好的椅子重新挪成带小桌的几组，已有观众坐下；认为无需像商业影院那样死板",
+      "abilities_resources": ["熟悉常来的观众", "电影院售票工作经历"],
+      "relationships": ["与梁序工作配合熟", "不喜欢梁序把一句问题说成一串技术词", "习惯替晚到者留靠走道的位置，自己常坐在门边"],
+      "knowledge": ["已经有人坐下", "几位熟客带了吃食"],
+      "open_threads": ["自己排好的带桌座位与梁序白天调好的投影布置发生冲突"]
+    }
+  },
+  "foreshadow": [],
+  "timeline_events": [],
+  "verdicts": [],
+  "scenes": []
+}

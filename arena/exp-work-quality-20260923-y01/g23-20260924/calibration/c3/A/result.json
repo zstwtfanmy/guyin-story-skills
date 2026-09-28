@@ -1,0 +1,120 @@
+{
+  "status": "completed_pending_user_quality_review",
+  "selected_draft": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c3\\A\\drafts\\v0002.md",
+  "selection_authority": "执行者仅选作实验展示；非用户选稿，未publish。",
+  "versions": [
+    {
+      "path": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c3\\A\\drafts\\v0001.md",
+      "sha256": "68e844844e71212c790541b822f81e7978482502905a94687c0ec2a3522b7523",
+      "bytes": 4965,
+      "body_han_count": 1338,
+      "body_non_whitespace_count": 1614,
+      "measured_at": "2026-09-24T07:39:42.306Z",
+      "framework_wordcount": null,
+      "framework_wordcount_note": "Framework access and invocation are prohibited by this condition.",
+      "han_range_met": true,
+      "visible_guardrail_met": true
+    },
+    {
+      "path": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c3\\A\\drafts\\v0002.md",
+      "sha256": "91ed710492e9ace0694fbf2511b3cf49a35ba1027a3c843f2e19a89e5cb312eb",
+      "bytes": 4956,
+      "body_han_count": 1334,
+      "body_non_whitespace_count": 1611,
+      "measured_at": "2026-09-24T07:41:14.334Z",
+      "framework_wordcount": null,
+      "framework_wordcount_note": "Framework access and invocation are prohibited by this condition.",
+      "han_range_met": true,
+      "visible_guardrail_met": true
+    }
+  ],
+  "counting_rule": "剔除首行Markdown标题后，以Unicode Script=Han计汉字，以Unicode码点计非空白字符；不含标题。",
+  "substantive_revision_count": 1,
+  "revision": {
+    "changed_lines": [
+      5,
+      25,
+      109
+    ],
+    "net_benefit": "修正糖纸与手机、水杯前后矛盾，澄清水瓶数量关系；不改剧情或解释笑意。",
+    "cost": "失去手机黏糖的触感和直接让出自己饮水的亲密；糖的落点与后面对话略重复。",
+    "original_preserved": true,
+    "only_declared_changes": true
+  },
+  "review_path": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c3\\A\\review.md",
+  "sources": [
+    {
+      "path": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c3\\A\\inputs\\brief.txt",
+      "bytes": 1681,
+      "sha256": "ea70575d1be0a11c40ef0717e5c6dc01e40e02add919ff4d1b7aaf64afb0a103",
+      "loaded": "full text via Read; full bytes via Node for hash"
+    },
+    {
+      "path": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c3\\A\\inputs\\profile.txt",
+      "bytes": 1613,
+      "sha256": "2e442886becb6aeefecd9e987d70bff2daed226e98bfd5c1aeda7f5147fbd48a",
+      "loaded": "full text via Read; full bytes via Node for hash"
+    },
+    {
+      "path": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c3\\A\\inputs\\generation-protocol.txt",
+      "bytes": 3354,
+      "sha256": "f739fbf03ee2e12c998cb84cf2cc21dccb93580046cb70bcff7d26f2700ec432",
+      "loaded": "full text via Read; full bytes via Node for hash"
+    }
+  ],
+  "host_auto_injected_context": {
+    "verification": "unknown",
+    "sha256": null,
+    "used_as_story_source": false
+  },
+  "timing": {
+    "session_started_at": null,
+    "start_note": "The first four tool calls occurred before this clock observation; their exact timestamps are not available.",
+    "first_clock_observation_at": "2026-09-24T07:38:34.314Z",
+    "completed_at": "2026-09-24T07:42:03.564Z",
+    "observed_elapsed_seconds": 209.25,
+    "total_session_elapsed_seconds": null
+  },
+  "tools": {
+    "visible_calls_including_finalization": 13,
+    "by_tool": {
+      "Bash": 5,
+      "Read": 4,
+      "Write": 3,
+      "Edit": 1
+    },
+    "failed_calls": 0,
+    "retries": 0,
+    "delegations": 0,
+    "skill_invocations": 0,
+    "limit": 25
+  },
+  "execution": {
+    "default_model_unchanged": true,
+    "model_id": null,
+    "temperature": null,
+    "seed": null,
+    "tokens": null,
+    "parameter_note": "模型身份、参数及token量没有可核实可见值。",
+    "network_used": false,
+    "installed": false,
+    "permissions_or_configuration_changed": false,
+    "published": false,
+    "git_used": false,
+    "memory_tools_used": false,
+    "wall_clock_limit_minutes": 30,
+    "budget_stop_triggered": false
+  },
+  "quality": {
+    "user_acceptance": "pending",
+    "score": null,
+    "level": null
+  },
+  "unresolved": [
+    "苏笛两次表示需要回想，可能给读者刻意扣住答案的感觉。",
+    "后半段糖、葱、辣椒的连续使用可能显得安排过整齐。",
+    "框架wordcount因禁止读取及调用框架而未运行；记录为null。",
+    "初始四次工具调用的精确时间与宿主自动注入来源SHA无法核实。"
+  ],
+  "blockers": []
+}

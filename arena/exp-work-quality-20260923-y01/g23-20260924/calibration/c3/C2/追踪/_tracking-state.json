@@ -1,0 +1,105 @@
+{
+  "book_title": "面要趁热",
+  "chapter_summaries": {},
+  "characters": {
+    "苏笛": {
+      "abilities_resources": [
+        "打鼓；与赵禾在漏词时维持节奏"
+      ],
+      "goal": "收拾自己的乐器箱，后续选择未定",
+      "identity": "二十九岁，业余乐队鼓手",
+      "knowledge": [
+        "赵禾答应散场后陪自己吃面",
+        "亲历首歌漏词和后续顺利演出"
+      ],
+      "location": "酒吧后门窄檐下",
+      "open_threads": [
+        "散场吃面约定未履行",
+        "尚未与莫圆私谈刚才几拍"
+      ],
+      "relationships": [
+        "与赵禾是大学以来玩音乐的朋友，曾合租后各自搬走",
+        "与莫圆同属小乐队"
+      ],
+      "state": "演出刚结束，尚未与莫圆私谈首歌的停顿；曾笑，用意未知"
+    },
+    "莫圆": {
+      "abilities_resources": [
+        "主唱，常替乐队联系演出"
+      ],
+      "goal": "收拾自己的乐器箱；有不愿一直贴钱的顾虑",
+      "identity": "三十三岁，小乐队主唱，常联系演出",
+      "knowledge": [
+        "首歌自己忘词停了几拍，节奏仍继续",
+        "看到苏笛笑；不把笑的用意设定为真相",
+        "场地方照约定支付原演出费"
+      ],
+      "location": "酒吧后门窄檐下",
+      "open_threads": [
+        "尚未与苏笛私谈漏词时几拍"
+      ],
+      "relationships": [
+        "与赵禾、苏笛同属小乐队"
+      ],
+      "state": "首歌漏词后已跟上，后几首顺利；看到苏笛笑，尚未与其私谈"
+    },
+    "赵禾": {
+      "abilities_resources": [
+        "业余弹贝斯；首歌漏词时和苏笛保持节奏"
+      ],
+      "goal": "收拾乐器；已有散场后陪苏笛吃面的承诺；明早须处理公司未完成的表",
+      "identity": "二十九岁，小公司会计，业余贝斯手",
+      "knowledge": [
+        "莫圆首歌忘词停了几拍后跟上，后几首顺利",
+        "苏笛当时笑了；不知笑的用意",
+        "场地方按约支付原定演出费，没有扣款或突然爆红机会"
+      ],
+      "location": "酒吧后门窄檐下",
+      "open_threads": [
+        "答应散场后陪苏笛吃面，尚未履行",
+        "明早须去公司处理未完成的表",
+        "手机同事消息尚待处理"
+      ],
+      "relationships": [
+        "与苏笛同龄，是大学以来玩音乐的朋友；曾合租，后来各自搬走",
+        "与主唱莫圆同属小乐队"
+      ],
+      "state": "演出刚结束，手指还酸，手机有同事消息，具体内容尚未设定"
+    }
+  },
+  "context": {
+    "active_character_names": [
+      "赵禾",
+      "苏笛",
+      "莫圆"
+    ],
+    "continuity_risks": [
+      "苏笛笑的用意未知，赵禾不能直接知道",
+      "场地方没有扣费；不把漏词变成巨大职业危机"
+    ],
+    "long_term_constraints": [
+      "第三人称有限，仅进入赵禾内心"
+    ],
+    "next_chapter_commitments": [
+      "既有散场后陪苏笛吃面的承诺尚未履行，可履行、商量或留下后果",
+      "赵禾明早须处理公司未完成的表"
+    ],
+    "position": {
+      "scene": "酒吧后门窄檐下，三人收拾乐器箱；店员已拿出饮用水与外套",
+      "story_time": "小酒吧演出刚结束，雨未停",
+      "volume": "独立短场景",
+      "volume_start_chapter": 1
+    },
+    "recent_chapters": []
+  },
+  "evidence": {},
+  "foreshadow": {},
+  "geo": {},
+  "imported_through_chapter": 0,
+  "last_committed_chapter": 0,
+  "scenes": {},
+  "schema_version": 7,
+  "state_revision": 0,
+  "timeline": {},
+  "verdicts": {}
+}

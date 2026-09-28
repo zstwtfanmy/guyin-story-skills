@@ -1,0 +1,9 @@
+{
+  "first_clock_observation_utc": "2026-09-24T07:38:16.317066+00:00",
+  "session_start_utc": null,
+  "session_start_note": "输入全文读取发生于首次时钟观测前；不可精确恢复会话起点。",
+  "preflight_observation": "书根递归清单仅 inputs 与四份派发输入，无追踪目录、publication、pending、work/run。",
+  "directory_prepared_utc": "2026-09-24T07:38:39.984986+00:00",
+  "run": "cal-c2",
+  "title_decided_before_start": "门边的位置"
+}

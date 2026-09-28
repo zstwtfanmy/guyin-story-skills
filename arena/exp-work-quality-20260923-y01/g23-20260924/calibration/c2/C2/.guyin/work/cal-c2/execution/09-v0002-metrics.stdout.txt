@@ -1,0 +1,9 @@
+{
+  "path": "D:\\readbook-wpace\\guyin-skills\\arena\\exp-work-quality-20260923-y01\\g23-20260924\\calibration\\c2\\C2\\.guyin\\work\\cal-c2\\drafts\\v0002.md",
+  "sha256": "b6057154a95a3ce7f6b274c424015bac804a3a153c166303c13f7e9ff9a9708c",
+  "bytes": 4717,
+  "body_han": 1280,
+  "body_non_whitespace": 1533,
+  "measured_at": "2026-09-24T07:44:44.748Z",
+  "draft_mtime": "2026-09-24T07:44:20.429Z"
+}
