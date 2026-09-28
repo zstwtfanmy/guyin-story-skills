@@ -2,6 +2,10 @@
 .upstream/
 linkbook/
 
+# 声线锚库（合法持书原文切片，本机私有：除协议 README 外不入库、不随项目分发）
+声线锚库/*
+!声线锚库/README.md
+
 # skills 安装器（npx skills add 在仓库根下跑会产出这些——guyin-skills 是 skill 提供方，
 # 不是消费项目，不应被当作安装目标；真正消费 skill 的是追影等项目，在那些项目根下跑）
 .agents/
