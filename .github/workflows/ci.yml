@@ -17,33 +17,10 @@ jobs:
 
       - name: Syntax check (node --check)
         run: |
-          node --check skills/guyin-write/scripts/guyin-check-degeneration.js
-          node --check skills/guyin-write/scripts/guyin-check-ai-patterns.js
-          node --check skills/guyin-write/scripts/guyin-check-integrity.js
-          node --check skills/guyin-write/scripts/guyin-check-outline-verdict.js
-          node --check skills/guyin-write/scripts/guyin-check-narrative-asset.js
-          node --check skills/guyin-write/scripts/guyin-check-consistency.js
-          node --check skills/guyin-write/scripts/guyin-check-beat.js
-          node --check skills/guyin-write/scripts/guyin-check-outline-copy.js
-          node --check skills/guyin-write/scripts/guyin-check-wordcount.js
-          node --check skills/guyin-write/scripts/guyin-check-hook-rotation.js
-          node --check skills/guyin-write/scripts/guyin-check-repetition.js
-          node --check skills/guyin-write/scripts/guyin-check-flesh.js
-          node --check skills/guyin-write/scripts/guyin-impact-map.js
-          node --check skills/guyin-write/scripts/guyin-check-reader-signal.js
           node --check skills/guyin-write/scripts/guyin-check-pitch.js
-          node --check skills/guyin-write/scripts/guyin-check-outline-slots.js
-          node --check skills/guyin-write/scripts/guyin-check-opening-retention.js
-          node --check skills/guyin-write/scripts/guyin-check-trial-gate.js
-          node --check skills/guyin-write/scripts/guyin-check-rule-conflict.js
-          node --check skills/guyin-write/scripts/guyin-check-foreshadow-id.js
-          node --check skills/guyin-write/scripts/guyin-check-outline-deliver.js
-          node --check skills/guyin-write/scripts/guyin-check-strip.js
-          node --check skills/guyin-write/scripts/guyin-check-authority-leak.js
-          node --check skills/guyin-write/scripts/guyin-check-pending.js
           node --check skills/guyin-write/scripts/guyin-normalize-punctuation.js
-          node --check skills/guyin-setup/scripts/merge-claude-settings.js
-          node --check skills/guyin-setup/templates/long/.claude/hooks/guyin-hook.js
+          node --check skills/guyin-setup/scripts/guyin-deploy.js
+          node --check skills/guyin-setup/scripts/guyin-check-package.js
           node --check scripts/check-doc-budget.js
           node --check scripts/check-skill-contracts.js
 

@@ -30,8 +30,9 @@ const SKILLS = [
 // 整包纳入清单的技能：guyin-write（全部运行链）、guyin-setup（部署器/模板/退役归档）、
 // guyin-review（SKILL.md 外部引用 references/rubrics/* 与 quality-rubric.md）。
 // 其余技能只核 SKILL.md 入口（其余资产不在写作硬依赖链上，缺入口即可定位重装）。
+// _disabled/ 是已退役机器与文档的留档（仅存 git 仓库），不随发布包分发，整体排除。
 const FULL_TREE_SKILLS = ['guyin-write', 'guyin-setup', 'guyin-review'];
-const EXCLUDE_NAMES = new Set(['node_modules', '__pycache__', '.DS_Store', MANIFEST_NAME]);
+const EXCLUDE_NAMES = new Set(['node_modules', '__pycache__', '.DS_Store', MANIFEST_NAME, '_disabled']);
 
 const isFile = (p) => {
   try { return fs.statSync(p).isFile(); } catch { return false; }

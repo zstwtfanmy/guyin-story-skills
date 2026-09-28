@@ -42,10 +42,8 @@ const MANAGED_AGENT_RELS = [
 
 // install：部署件可安全刷新；其余一律 create-if-absent
 const REPLACE_FILES = [
-  '.claude/hooks/guyin-hook.js',
   '.opencode/commands/guyin.md',
 ];
-const MERGE_SETTINGS = '.claude/settings.json';
 
 function sha256(buf) {
   return crypto.createHash('sha256').update(buf).digest('hex');
@@ -185,7 +183,6 @@ function cmdInstall({ dest, kind = 'long', title }) {
 
   for (const abs of walkFiles(LONG_TPL)) {
     const rel = posixRel(LONG_TPL, abs);
-    if (rel === MERGE_SETTINGS) continue;
     if (REPLACE_FILES.includes(rel)) {
       fs.mkdirSync(path.dirname(path.join(root, rel)), { recursive: true });
       fs.writeFileSync(path.join(root, rel), fs.readFileSync(abs));
@@ -193,20 +190,6 @@ function cmdInstall({ dest, kind = 'long', title }) {
       continue;
     }
     copyIfAbsent(abs, rel);
-  }
-
-  // settings：缺失直接复制；已存在走确定性合并（保留用户其他键）
-  const setDst = path.join(root, MERGE_SETTINGS);
-  let settingsAction = 'copied';
-  if (fs.existsSync(setDst)) {
-    const merger = path.join(SKILL_DIR, 'scripts', 'merge-claude-settings.js');
-    const r = spawnSync('node', [merger, '--template', path.join(LONG_TPL, MERGE_SETTINGS),
-      '--target', setDst], { encoding: 'utf8' });
-    if (r.status !== 0) fail(`settings 合并失败：${(r.stderr || r.stdout).slice(0, 400)}`);
-    settingsAction = 'merged';
-  } else {
-    fs.mkdirSync(path.dirname(setDst), { recursive: true });
-    fs.writeFileSync(setDst, fs.readFileSync(path.join(LONG_TPL, MERGE_SETTINGS)));
   }
 
   if (kind === 'long+short') {
@@ -221,7 +204,7 @@ function cmdInstall({ dest, kind = 'long', title }) {
   const record = {
     deployed_at: (prev && prev.deployed_at) || new Date().toISOString(),
     redeployed_at: prev ? new Date().toISOString() : null,
-    guyin_version: '0.9.0',
+    guyin_version: '0.10.0',
     form: kind,
     distribution: 'single-model-free-write',
     managed_agents: 'retired',
@@ -230,7 +213,7 @@ function cmdInstall({ dest, kind = 'long', title }) {
 
   emit({
     ok: true, command: 'install', dest: root, kind,
-    settings: settingsAction, installed, replaced, skipped,
+    installed, replaced, skipped,
     managed_agents_distributed: false,
   });
 }

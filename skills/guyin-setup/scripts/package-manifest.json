@@ -19,15 +19,15 @@
     {
       "skill": "guyin-story",
       "path": "SKILL.md",
-      "sha256": "ba3bf0fdf917d5fd8ddb7b32dc1d948ebbe629b7d77f343c9b8c045b7329ba86",
-      "size": 2943,
+      "sha256": "01c0660967c172ea5feb5171b7f84169ba40480260698fe64b989a698e1ed80a",
+      "size": 2516,
       "role": "skill-md"
     },
     {
       "skill": "guyin-write",
       "path": "SKILL.md",
-      "sha256": "e9c263dce7a3b35267ce9426b8c63a7cf4a1b8ec27f6583ae173e9ac2c112df2",
-      "size": 11584,
+      "sha256": "af2142ecc9f2d09367b7606b198a7ce2e9287c307279c85cb097b6c61f807fef",
+      "size": 5578,
       "role": "skill-md"
     },
     {
@@ -82,8 +82,8 @@
     {
       "skill": "guyin-write",
       "path": "references/consult/INDEX.md",
-      "sha256": "596c597bcba557efe157721aa87511eb720507f34ddf0423cd6cf461c497acc4",
-      "size": 7584,
+      "sha256": "3f94fa464863b561ed38253db18fdf9c118693878c3bfe1fa2aa37545f6df4fb",
+      "size": 7599,
       "role": "reference"
     },
     {
@@ -501,16 +501,9 @@
     },
     {
       "skill": "guyin-write",
-      "path": "references/候选隔离协议.md",
-      "sha256": "96dd417b528a163e6d3ac8e9f727870efc1db60d9e0b96a934abc82c9f5a99a9",
-      "size": 2877,
-      "role": "reference"
-    },
-    {
-      "skill": "guyin-write",
       "path": "references/细纲协议.md",
-      "sha256": "21be8fdb9c16fdd56708f93b59f1119803dbcf8f09a2fe769121f8355105fa46",
-      "size": 16568,
+      "sha256": "dc12d8c94a4112c7322d79e3b97d110e4aa7223641dbd98ea504fe9e78db2ba0",
+      "size": 3690,
       "role": "reference"
     },
     {
@@ -519,34 +512,6 @@
       "sha256": "fc58b4b12400d86e6c8023013dfb7519967ca9efbea5a62d4634441a9209464d",
       "size": 17848,
       "role": "reference"
-    },
-    {
-      "skill": "guyin-write",
-      "path": "scripts/guyin-author-session.py",
-      "sha256": "6c6341c6e55c4e530459c2308f49b6a8b7e455d8590f6b149760c40b71ab1a7c",
-      "size": 53171,
-      "role": "script"
-    },
-    {
-      "skill": "guyin-write",
-      "path": "scripts/guyin-check-ai-patterns.js",
-      "sha256": "128bd8358f57ec7995421c08f4220b184f6fd6fff12ef9b553e8462898cba1db",
-      "size": 121037,
-      "role": "script"
-    },
-    {
-      "skill": "guyin-write",
-      "path": "scripts/guyin-check-authority-leak.js",
-      "sha256": "542e347126f088e221e33257999f438a806f74847d604e504a9cecbdcc73fe6d",
-      "size": 20647,
-      "role": "script"
-    },
-    {
-      "skill": "guyin-write",
-      "path": "scripts/guyin-check-beat.js",
-      "sha256": "ddb9ac3ff107d85fc69293fac83bc4f581ef50910b6ccad55191f97ee5e57607",
-      "size": 18398,
-      "role": "script"
     },
     {
       "skill": "guyin-write",
@@ -567,13 +532,6 @@
       "path": "scripts/guyin-check-flesh.js",
       "sha256": "494aa241839b1843584fda7904f217ea122fa7b9603f042e30e0027d0238d842",
       "size": 18716,
-      "role": "script"
-    },
-    {
-      "skill": "guyin-write",
-      "path": "scripts/guyin-check-foreshadow-id.js",
-      "sha256": "0fb03d8798c59b9b01e00911404c15e490036a3209f3723303e07d26439374b6",
-      "size": 13590,
       "role": "script"
     },
     {
@@ -606,20 +564,6 @@
     },
     {
       "skill": "guyin-write",
-      "path": "scripts/guyin-check-outline-copy.js",
-      "sha256": "54e6ada168258cdaa649cec46ab611914b5a7cf04db0cb541358a08fcd909652",
-      "size": 15772,
-      "role": "script"
-    },
-    {
-      "skill": "guyin-write",
-      "path": "scripts/guyin-check-outline-deliver.js",
-      "sha256": "0f44fd26b2a333d0ba7c14c157140b404410fe1ddf1b2904040bc05356a08856",
-      "size": 20460,
-      "role": "script"
-    },
-    {
-      "skill": "guyin-write",
       "path": "scripts/guyin-check-outline-slots.js",
       "sha256": "84fe694d9877ac63fc92010e6ed65b36acfae4b2d9148d59d503f14ad8df0b15",
       "size": 20699,
@@ -630,13 +574,6 @@
       "path": "scripts/guyin-check-outline-verdict.js",
       "sha256": "684e1701eba3870c2046d68f4f3b0ac83bfa679050213dbbc59408643bde98eb",
       "size": 18735,
-      "role": "script"
-    },
-    {
-      "skill": "guyin-write",
-      "path": "scripts/guyin-check-pending.js",
-      "sha256": "cefa0422674e6bd278be1f02c609e692cc661f4d9e9595481ab6794bab5eafb4",
-      "size": 16325,
       "role": "script"
     },
     {
@@ -655,13 +592,6 @@
     },
     {
       "skill": "guyin-write",
-      "path": "scripts/guyin-check-repetition.js",
-      "sha256": "983e90e1aa681802177c27301f6826d46fc85b214c6e3abc3ff976f354898942",
-      "size": 55842,
-      "role": "script"
-    },
-    {
-      "skill": "guyin-write",
       "path": "scripts/guyin-check-rule-conflict.js",
       "sha256": "a1885a6c4b116531115a29b77678a0ae06dbdf12ee1ddd36b51f5dff8f5fdde3",
       "size": 6102,
@@ -672,20 +602,6 @@
       "path": "scripts/guyin-check-strip.js",
       "sha256": "8e0a0f62c48a7da5e45a262805015b84d722d5e5918a2a4fde268c7b04310f3b",
       "size": 8676,
-      "role": "script"
-    },
-    {
-      "skill": "guyin-write",
-      "path": "scripts/guyin-check-trial-gate.js",
-      "sha256": "ce8145125763c877b8855d0a432208a68f907c432b4e8aac406a363ac887a556",
-      "size": 35050,
-      "role": "script"
-    },
-    {
-      "skill": "guyin-write",
-      "path": "scripts/guyin-check-wordcount.js",
-      "sha256": "fbe174545a1e236b823b6f3f63cd8d55325741f25252c3c334d61ad4d634e064",
-      "size": 13115,
       "role": "script"
     },
     {
@@ -704,20 +620,6 @@
     },
     {
       "skill": "guyin-write",
-      "path": "scripts/guyin-tracking-commit.py",
-      "sha256": "9fe9c10ec404b6ddc97d74c3753b15a8128342ac1551576eb3ae69b0660977da",
-      "size": 178455,
-      "role": "script"
-    },
-    {
-      "skill": "guyin-write",
-      "path": "scripts/lib/guyin-candidate-context.js",
-      "sha256": "281cc645e8588f2a4879d0d2feedac7e923180e5fc025c5adc4c50451a3a02e6",
-      "size": 35008,
-      "role": "lib"
-    },
-    {
-      "skill": "guyin-write",
       "path": "scripts/lib/guyin-handling.js",
       "sha256": "4fc06cc73aa33c7372da30096758a4be3aea08e26010b71a92a8b49d331227ff",
       "size": 14704,
@@ -726,8 +628,8 @@
     {
       "skill": "guyin-short-write",
       "path": "SKILL.md",
-      "sha256": "a791c5bc6b2a6728190a6f733775f4936e80d24f1b5a908b6307e7a46b99e528",
-      "size": 5324,
+      "sha256": "d1e29f6dad79a12c965d652cf789809c52b677bc067eb0918a94feb77a2a3f28",
+      "size": 3289,
       "role": "skill-md"
     },
     {
@@ -747,8 +649,8 @@
     {
       "skill": "guyin-review",
       "path": "SKILL.md",
-      "sha256": "7975b7b608c7b75e048acf912aea8ae6dab75e05e7fb5414d6dda889cc2bf8c2",
-      "size": 6064,
+      "sha256": "0b9e9ea1b56ec655e0d3f78d9de0a0e585e661bc843065a273bd7b1e6daa4f06",
+      "size": 3426,
       "role": "skill-md"
     },
     {
@@ -782,22 +684,22 @@
     {
       "skill": "guyin-deslop",
       "path": "SKILL.md",
-      "sha256": "d809cd0ff05ba8affcbb478f500664de9a76c4ec52de60d0feaa824c33fec788",
-      "size": 3592,
+      "sha256": "741205510b440d20fad62ade75ee585fc3a3097035017e439dd04b15febb147e",
+      "size": 2793,
       "role": "skill-md"
     },
     {
       "skill": "guyin-pitch",
       "path": "SKILL.md",
-      "sha256": "89c3f97294e86f22816cd45a3c7413f91ec8e94dcb4c83ad143a8c559d61bc55",
-      "size": 4464,
+      "sha256": "a65873e6ff31be8222800fcb39c1d31285574a0c7761f6e8cc90f8b58b8d9bab",
+      "size": 4444,
       "role": "skill-md"
     },
     {
       "skill": "guyin-setup",
       "path": "SKILL.md",
-      "sha256": "814d3976a1ef431e0aadd49c1607bdd430dad4d2f25ba10c753d4a0221471aec",
-      "size": 11359,
+      "sha256": "b308065cbefc61b37649689335deec054cc4e3456de333a7442becdc6401b93e",
+      "size": 9564,
       "role": "skill-md"
     },
     {
@@ -859,37 +761,16 @@
     {
       "skill": "guyin-setup",
       "path": "scripts/guyin-check-package.js",
-      "sha256": "1e8ece0ef652630e4d09c9f8d6e75c0f27d0294eb10ccd76c013fbccb5743cac",
-      "size": 9814,
+      "sha256": "52b531bff7c52f23704619586e241a0233f8e6e5de3baaba30e104cd355ceaec",
+      "size": 9944,
       "role": "script"
     },
     {
       "skill": "guyin-setup",
       "path": "scripts/guyin-deploy.js",
-      "sha256": "97f6ef4e299f52526fb4f419bc4c429375b22329c82728c14fe07c59aff10244",
-      "size": 15621,
+      "sha256": "458ca9a7605226cd2ab9d1f581ef69f6e768c60ba2a613a576ef4fe28b42a7ef",
+      "size": 14739,
       "role": "script"
-    },
-    {
-      "skill": "guyin-setup",
-      "path": "scripts/merge-claude-settings.js",
-      "sha256": "c1df1a5cef6404ae73722472e85858e4e44b444f1d55e11b7c79caa34bb7333a",
-      "size": 5351,
-      "role": "script"
-    },
-    {
-      "skill": "guyin-setup",
-      "path": "templates/long/.claude/hooks/guyin-hook.js",
-      "sha256": "87307f2b88572b8f30c66c6273650e60f0e7a3207412a033d9f6efe5ef9f2f55",
-      "size": 29314,
-      "role": "template"
-    },
-    {
-      "skill": "guyin-setup",
-      "path": "templates/long/.claude/settings.json",
-      "sha256": "09494174c3cfd6d5211489ac3b18cab0a0bfd937e78a88e964974d84353810df",
-      "size": 1193,
-      "role": "template"
     },
     {
       "skill": "guyin-setup",
@@ -901,22 +782,22 @@
     {
       "skill": "guyin-setup",
       "path": "templates/long/AGENTS.md",
-      "sha256": "ce3d88da114a2751e439b34256d1b5a28d9152df4952e34fe69ee648bd02f85d",
-      "size": 3488,
+      "sha256": "8a3468ca9f6d1707f2f04bf1d30879aa91e82f126e927a1a0fc13786bb4dfb86",
+      "size": 2539,
       "role": "template"
     },
     {
       "skill": "guyin-setup",
       "path": "templates/long/README.md",
-      "sha256": "7034b45ba799b228b98b8b232f48d566951614fec6c783c3245a72a4a5e189e9",
-      "size": 6879,
+      "sha256": "629a01e5f8f805da2450588bfb5075680b21d8d5df75f21bc2bd0a588fd055f5",
+      "size": 3702,
       "role": "template"
     },
     {
       "skill": "guyin-setup",
       "path": "templates/long/作者性/偏执点.md",
-      "sha256": "219901262fcf732091389274ebb7e5f39edd026fdd9ec124154aacc1f88c828a",
-      "size": 727,
+      "sha256": "932d43ab1b4912e88542e979db9d37fedd31717b813fc0813cab7a2d96d7c565",
+      "size": 736,
       "role": "template"
     },
     {
@@ -957,8 +838,8 @@
     {
       "skill": "guyin-setup",
       "path": "templates/long/作者性/纪律冲突台账.md",
-      "sha256": "e1e5ca1a23c91e6eb0e53dab3196da3dd38d5e287b9a3f7b839cda8d77de4155",
-      "size": 1169,
+      "sha256": "0052bcd1b5c1dea6fde0318f9621df690bc23645d8462b3343b8b68d9bb41250",
+      "size": 1109,
       "role": "template"
     },
     {
@@ -978,22 +859,22 @@
     {
       "skill": "guyin-setup",
       "path": "templates/long/大纲/README.md",
-      "sha256": "2121e181563f39c1a4daad4e138b8a9511678adc6e345e2c5d137d54568d9ab3",
-      "size": 5656,
+      "sha256": "d0e3098ae237011d70d611febdd85114f21d14435c0f0aeaba05606e69b8292d",
+      "size": 1415,
       "role": "template"
     },
     {
       "skill": "guyin-setup",
       "path": "templates/long/大纲/执行层一页纸.md",
-      "sha256": "77a8e22586af4e4e1c5d74d4a25b86a63319c98ebed713426940cf32bfbd337b",
-      "size": 2358,
+      "sha256": "b778522297bc42f1bafe6b4cbc962c06dbd731bb817edbb50527ee10a10ad1cd",
+      "size": 1918,
       "role": "template"
     },
     {
       "skill": "guyin-setup",
       "path": "templates/long/大纲/批次公约.md",
-      "sha256": "1b089b43d0c27d014595db2bd4a917f7c23d7b9a9042171d6a56cba252942b23",
-      "size": 2791,
+      "sha256": "8c74ba37c38d0ed19ea13b08438f829a5b17585fd88e2252006edfda724c266a",
+      "size": 2657,
       "role": "template"
     },
     {
@@ -1006,8 +887,8 @@
     {
       "skill": "guyin-setup",
       "path": "templates/long/正文/README.md",
-      "sha256": "4c05ada059642db1f4978ea5bd74d3b43e06b7239fb3a6dc2a44853a6ee1b702",
-      "size": 154,
+      "sha256": "85353f76cd1a67fac45aef81843fc015ab6d7d11d7c9b3a04042648c3aa21059",
+      "size": 146,
       "role": "template"
     },
     {
@@ -1020,29 +901,22 @@
     {
       "skill": "guyin-setup",
       "path": "templates/long/设定/世界观/README.md",
-      "sha256": "86fc0dca4f9aac14c3ad9397a064b6911d1c228063dfc12119957e62acc47ea0",
-      "size": 139,
+      "sha256": "4f39c5579db3dadb2a7066d40c9749f633b495d75777e04ae3f09466bc7d17a1",
+      "size": 226,
       "role": "template"
     },
     {
       "skill": "guyin-setup",
       "path": "templates/long/设定/角色/README.md",
-      "sha256": "c710b28a4a27a3e3988bdcc1dd178013d8bdc1eefaba7af34e42d72a7c4bbbd7",
-      "size": 839,
+      "sha256": "8876c8ad4e15d227fc4e47a29777e933a5520324819d749707ce6f4e277b1a85",
+      "size": 632,
       "role": "template"
     },
     {
       "skill": "guyin-setup",
       "path": "templates/long/设定/题材定位.md",
-      "sha256": "a4fb30885504f71c9795c36e46871cb9543830974eaca5924d83cd1c94e527f1",
-      "size": 5828,
-      "role": "template"
-    },
-    {
-      "skill": "guyin-setup",
-      "path": "templates/long/追踪/_tracking-state.json",
-      "sha256": "38f1135f4629e4cbb528ff86d1e107957237060d5464f88efa419199f7523528",
-      "size": 647,
+      "sha256": "2b96f1535973cdd8e603ad887f6d7e552e3dc1c2c96c92d157a178dedd80bd4b",
+      "size": 5743,
       "role": "template"
     },
     {
@@ -1055,8 +929,8 @@
     {
       "skill": "guyin-setup",
       "path": "templates/long/追踪/事件定性资产.md",
-      "sha256": "e0fe0b25ea817e1c76f2cc2198de90e0a8ce7fe1b8b3ef69be130da78d23e8b8",
-      "size": 451,
+      "sha256": "0641c53b28da0826bc76edd29339be405dcdca0cdaf2ce80d45e0f23fcb2deef",
+      "size": 406,
       "role": "template"
     },
     {
@@ -1069,43 +943,29 @@
     {
       "skill": "guyin-setup",
       "path": "templates/long/追踪/地理台账.md",
-      "sha256": "e4b0d1093bdc2e90660b4f246305498a7dab6a85a8703ee2cd102857c8ebebaa",
-      "size": 440,
+      "sha256": "ed19eb8a3dfaca310f28c48437819224810f73bce53fbe1cb132d9109daeace1",
+      "size": 445,
       "role": "template"
     },
     {
       "skill": "guyin-setup",
       "path": "templates/long/追踪/场景台账.md",
-      "sha256": "b6e54fc4687d51f8910807be7bcbd53d4de1749bc4b25cbc2a5b844b9cca4500",
-      "size": 448,
+      "sha256": "619a4abaa19441d9425d838dd338e47a2122abeb387eb14c0e583d88c367c71c",
+      "size": 424,
       "role": "template"
     },
     {
       "skill": "guyin-setup",
       "path": "templates/long/追踪/复沓锚句.md",
-      "sha256": "67c2b8417840d179bf8c91ad3c54448c5879d027a81958f0592832f566f1d878",
-      "size": 1480,
-      "role": "template"
-    },
-    {
-      "skill": "guyin-setup",
-      "path": "templates/long/追踪/契约对账矩阵.md",
-      "sha256": "03f41a6679292b6c52708346f07c31ab24a5f174531d278b262e7b385a5cae6c",
-      "size": 1678,
-      "role": "template"
-    },
-    {
-      "skill": "guyin-setup",
-      "path": "templates/long/追踪/待审台账.md",
-      "sha256": "91d66e946967021c2b9c6d79d8c88d7de079f161a98483be795b4674472ac1b3",
-      "size": 3052,
+      "sha256": "cc24a8116f449477940aa937af9eba196b39397c8b59a858ed78ee0944e6cc2f",
+      "size": 500,
       "role": "template"
     },
     {
       "skill": "guyin-setup",
       "path": "templates/long/追踪/时间线/README.md",
-      "sha256": "7ccce10f2b4bd8cdbafa8069c612b68447dcf027d0f691101548dcee214f9da0",
-      "size": 111,
+      "sha256": "27e43db22e9ce2d753c7d099fff98bcbf62e9841624280e6cd5e1e261f2a73b1",
+      "size": 118,
       "role": "template"
     },
     {
@@ -1125,22 +985,22 @@
     {
       "skill": "guyin-setup",
       "path": "templates/long/追踪/灵感台账.md",
-      "sha256": "1b1babde083e9fd9de3ae63f8b3616abd714d31ba895b9f161ee7e765a0662d0",
-      "size": 1339,
+      "sha256": "c90ed7054b9cdc43f579d0b60ea36ca7e31634d97195e4d5e1453db818a52f39",
+      "size": 1071,
       "role": "template"
     },
     {
       "skill": "guyin-setup",
       "path": "templates/long/追踪/物证台账.md",
-      "sha256": "f00f4101f9c6960053d964cfbac07d5394c42dfc3bf6a6f56fd2929367faa3c2",
-      "size": 408,
+      "sha256": "614a663b15a1ae6ee22dff195ec6f7b4592947de01b4abcc6e46f8f674aa5c52",
+      "size": 401,
       "role": "template"
     },
     {
       "skill": "guyin-setup",
       "path": "templates/long/追踪/短语黑名单.md",
-      "sha256": "ccd552132c337295ee78a13f752406b0fe294e3371380107b497c909048079eb",
-      "size": 1845,
+      "sha256": "e4a011fee96ba6a903da34be5363f7495bcc9a3cc7c3e6d9faba6fda82dbae13",
+      "size": 387,
       "role": "template"
     },
     {
@@ -1152,16 +1012,16 @@
     },
     {
       "skill": "guyin-setup",
-      "path": "templates/long/追踪/读者信号.md",
-      "sha256": "dd958f8d299ae3218471180b102d9aa514d8b00f006f2f7799097c1f1fa57463",
-      "size": 4354,
+      "path": "templates/long/追踪/角色状态/README.md",
+      "sha256": "341d11b3a51e80f41232b346a2ff4dad1d23dfa5b5e623ed63df9797413ef919",
+      "size": 547,
       "role": "template"
     },
     {
       "skill": "guyin-setup",
-      "path": "templates/long/追踪/豁免台账.md",
-      "sha256": "4ba97ba2d3974d70acf4feefb65feff06b27c0e487afeeb2973724bb293ea79b",
-      "size": 1343,
+      "path": "templates/long/追踪/读者信号.md",
+      "sha256": "007e400d6663c26a6f8c8b87ef37c2e3fdb79cc76f95778ff3c94b4b2d87b75c",
+      "size": 694,
       "role": "template"
     },
     {
@@ -1174,15 +1034,15 @@
     {
       "skill": "guyin-setup",
       "path": "templates/short/大纲/情绪曲线.md",
-      "sha256": "d3a416e572cf96ccb004715a93d00bcef676845ce01fe1afd0a58978088e57e9",
-      "size": 843,
+      "sha256": "6e7861a3ab8088cfbfff8b1e9b16df86acabf09a40f2973e3069fa06e8e9faaf",
+      "size": 833,
       "role": "template"
     },
     {
       "skill": "guyin-setup",
       "path": "templates/short/大纲/情节节点.md",
-      "sha256": "01143e5536791153ddc04979e7d957b56112f800f9e81bbea568c0232f27ecc3",
-      "size": 815,
+      "sha256": "5ab9b551183917ec47caf6f2a269883fe05011f73ee506ed93d70cd875d05e0e",
+      "size": 787,
       "role": "template"
     }
   ]

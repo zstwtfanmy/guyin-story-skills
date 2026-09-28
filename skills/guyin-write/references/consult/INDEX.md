@@ -71,7 +71,7 @@
 | 文件 | 标注 | 一句话用途 |
 |------|------|-----------|
 | state-tracking.md | [方法] | 「本节速记」提取逻辑与角色状态格式 |
-| tracking-transaction.md | [方法] | 追踪状态协议：一份权威 JSON + 派生视图 |
+| tracking-transaction.md | [存档] | 旧追踪状态协议（权威 JSON + 派生视图）——已废止；现行＝markdown 三件（上下文/伏笔/角色状态），见 guyin-write/SKILL.md |
 | artifact-protocols.md | [存档] | 各产物标准模板（隐笔项目模板已重定义，冲突以项目模板为准；其中 题材定位.md 骨架已随 setup 模板分发——项目 `设定/题材定位.md` 为书级唯一来源，v3-A3） |
 | quality-checklist.md | [方法] | 网文质量检查清单 |
 | cross-book-recall.md | [方法] | 多对标跨书召回机制（隐笔魂档案/气卡的跨书资产可参考其检索思路） |
@@ -80,7 +80,7 @@
 
 | 文件 | 标注 | 说明 |
 |------|------|------|
-| anti-ai-writing.md | [降级] | 原去AI味完整指南。负面清单路线已废弃；确定性部分已编译进 `scripts/guyin-check-ai-patterns.js`，示范部分由 exemplars 好坏对照例替代。**其旧句长规格、情绪外化表、动静配额等结论一律失效，不得经 writing-craft 等文件引用复活**（候选 C1 已清理 writing-craft 中对它的规则引用） |
+| anti-ai-writing.md | [降级] | 原去AI味完整指南。负面清单路线已废弃；风格 lint 已随工程门整体退役，示范部分由 exemplars 好坏对照例替代。**其旧句长规格、情绪外化表、动静配额等结论一律失效，不得经 writing-craft 等文件引用复活** |
 | lifecycle-protocols.md | [降级] | 原点子压测/收线审计协议。压测三问降为可选自查（非开写前置门、不绑作者性四件）；收线以 write SKILL「完书」段为准，收线清单/尾声细纲硬门已废止 |
 | banned-words.md | [降级] | 原禁用词与句式表。不再作为主流程强制；仅 lint 与改写卡设计时参考 |
 
