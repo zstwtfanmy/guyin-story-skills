@@ -10,12 +10,12 @@
 | 技能 | 触发 | 职责 |
 |------|------|------|
 | **guyin-story** | `/guyin`、`/隐笔`、「我想写小说」 | 主入口：路由 + 项目状态诊断 |
-| **guyin-write** | `/guyin-write`、「开书」「写第X章」「日更」「回炉」 | 长篇写作：五步极简流 + 隐杀声线锚（写作知识六条、持锚四问自审） |
+| **guyin-write** | `/guyin-write`、「开书」「写第X章」「日更」「回炉」 | 长篇写作：五步极简流 + 隐杀声线锚（写作知识六条、持锚三问自审） |
 | **guyin-short-write** | `/guyin-short-write`、「写短篇」「盐言故事」 | 短篇写作：同一五步流；骨架三件（情节节点/情绪曲线/反转表）是设想不是考卷 |
 | **guyin-pitch** | `/guyin-pitch`、「起书名」「写简介」「章节标题」 | 开书文案包：书名多采样外选+十年测试，简介从已写成正文反向提炼 |
 | **guyin-analyze** | `/guyin-analyze`、「拆这本书」 | 长篇拆文管道 |
 | **guyin-short-analyze** | `/guyin-short-analyze`、「拆短篇」 | 短篇拆文全量管道 |
-| **guyin-review** | `/guyin-review`、「审查」「这章怎么样」 | 对抗式审查：只诊断不动刀，输出「哪里想停读＋持锚声音四问」，不盖章不发 pass |
+| **guyin-review** | `/guyin-review`、「审查」「这章怎么样」 | 对抗式审查：只诊断不动刀，输出「哪里想停读＋持锚三问」，不盖章不发 pass |
 | **guyin-deslop** | `/guyin-deslop`、「去AI味」 | 去AI味：原地两步（读审→陌生化改写），宁留三分糙不磨十分滑 |
 | **guyin-setup** | `/guyin-setup`、「准备写书」「搭环境」「建项目」 | 项目脚手架部署：模板随技能走，无 hook、无台账机器 |
 

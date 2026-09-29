@@ -2,7 +2,7 @@
   "schema_version": 1,
   "distribution": "guyin-story-skills",
   "source": "zstwtfanmy/guyin-story-skills",
-  "built_at": "2026-09-28",
+  "built_at": "2026-09-29",
   "note": "固定发布版本相对路径清单；安装后用 guyin-check-package.js verify 核对，缺件/损坏/混版 exit1",
   "skills": [
     "guyin-story",
@@ -26,8 +26,8 @@
     {
       "skill": "guyin-write",
       "path": "SKILL.md",
-      "sha256": "af2142ecc9f2d09367b7606b198a7ce2e9287c307279c85cb097b6c61f807fef",
-      "size": 5578,
+      "sha256": "7e808f163699d7b463496b22f627e9c296d5571c9092b6d8b5c1fb6ab68e23a4",
+      "size": 6368,
       "role": "skill-md"
     },
     {
@@ -502,8 +502,8 @@
     {
       "skill": "guyin-write",
       "path": "references/细纲协议.md",
-      "sha256": "dc12d8c94a4112c7322d79e3b97d110e4aa7223641dbd98ea504fe9e78db2ba0",
-      "size": 3690,
+      "sha256": "99e9cddef10ee7d8705be039c5ee506f2a1233b1ab565cdb61c27f77d0b79e72",
+      "size": 3904,
       "role": "reference"
     },
     {
@@ -628,8 +628,8 @@
     {
       "skill": "guyin-short-write",
       "path": "SKILL.md",
-      "sha256": "d1e29f6dad79a12c965d652cf789809c52b677bc067eb0918a94feb77a2a3f28",
-      "size": 3289,
+      "sha256": "10832180cefbdc677ae1ab1037249e8eb78f62646cef7093c0a83f16d1eed940",
+      "size": 3315,
       "role": "skill-md"
     },
     {
@@ -649,8 +649,8 @@
     {
       "skill": "guyin-review",
       "path": "SKILL.md",
-      "sha256": "0b9e9ea1b56ec655e0d3f78d9de0a0e585e661bc843065a273bd7b1e6daa4f06",
-      "size": 3426,
+      "sha256": "66b6c581fa3a5058115f0c8eaf867d05958890064d0dd0d65befc5b079e3de3f",
+      "size": 3701,
       "role": "skill-md"
     },
     {
@@ -782,8 +782,8 @@
     {
       "skill": "guyin-setup",
       "path": "templates/long/AGENTS.md",
-      "sha256": "8a3468ca9f6d1707f2f04bf1d30879aa91e82f126e927a1a0fc13786bb4dfb86",
-      "size": 2539,
+      "sha256": "752f210aff567b68fc3dcff27b8760bc535602ed7817417b2e8916feb90ae7f6",
+      "size": 2877,
       "role": "template"
     },
     {
@@ -859,8 +859,8 @@
     {
       "skill": "guyin-setup",
       "path": "templates/long/大纲/README.md",
-      "sha256": "d0e3098ae237011d70d611febdd85114f21d14435c0f0aeaba05606e69b8292d",
-      "size": 1415,
+      "sha256": "f2290ca6fde95499e9f168e7111303b8a31e2280c4158c52517715f7e1fb47a4",
+      "size": 1888,
       "role": "template"
     },
     {
@@ -915,8 +915,8 @@
     {
       "skill": "guyin-setup",
       "path": "templates/long/设定/题材定位.md",
-      "sha256": "2b96f1535973cdd8e603ad887f6d7e552e3dc1c2c96c92d157a178dedd80bd4b",
-      "size": 5743,
+      "sha256": "82b40d20f2be7ae93c1dcdeab7ddfc846b80fe2d458335ce16aa444b56e110ed",
+      "size": 6005,
       "role": "template"
     },
     {
@@ -1022,6 +1022,13 @@
       "path": "templates/long/追踪/读者信号.md",
       "sha256": "007e400d6663c26a6f8c8b87ef37c2e3fdb79cc76f95778ff3c94b4b2d87b75c",
       "size": 694,
+      "role": "template"
+    },
+    {
+      "skill": "guyin-setup",
+      "path": "templates/long/追踪/连续性审计.md",
+      "sha256": "759e075b8c4a0bae54f00350d1726f56f05a4b6fc8b205c6c0e7b2f7e392e27a",
+      "size": 1439,
       "role": "template"
     },
     {
